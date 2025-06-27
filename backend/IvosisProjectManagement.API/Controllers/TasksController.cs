@@ -1,5 +1,6 @@
 using IvosisProjectManagement.API.Models;
 using IvosisProjectManagement.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IvosisProjectManagement.API.Controllers
@@ -15,6 +16,7 @@ namespace IvosisProjectManagement.API.Controllers
             _taskService = taskService;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -22,6 +24,7 @@ namespace IvosisProjectManagement.API.Controllers
             return Ok(tasks);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
@@ -30,6 +33,7 @@ namespace IvosisProjectManagement.API.Controllers
             return Ok(task);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] TaskItem task)
         {
@@ -37,14 +41,22 @@ namespace IvosisProjectManagement.API.Controllers
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] TaskItem task)
         {
             if (id != task.Id) return BadRequest();
-            var updated = await _taskService.UpdateAsync(task);
-            return updated ? NoContent() : NotFound();
-        }
 
+            var updated = await _taskService.UpdateAsync(task);
+
+            if (!updated)
+                return NotFound();
+
+            var updatedProcess = await _taskService.GetByIdAsync(id);
+            return Ok(updatedProcess); // 200 OK + body
+        }
+        
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

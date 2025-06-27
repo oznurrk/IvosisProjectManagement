@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using IvosisProjectManagement.API.Models;
-using IvosisProjectManagement.API.Services; 
+using IvosisProjectManagement.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IvosisProjectManagement.API.Controllers
 {
@@ -15,7 +16,7 @@ namespace IvosisProjectManagement.API.Controllers
             _userService = userService;
         }
 
-        // GET: api/users
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -23,7 +24,7 @@ namespace IvosisProjectManagement.API.Controllers
             return Ok(users);
         }
 
-        // GET: api/users/5
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -32,9 +33,9 @@ namespace IvosisProjectManagement.API.Controllers
                 return NotFound();
 
             return Ok(user);
-        }
+        }   
 
-        // POST: api/users
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] User user)
         {
@@ -42,7 +43,24 @@ namespace IvosisProjectManagement.API.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
         }
 
-        // DELETE: api/users/5
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] User user)
+        {
+            if (id != user.Id) return BadRequest();
+
+            var updated = await _userService.UpdateAsync(user);
+
+            if (!updated)
+                return NotFound();
+
+            var updatedProcess = await _userService.GetByIdAsync(id);
+            return Ok(updatedProcess); // 200 OK + body
+        }
+
+
+        [Authorize]
+        [Authorize(Roles = "Admin")] // Sadece Admin rolündeki kullanıcılar silebilir
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -51,6 +69,14 @@ namespace IvosisProjectManagement.API.Controllers
                 return NotFound();
 
             return NoContent();
+        }
+        //Sadece Admin'in görebileceği özel alan
+        [Authorize]
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin-only")]
+        public IActionResult GetAdminOnlyData()
+        {
+            return Ok("Bu endpoint yalnızca Admin rolündeki kullanıcılar tarafından erişilebilir.");
         }
     }
 }
