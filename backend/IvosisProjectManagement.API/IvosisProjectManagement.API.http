@@ -1,0 +1,6 @@
+@IvosisProjectManagement.API_HostAddress = http://localhost:5173
+
+GET {{IvosisProjectManagement.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
