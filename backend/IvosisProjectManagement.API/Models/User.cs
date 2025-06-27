@@ -1,8 +1,8 @@
 namespace IvosisProjectManagement.API.Models
 {
-    public class Users
+    public class User
     {
-        public Guid Id { get; set; }               // Primary Key
+        public int Id { get; set; }               // Primary Key
         public string? Name { get; set; }           // Kullanıcının adı
         public string? Email { get; set; }          // E-posta adresi
         public string? PasswordHash { get; set; }   // Şifre hash’i

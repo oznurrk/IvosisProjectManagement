@@ -4,6 +4,9 @@ namespace IvosisProjectManagement.API.Services
 {
     public interface IUserService
     {
-        Task<IEnumerable<User>> GetUsersAsync();
+        Task<IEnumerable<User>> GetAllUsersAsync();
+        Task<User?> GetByIdAsync(int id);
+        Task<User> CreateUserAsync(User user);
+        Task<bool> DeleteUserAsync(int id);
     }
 }

@@ -8,7 +8,7 @@ namespace IvosisProjectManagement.API.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         public DbSet<Models.User> Users { get; set; }
-        public DbSet<Models.Processes> Processes { get; set; }
+        public DbSet<Models.Process> Processes { get; set; }
         public DbSet<Models.TaskItem> Tasks { get; set; }
     }
 }
