@@ -1,4 +1,4 @@
-using IvosisProjectManagement.API.Models;
+﻿using IvosisProjectManagement.API.Models;
 using IvosisProjectManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -61,7 +61,10 @@ namespace IvosisProjectManagement.API.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _taskService.DeleteAsync(id);
-            return deleted ? NoContent() : NotFound();
+            if (!deleted)
+                return NotFound(new { message = "Kayıt bulunamadı." });
+
+            return Ok(new { message = "Kayıt başarıyla silindi." });
         }
     }
 }

@@ -58,18 +58,6 @@ namespace IvosisProjectManagement.API.Controllers
             return Ok(updatedProcess); // 200 OK + body
         }
 
-
-        [Authorize]
-        [Authorize(Roles = "Admin")] // Sadece Admin rolündeki kullanıcılar silebilir
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var deleted = await _userService.DeleteUserAsync(id);
-            if (!deleted)
-                return NotFound();
-
-            return NoContent();
-        }
         //Sadece Admin'in görebileceği özel alan
         [Authorize]
         [Authorize(Roles = "Admin")]

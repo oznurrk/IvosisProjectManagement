@@ -9,6 +9,6 @@ namespace IvosisProjectManagement.API.Models
         public string Status { get; set; } = "ToDo"; 
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public Guid? AssignedUserId { get; set; }
+        public int? AssignedUserId { get; set; }
     }
 }

@@ -38,16 +38,5 @@ namespace IvosisProjectManagement.API.Services
             _context.Users.Update(user);
             return await _context.SaveChangesAsync() > 0;
         }
-
-
-        public async Task<bool> DeleteUserAsync(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return false;
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-            return true;
-        }
     }
 }
