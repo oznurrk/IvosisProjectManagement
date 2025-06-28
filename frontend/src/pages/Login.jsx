@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './Login.css';
-
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +12,7 @@ const Login = () => {
     try {
       const response = await axios.post('http://localhost:5000/api/auth/login', {
         email,
-        password
+        password,
       });
 
       localStorage.setItem('token', response.data.token);
@@ -25,25 +23,12 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <h2>IVOSIS Project Management</h2>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Şifre"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Giriş Yap</button>
-      </form>
+    <div style={{background:'url("ivosis.webp")'}} className='h-screen w-screen !bg-cover !bg-center !bg-no-repeat flex flex-col items-center justify-center'>
+      <div className='w-[450px] backdrop-blur-md p-10 py-8 rounded-lg'>
+        <form className='flex flex-col gap-5'>
+          <div className='self-center font-medium font-heading text-white text-xl'>Giriş Yap</div>
+        </form>
+      </div>
     </div>
   );
 };

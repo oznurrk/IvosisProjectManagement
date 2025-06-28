@@ -1,0 +1,11 @@
+
+backend projesini kaldırma:
+     dotnet build -> dotnet run
+
+
+npm install @mantine/core @mantine/hook 
+
+tailwindcss -> 
+    npm install -D tailwindcss@3.4.17 (sürüm uyuşmazlığı için)
+    npx tailwindcss init (tailwind.config.js dosyasını oluşturmak için)
+
