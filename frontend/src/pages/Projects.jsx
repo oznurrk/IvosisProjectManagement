@@ -70,7 +70,7 @@ const Projects = () => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Projeler</h1>
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-ivosis-400 text-white px-4 py-2 rounded"
             onClick={() => setCurrentPage("add")}
           >
             Proje Ekle
@@ -199,13 +199,13 @@ const Projects = () => {
           <button
             type="button"
             onClick={() => setCurrentPage("dashboard")}
-            className="border border-gray-300 px-4 py-2 rounded"
+            className=" bg-red-500 border border-gray-300 px-4 py-2 rounded"
           >
             İptal
           </button>
           <button
             type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded"
+            className="bg-ivosis-400 text-white px-4 py-2 rounded"
           >
             Kaydet
           </button>

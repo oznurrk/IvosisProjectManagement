@@ -1,0 +1,35 @@
+               ┌──────────────┐
+               │  Client (UI) │
+               └──────┬───────┘
+                      │
+           sends DTO  ▼
+              ┌────────────────────┐
+              │   Controller       │
+              │ (UserCreateDto)    │
+              └──────┬─────────────┘
+                     │ uses
+                     ▼
+            ┌────────────────┐
+            │   AutoMapper   │
+            └──────┬─────────┘
+                   ▼
+              ┌─────────┐
+              │ Model   │
+              │ (User)  │
+              └────┬────┘
+                   ▼
+             ┌────────────┐
+             │ Service    │
+             │ (EF Core)  │
+             └────────────┘
+
+
+
+
+git pull origin main
+# (Kodlarını yaz/düzenle)
+git status
+git add .
+git commit -m "Günlük değişiklik: XYZ işlemleri yapıldı"
+git push origin main
+

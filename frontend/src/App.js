@@ -1,13 +1,9 @@
 import React from 'react';
 import '@mantine/core/styles.css'
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { createTheme, MantineProvider } from '@mantine/core';
 
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import KanbanBoard from './pages/KanbanBoard';
-import AdminPanel from './pages/AdminPanel';
-import Projects from './pages/Projects';
+
+import AppRoutes from './Routes/AppRoutes';
 
 const theme = createTheme({
   focusRing:"never",
@@ -27,12 +23,7 @@ const theme = createTheme({
 function App() {
   return (
     <MantineProvider theme={theme}>
-      <BrowserRouter>
-        <Routes>
-          <Route path='/' element={<Login />}/>
-          <Route path='/projects' element={<Projects />} />
-        </Routes>
-      </BrowserRouter>
+      <AppRoutes />
     </MantineProvider>
   );
 }

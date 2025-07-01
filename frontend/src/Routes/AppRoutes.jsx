@@ -1,14 +1,21 @@
-import Header from "../components/Header/Header"
-import Sidebar from "../components/Sidebar/Sidebar"
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AdminDashboard from "../Layout/AdminDashboard";
+import Projects from "../pages/Projects";
+
 
 const AppRoutes = () => {
-    return (
-        <div className="flex">
-            <Sidebar />
-            <div className="w-full">
-                <Header />
-            </div>
-        </div>
+    return(
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<AdminDashboard />}>
+                    <Route path="/dashboard" element={<Projects />} />
+                    <Route path="/projects" element={<Projects />} />
+                    <Route path="/processes" element={<Projects />} />
+                    <Route path="/documents" element={<Projects />} />
+                    <Route path="/settings" element={<Projects />} />
+                </Route>
+            </Routes>
+        </BrowserRouter>
     )
 }
 
