@@ -1,6 +1,5 @@
 using IvosisProjectManagement.API.Data;
-using IvosisProjectManagement.API.Models;
-using IvosisProjectManagement.API.Models.Dtos;
+using IvosisProjectManagement.API.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace IvosisProjectManagement.API.Services
@@ -24,8 +23,8 @@ namespace IvosisProjectManagement.API.Services
                     Title = t.Title,
                     Description = t.Description,
                     Status = t.Status,
-                    StartDate = (DateTime)t.StartDate,
-                    EndDate = (DateTime)t.EndDate,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate,
                     AssignedUserId = t.AssignedUserId
                 })
                 .ToListAsync();
@@ -43,8 +42,8 @@ namespace IvosisProjectManagement.API.Services
                 Title = task.Title,
                 Description = task.Description,
                 Status = task.Status,
-                StartDate = (DateTime)task.StartDate,
-                EndDate = (DateTime)task.EndDate,
+                StartDate = task.StartDate,
+                EndDate = task.EndDate,
                 AssignedUserId = task.AssignedUserId
             };
         }
@@ -72,8 +71,8 @@ namespace IvosisProjectManagement.API.Services
                 Title = task.Title,
                 Description = task.Description,
                 Status = task.Status,
-                StartDate = (DateTime)task.StartDate,
-                EndDate = (DateTime)task.EndDate,
+                StartDate = task.StartDate,
+                EndDate = task.EndDate,
                 AssignedUserId = task.AssignedUserId
             };
         }

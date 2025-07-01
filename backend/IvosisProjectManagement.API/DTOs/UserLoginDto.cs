@@ -1,4 +1,4 @@
-namespace IvosisProjectManagement.API.Models
+namespace IvosisProjectManagement.API.DTOs
 {
     public class UserLoginDto
     {

@@ -1,4 +1,4 @@
-﻿using IvosisProjectManagement.API.Models;
+﻿using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

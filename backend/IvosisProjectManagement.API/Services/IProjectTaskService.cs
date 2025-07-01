@@ -1,13 +1,13 @@
-using IvosisProjectManagement.API.Models;
+using IvosisProjectManagement.API.DTOs;
 
 namespace IvosisProjectManagement.API.Services
 {
     public interface IProjectTaskService
     {
-        Task<IEnumerable<ProjectTask>> GetAllAsync();
-        Task<ProjectTask?> GetByIdAsync(int id);
-        Task<ProjectTask> CreateAsync(ProjectTask task);
-        Task<bool> UpdateAsync(ProjectTask task);
+        Task<IEnumerable<ProjectTaskDto>> GetAllAsync();
+        Task<ProjectTaskDto?> GetByIdAsync(int id);
+        Task<ProjectTaskDto> CreateAsync(ProjectTaskCreateDto dto);
+        Task<bool> UpdateAsync(ProjectTaskUpdateDto dto);
         Task<bool> DeleteAsync(int id);
     }
 }

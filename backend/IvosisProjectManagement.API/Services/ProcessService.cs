@@ -1,4 +1,5 @@
 using IvosisProjectManagement.API.Data;
+using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +45,7 @@ namespace IvosisProjectManagement.API.Services
             var process = new Process
             {
                 Name = dto.Name,
-                Description = dto.Description,
+                Description = dto.Description ?? string.Empty,
                 ParentProcessId = dto.ParentProcessId
             };
 
@@ -66,7 +67,7 @@ namespace IvosisProjectManagement.API.Services
             if (process == null) return false;
 
             process.Name = dto.Name;
-            process.Description = dto.Description;
+            process.Description = dto.Description ?? string.Empty;
 
             _context.Processes.Update(process);
             return await _context.SaveChangesAsync() > 0;

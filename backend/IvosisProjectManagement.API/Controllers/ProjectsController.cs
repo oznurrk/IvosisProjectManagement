@@ -1,4 +1,4 @@
-using IvosisProjectManagement.API.Models;
+using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,17 +33,17 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Project project)
+        public async Task<IActionResult> Create(ProjectCreateDto dto)
         {
-            var created = await _projectService.CreateAsync(project);
+            var created = await _projectService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Project project)
+        public async Task<IActionResult> Update(int id, ProjectUpdateDto dto)
         {
-            if (id != project.Id) return BadRequest();
-            var updated = await _projectService.UpdateAsync(project);
+            if (id != dto.Id) return BadRequest();
+            var updated = await _projectService.UpdateAsync(id,dto);
             return updated ? NoContent() : NotFound();
         }
 

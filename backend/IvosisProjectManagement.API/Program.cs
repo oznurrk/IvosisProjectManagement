@@ -26,7 +26,7 @@ builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]);
+        var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

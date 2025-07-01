@@ -1,4 +1,5 @@
 using IvosisProjectManagement.API.Models;
+using IvosisProjectManagement.API.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -43,12 +44,12 @@ namespace IvosisProjectManagement.API.Controllers
 
         private string GenerateJwtToken(User user)
         {
-            var claims = new[]
-            {
+            var claims = new[] {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Email,user.Email!),
+                new Claim(ClaimTypes.Role,user.Role!),
             };
+
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

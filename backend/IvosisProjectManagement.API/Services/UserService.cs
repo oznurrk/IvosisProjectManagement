@@ -1,7 +1,7 @@
 using IvosisProjectManagement.API.Data;
 using IvosisProjectManagement.API.Models;
 using Microsoft.EntityFrameworkCore;
-
+using IvosisProjectManagement.API.DTOs;
 namespace IvosisProjectManagement.API.Services
 {
     public class UserService : IUserService

@@ -1,5 +1,4 @@
-using IvosisProjectManagement.API.Models;
-using IvosisProjectManagement.API.Models.Dtos;
+using IvosisProjectManagement.API.DTOs;
 
 namespace IvosisProjectManagement.API.Services
 {
