@@ -33,3 +33,12 @@ git add .
 git commit -m "Günlük değişiklik: XYZ işlemleri yapıldı"
 git push origin main
 
+
+
+
+-----------------
+
+git add .
+git commit -m "your message"
+git pull 
+

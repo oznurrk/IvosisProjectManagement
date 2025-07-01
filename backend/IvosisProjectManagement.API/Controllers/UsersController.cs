@@ -37,7 +37,7 @@ namespace IvosisProjectManagement.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] UserRegisterDto dto)
+        public async Task<IActionResult> Create(UserRegisterDto dto)
         {
             var createdUser = await _userService.CreateUserAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
@@ -45,7 +45,7 @@ namespace IvosisProjectManagement.API.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UserUpdateDto dto)
+        public async Task<IActionResult> Update(int id, UserUpdateDto dto)
         {
             var updated = await _userService.UpdateAsync(id, dto);
             if (!updated)

@@ -29,11 +29,17 @@ const Projects = () => {
 
   // Veritabanından projeleri çek
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/projects")
-      .then((res) => setProjects(res.data))
-      .catch((err) => console.error("Proje çekme hatası:", err));
-  }, []);
+  const token = localStorage.getItem("token"); // Token burada alınır
+
+  axios
+    .get("http://localhost:5000/api/projects", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => setProjects(res.data))
+    .catch((err) => console.error("Proje çekme hatası:", err));
+}, []);
 
   // Form gönderimi
   const handleSubmit = async (e) => {

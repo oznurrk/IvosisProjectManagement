@@ -33,14 +33,14 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] TaskItemCreateDto dto)
+        public async Task<IActionResult> Create(TaskItemCreateDto dto)
         {
             var created = await _taskService.CreateAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created); // TaskItemDto döner
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] TaskItemUpdateDto dto)
+        public async Task<IActionResult> Update(int id, TaskItemUpdateDto dto)
         {
             var updated = await _taskService.UpdateAsync(id, dto);
             if (!updated)
