@@ -38,4 +38,11 @@ kullanıcı bilgisi
 durum
 başlama ve bitiş tarihi
 proje detay açıklaması (string max 500)
-dosya ekleme 
+dosya ekleme
+
+
+PROJE EKRANLARI
+    -> Proje ekleme ekranı (Projects ve ProjectTasks tablosuna aynı anda post atacak)
+    -> Proje Listeleme (Eklenen Projeler Görüntülenecek, tüm alanlar görüntülenmeyecek, proje detay butonu olacak
+    butona tıklandığında proje detay sayfası açılacak)
+    -> Proje Detay (Proje ekleme ekranında girilen tüm bilgiler görüntülenecek)
