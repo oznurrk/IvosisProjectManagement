@@ -33,33 +33,28 @@ namespace IvosisProjectManagement.API.Controllers
                 return NotFound();
 
             return Ok(user);
-        }   
+        }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] User user)
+        public async Task<IActionResult> Create([FromBody] UserRegisterDto dto)
         {
-            var createdUser = await _userService.CreateUserAsync(user);
+            var createdUser = await _userService.CreateUserAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] User user)
+        public async Task<IActionResult> Update(int id, [FromBody] UserUpdateDto dto)
         {
-            if (id != user.Id) return BadRequest();
-
-            var updated = await _userService.UpdateAsync(user);
-
+            var updated = await _userService.UpdateAsync(id, dto);
             if (!updated)
                 return NotFound();
 
-            var updatedProcess = await _userService.GetByIdAsync(id);
-            return Ok(updatedProcess); // 200 OK + body
+            var updatedUser = await _userService.GetByIdAsync(id);
+            return Ok(updatedUser);
         }
 
-        //Sadece Admin'in görebileceği özel alan
-        [Authorize]
         [Authorize(Roles = "Admin")]
         [HttpGet("admin-only")]
         public IActionResult GetAdminOnlyData()

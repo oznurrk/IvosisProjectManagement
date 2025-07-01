@@ -30,8 +30,8 @@ namespace IvosisProjectManagement.API.Controllers
                 return Unauthorized("Geçersiz e-posta.");
 
             // Şifre karşılaştırması
-            bool passwordMatches = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
-            Console.WriteLine(BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash));
+            bool passwordMatches = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password);
+            Console.WriteLine(BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password));
             
             
             if (!passwordMatches)

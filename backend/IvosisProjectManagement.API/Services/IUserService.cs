@@ -4,9 +4,11 @@ namespace IvosisProjectManagement.API.Services
 {
     public interface IUserService
     {
+        
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User?> GetByIdAsync(int id);
-        Task<User> CreateUserAsync(User user);
-        Task<bool> UpdateAsync(User user);
+        Task<User> CreateUserAsync(UserRegisterDto dto);
+        Task<bool> UpdateAsync(int id, UserUpdateDto dto);
+        
     }
 }

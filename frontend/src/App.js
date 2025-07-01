@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import KanbanBoard from './pages/KanbanBoard';
 import AdminPanel from './pages/AdminPanel';
+import Projects from './pages/Projects';
 
 const theme = createTheme({
   focusRing:"never",
@@ -29,6 +30,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path='/' element={<Login />}/>
+          <Route path='/projects' element={<Projects />} />
         </Routes>
       </BrowserRouter>
     </MantineProvider>

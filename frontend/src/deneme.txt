@@ -9,3 +9,33 @@ tailwindcss ->
     npm install -D tailwindcss@3.4.17 (sürüm uyuşmazlığı için)
     npx tailwindcss init (tailwind.config.js dosyasını oluşturmak için)
 
+
+git pull origin main -> değişiklikleri repository'den çeker
+
+git add . -> projedeki değişiklerin tümününü ekler
+git commit -m "message" -> commit mesajı (sürüm)
+git push origin main -> commit'i repository'e ekler
+
+
+
+PROJE EKLEME EKRANI
+proje (string max 250 karakter)
+süreç (string combobox)
+görev (string textbox max 250 karakter)
+kullanıcı (kullanıcılar combobox)
+başlama bitiş tarihleri (date,date)
+son değiştiren kullanıcı (giriş yapan kişinin bilgileri)
+son değiştirme tarih ve saaat (yapılan işlem tarihi)
+durum (combobox) (içerisinde yapılacak devam ediyor bitti iptal) 
+önem sırası (öncelik düşük orta yüksek kritik)
+
+PROJE DETAY SAYFASI
+proje adı
+süreç
+görev
+kullanıcı bilgisi
+öncelik durumu
+durum
+başlama ve bitiş tarihi
+proje detay açıklaması (string max 500)
+dosya ekleme 

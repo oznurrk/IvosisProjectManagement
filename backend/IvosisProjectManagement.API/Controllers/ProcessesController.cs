@@ -35,25 +35,21 @@ namespace IvosisProjectManagement.API.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Process process)
+        public async Task<IActionResult> Create([FromBody] ProcessCreateDto dto)
         {
-            var created = await _service.CreateAsync(process);
+            var created = await _service.CreateAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }
 
+
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Process process)
+        public async Task<IActionResult> Update(int id, [FromBody] ProcessUpdateDto dto)
         {
-            if (id != process.Id) return BadRequest();
-
-            var updated = await _service.UpdateAsync(process);
-
-            if (!updated)
-                return NotFound();
-
+            var updated = await _service.UpdateAsync(id, dto);
+            if (!updated) return NotFound();
             var updatedProcess = await _service.GetByIdAsync(id);
-            return Ok(updatedProcess); // 200 OK + body
+            return Ok(updatedProcess);
         }
 
         [Authorize]

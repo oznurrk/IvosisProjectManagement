@@ -13,25 +13,61 @@ namespace IvosisProjectManagement.API.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<Process>> GetAllAsync()
+        public async Task<IEnumerable<ProcessDto>> GetAllAsync()
         {
-            return await _context.Processes.ToListAsync();
+            return await _context.Processes
+                .Select(p => new ProcessDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    ParentProcessId = p.ParentProcessId
+                })
+                .ToListAsync();
         }
 
-        public async Task<Process?> GetByIdAsync(int id)
+        public async Task<ProcessDto?> GetByIdAsync(int id)
         {
-            return await _context.Processes.FindAsync(id);
+            var p = await _context.Processes.FindAsync(id);
+            if (p == null) return null;
+            return new ProcessDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                ParentProcessId = p.ParentProcessId
+            };
         }
 
-        public async Task<Process> CreateAsync(Process process)
+        public async Task<ProcessDto> CreateAsync(ProcessCreateDto dto)
         {
+            var process = new Process
+            {
+                Name = dto.Name,
+                Description = dto.Description,
+                ParentProcessId = dto.ParentProcessId
+            };
+
             _context.Processes.Add(process);
             await _context.SaveChangesAsync();
-            return process;
+
+            return new ProcessDto
+            {
+                Id = process.Id,
+                Name = process.Name,
+                Description = process.Description,
+                ParentProcessId = process.ParentProcessId
+            };
         }
 
-        public async Task<bool> UpdateAsync(Process process)
+        public async Task<bool> UpdateAsync(int id, ProcessUpdateDto dto)
         {
+            var process = await _context.Processes.FindAsync(id);
+            if (process == null) return false;
+
+            process.Name = dto.Name;
+            process.Description = dto.Description;
+
             _context.Processes.Update(process);
             return await _context.SaveChangesAsync() > 0;
         }
