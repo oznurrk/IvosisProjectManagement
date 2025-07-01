@@ -4,10 +4,10 @@ namespace IvosisProjectManagement.API.Services
 {
     public interface IProcessService
     {
-        Task<IEnumerable<Process>> GetAllAsync();
-        Task<Process?> GetByIdAsync(int id);
-        Task<Process> CreateAsync(Process process);
-        Task<bool> UpdateAsync(Process process);
+        Task<IEnumerable<ProcessDto>> GetAllAsync();
+        Task<ProcessDto?> GetByIdAsync(int id);
+        Task<ProcessDto> CreateAsync(ProcessCreateDto dto);
+        Task<bool> UpdateAsync(int id, ProcessUpdateDto dto);
         Task<bool> DeleteAsync(int id);
     }
 }

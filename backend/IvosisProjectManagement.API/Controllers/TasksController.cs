@@ -7,6 +7,7 @@ namespace IvosisProjectManagement.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class TasksController : ControllerBase
     {
         private readonly ITaskService _taskService;
@@ -16,47 +17,39 @@ namespace IvosisProjectManagement.API.Controllers
             _taskService = taskService;
         }
 
-        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var tasks = await _taskService.GetAllAsync();
-            return Ok(tasks);
+            return Ok(tasks); // TaskItemDto listesi dönecek
         }
 
-        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
             var task = await _taskService.GetByIdAsync(id);
             if (task == null) return NotFound();
-            return Ok(task);
+            return Ok(task); // TaskItemDto döner
         }
 
-        [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] TaskItem task)
+        public async Task<IActionResult> Create([FromBody] TaskItemCreateDto dto)
         {
-            var created = await _taskService.CreateAsync(task);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+            var created = await _taskService.CreateAsync(dto);
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, created); // TaskItemDto döner
         }
 
-        [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] TaskItem task)
+        public async Task<IActionResult> Update(int id, [FromBody] TaskItemUpdateDto dto)
         {
-            if (id != task.Id) return BadRequest();
-
-            var updated = await _taskService.UpdateAsync(task);
-
+            var updated = await _taskService.UpdateAsync(id, dto);
             if (!updated)
                 return NotFound();
 
-            var updatedProcess = await _taskService.GetByIdAsync(id);
-            return Ok(updatedProcess); // 200 OK + body
+            var updatedTask = await _taskService.GetByIdAsync(id);
+            return Ok(updatedTask); // Güncel TaskItemDto döner
         }
-        
-        [Authorize]
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
