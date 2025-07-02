@@ -1,46 +1,65 @@
-# Build çıktıları
+# -------------------------
+# .NET / C# Output Files
+# -------------------------
 bin/
 obj/
 *.dll
 *.exe
 *.pdb
 
-# .NET user config
+# .NET User Specific
 *.user
 *.suo
 *.cache
 *.log
 
-# Rider ve VS
+# Rider, Visual Studio
 .vs/
 .idea/
 *.sln.docstates
 
-# Node.js
+# -------------------------
+# Node.js / Frontend
+# -------------------------
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# React derleme önbellekleri
+*.eslintcache
+*.babelcache
 .cache/
 dist/
 build/
 
-# MacOS & Linux sistem dosyaları
+# Next.js (varsa)
+.next/
+
+# React specific (Vite, CRA, etc.)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.next/
+frontend/.cache/
+
+# -------------------------
+# Environment & Secrets
+# -------------------------
+.env
+.env.local
+.env.*.local
+
+# -------------------------
+# System Files
+# -------------------------
 .DS_Store
 Thumbs.db
 
-# Git merge çakışma işaretçileri
+# -------------------------
+# Git Conflict Files
+# -------------------------
 *.orig
 
-# VS Code
+# -------------------------
+# VS Code / Editor Settings
+# -------------------------
 .vscode/
-
-# Paket kilitleri (isteğe bağlı takip edebilirsin)
-package-lock.json
-yarn.lock
-
-# frontend özel (babel, eslint)
-*.eslintcache
-*.babelcache
