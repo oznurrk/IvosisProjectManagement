@@ -2,6 +2,7 @@ using IvosisProjectManagement.API.Data;
 using IvosisProjectManagement.API.Models;
 using Microsoft.EntityFrameworkCore;
 using IvosisProjectManagement.API.DTOs;
+
 namespace IvosisProjectManagement.API.Services
 {
     public class UserService : IUserService
@@ -13,17 +14,34 @@ namespace IvosisProjectManagement.API.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
         {
-            return await _context.Users.ToListAsync();
+            return await _context.Users
+                .Select(user => new UserDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Role = user.Role
+                })
+                .ToListAsync();
         }
 
-        public async Task<User?> GetByIdAsync(int id)
+        public async Task<UserDto?> GetByIdAsync(int id)
         {
-            return await _context.Users.FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return null;
+
+            return new UserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role
+            };
         }
 
-        public async Task<User> CreateUserAsync(UserRegisterDto dto)
+        public async Task<UserDto> CreateUserAsync(UserRegisterDto dto)
         {
             var user = new User
             {
@@ -35,7 +53,14 @@ namespace IvosisProjectManagement.API.Services
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return user;
+
+            return new UserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role
+            };
         }
 
         public async Task<bool> UpdateAsync(int id, UserUpdateDto dto)
@@ -47,8 +72,8 @@ namespace IvosisProjectManagement.API.Services
             user.Email = dto.Email;
             user.Role = dto.Role;
 
-            if (!string.IsNullOrWhiteSpace(dto.Password))
-                user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            if (!string.IsNullOrWhiteSpace(dto.NewPassword))
+                user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
 
             _context.Users.Update(user);
             return await _context.SaveChangesAsync() > 0;

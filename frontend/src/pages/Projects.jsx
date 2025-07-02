@@ -90,7 +90,9 @@ const Projects = () => {
               <tr>
                 <th className="p-2 border">Adı</th>
                 <th className="p-2 border">Açıklama</th>
-                <th className="p-2 border">Tarih</th>
+                <th className="p-2 border">Atanan Kullanıcı</th>
+                <th className="p-2 border">Başlangıç Tarihi</th>
+                <th className="p-2 border">Bitiş Tarihi</th>
                 <th className="p-2 border">Öncelik</th>
                 <th className="p-2 border">Durum</th>
               </tr>
@@ -100,9 +102,9 @@ const Projects = () => {
                 <tr key={project.id} className="hover:bg-gray-50">
                   <td className="p-2 border">{project.name}</td>
                   <td className="p-2 border">{project.description}</td>
-                  <td className="p-2 border">
-                    {project.startDate} - {project.endDate}
-                  </td>
+                  <td className="p-2 border">{project.assignedUserName}</td>
+                  <td className="p-2 border">{project.startDate} </td>
+                  <td className="p-2 border">{project.endDate}</td>
                   <td className="p-2 border">
                     {
                       priorityOptions.find((p) => p.value === project.priority)?.label
@@ -149,7 +151,6 @@ const Projects = () => {
             rows="3"
           />
         </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 font-medium">Başlangıç Tarihi</label>

@@ -1,11 +1,28 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace IvosisProjectManagement.API.Models
 {
     public class User
     {
-        public int Id { get; set; }               // Primary Key
-        public string? Name { get; set; }           // Kullanıcının adı
-        public string? Email { get; set; }          // E-posta adresi
-        public string? Password { get; set; }   // Şifre hash’i
-        public string? Role { get; set; }           // Kullanıcı rolü (örn: Adm
+        public int Id { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; }
+
+        [Required]
+        [EmailAddress]
+        [MaxLength(200)]
+        public string Email { get; set; }
+
+        [Required]
+        public string Password { get; set; }
+
+        [MaxLength(100)]
+        public string Role { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? UpdatedAt { get; set; }
     }
+
 }

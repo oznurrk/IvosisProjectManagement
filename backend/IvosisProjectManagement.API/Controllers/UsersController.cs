@@ -21,7 +21,7 @@ namespace IvosisProjectManagement.API.Controllers
         public async Task<IActionResult> GetAll()
         {
             var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
+            return Ok(users);// UserDto listesi dönülür
         }
 
         [Authorize]
@@ -32,7 +32,7 @@ namespace IvosisProjectManagement.API.Controllers
             if (user == null)
                 return NotFound();
 
-            return Ok(user);
+            return Ok(user);// UserDto listesi dönülür
         }
 
         [Authorize(Roles = "Admin")]
@@ -40,7 +40,14 @@ namespace IvosisProjectManagement.API.Controllers
         public async Task<IActionResult> Create(UserRegisterDto dto)
         {
             var createdUser = await _userService.CreateUserAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
+            var userDto = new UserDto
+            {
+                Id = createdUser.Id,
+                Name = createdUser.Name,
+                Email = createdUser.Email,
+                Role = createdUser.Role
+            };
+            return CreatedAtAction(nameof(GetById), new { id = userDto.Id }, userDto);
         }
 
         [Authorize(Roles = "Admin")]

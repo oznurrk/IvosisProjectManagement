@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IvosisProjectManagement.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4e7262d3376722d56c1919ccf045fef3f1db1316")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c8f00af0b813d243eb2bc5d75efc1de0809e71e4")]
 [assembly: System.Reflection.AssemblyProductAttribute("IvosisProjectManagement.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IvosisProjectManagement.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
