@@ -1,223 +1,167 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
+import { Text } from "@mantine/core";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    startDate: "",
-    endDate: "",
-    priority: "medium",
-    status: "todo",
-  });
-  const [currentPage, setCurrentPage] = useState("dashboard");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState("startDate");
+  const [sortOrder, setSortOrder] = useState("asc");
 
-  const priorityOptions = [
-    { value: "low", label: "Düşük" },
-    { value: "medium", label: "Orta" },
-    { value: "high", label: "Yüksek" },
-    { value: "critical", label: "Kritik" },
-  ];
-
-  const statusOptions = [
-    { value: "todo", label: "Yapılacak" },
-    { value: "inprogress", label: "Devam Ediyor" },
-    { value: "completed", label: "Tamamlandı" },
-    { value: "cancelled", label: "İptal Edildi" },
-  ];
-
-  // Veritabanından projeleri çek
   useEffect(() => {
-  const token = localStorage.getItem("token"); // Token burada alınır
+    const token = localStorage.getItem("token");
+    axios
+      .get("http://localhost:5000/api/projects", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setProjects(res.data))
+      .catch((err) => console.error("Projeler alınamadı:", err));
+  }, []);
 
-  axios
-    .get("http://localhost:5000/api/projects", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((res) => setProjects(res.data))
-    .catch((err) => console.error("Proje çekme hatası:", err));
-}, []);
-
-  // Form gönderimi
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.name.trim()) {
-      alert("Proje adı zorunludur.");
-      return;
-    }
-
-    try {
-      const response = await axios.post("http://localhost:5000/api/projects", formData);
-      setProjects((prev) => [...prev, response.data]);
-      setFormData({
-        name: "",
-        description: "",
-        startDate: "",
-        endDate: "",
-        priority: "medium",
-        status: "todo",
-      });
-      setCurrentPage("dashboard");
-      alert("Proje başarıyla eklendi.");
-    } catch (error) {
-      console.error("Proje ekleme hatası:", error);
-      alert("Proje eklenemedi.");
-    }
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("tr-TR");
   };
 
-  // Liste görünümü
-  if (currentPage === "dashboard") {
-    return (
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Projeler</h1>
-          <button
-            className="bg-ivosis-400 text-white px-4 py-2 rounded"
-            onClick={() => setCurrentPage("add")}
+  const priorityClassMap = {
+    Düşük: "bg-blue-500 text-white",
+    Orta: "bg-green-500 text-white",
+    Yüksek: "bg-orange-500 text-white",
+    Kritik: "bg-red-500 text-white",
+  };
+
+  const priorityOrderMap = {
+    Düşük: 1,
+    Orta: 2,
+    Yüksek: 3,
+    Kritik: 4,
+  };
+
+  const getPriorityClass = (priority) =>
+    priorityClassMap[priority] || "bg-white text-gray-800";
+
+  const filteredProjects = projects
+    .filter((project) => {
+      const valuesToSearch = [
+        project.name,
+        project.description,
+        project.startDate,
+        project.endDate,
+        project.priority,
+        project.status,
+      ];
+      return valuesToSearch.some((field) =>
+        field?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    })
+    .sort((a, b) => {
+      let aVal, bVal;
+
+      if (sortField === "priority") {
+        aVal = priorityOrderMap[a.priority] || 0;
+        bVal = priorityOrderMap[b.priority] || 0;
+      } else {
+        aVal = new Date(a[sortField]);
+        bVal = new Date(b[sortField]);
+      }
+
+      return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+    });
+
+  return (
+    <div className="p-6">
+      {/* Arama ve sıralama */}
+      <div className="mb-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <input
+          type="text"
+          placeholder="Proje adı, açıklama, tarih, öncelik veya durum ile ara..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full md:w-1/2 px-4 py-2 border border-ivosis-400 rounded-md"
+        />
+
+        <div className="flex gap-2">
+          <select
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value)}
+            className="px-3 py-2 border border-ivosis-400 rounded-md"
           >
-            Proje Ekle
-          </button>
+            <option value="startDate">Başlama Tarihi</option>
+            <option value="endDate">Bitiş Tarihi</option>
+            <option value="createdAt">Eklenme Tarihi</option>
+            <option value="priority">Öncelik</option>
+          </select>
+
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            className="px-3 py-2 border border-ivosis-400 rounded-md"
+          >
+            <option value="asc">Artan</option>
+            <option value="desc">Azalan</option>
+          </select>
         </div>
-        {projects.length === 0 ? (
-          <p>Henüz kayıtlı proje yok.</p>
+      </div>
+
+      {/* Kart listesi */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {filteredProjects.length === 0 ? (
+          <p>Arama sonucu bulunamadı.</p>
         ) : (
-          <table className="w-full border text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2 border">Adı</th>
-                <th className="p-2 border">Açıklama</th>
-                <th className="p-2 border">Atanan Kullanıcı</th>
-                <th className="p-2 border">Başlangıç Tarihi</th>
-                <th className="p-2 border">Bitiş Tarihi</th>
-                <th className="p-2 border">Öncelik</th>
-                <th className="p-2 border">Durum</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="p-2 border">{project.name}</td>
-                  <td className="p-2 border">{project.description}</td>
-                  <td className="p-2 border">{project.assignedUserName}</td>
-                  <td className="p-2 border">{project.startDate} </td>
-                  <td className="p-2 border">{project.endDate}</td>
-                  <td className="p-2 border">
-                    {
-                      priorityOptions.find((p) => p.value === project.priority)?.label
-                    }
-                  </td>
-                  <td className="p-2 border">
-                    {
-                      statusOptions.find((s) => s.value === project.status)?.label
-                    }
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          filteredProjects.map((project) => (
+            <Link
+              key={project.id}
+              to={`/projectDetails/${project.id}`}
+              className="bg-white border border-ivosis-400 p-4 w-72 flex flex-col gap-1 rounded-xl hover:shadow-[0_0_5px_1px_yellow] !shadow-ivosis-400"
+            >
+              <div className="flex gap-2 items-center">
+                <div>
+                  <div className="font-semibold text-natural-950 text-xl">
+                    {project.name}
+                  </div>
+                </div>
+              </div>
+
+              <Text
+                className="!text-xs text-justify !text-natural-800"
+                lineClamp={3}
+              >
+                {project.description || "Açıklama yok"}
+              </Text>
+
+              <div className="flex gap-2 text-xs">
+                <div
+                  className={`${getPriorityClass(
+                    project.priority
+                  )} py-1 px-2 rounded-lg`}
+                >
+                  {project.priority || "-"}
+                </div>
+                <div className="bg-white text-ivosis-400 py-1 px-2 rounded-lg">
+                  {project.status || "-"}
+                </div>
+              </div>
+
+              <div className="flex justify-between text-sm text-natural-950 font-semibold">
+                <div className="flex flex-col items-center">
+                  Başlama:
+                  <div>{formatDate(project.startDate)}</div>
+                </div>
+                <div className="flex flex-col items-center">
+                  Bitiş:
+                  <div>{formatDate(project.endDate)}</div>
+                </div>
+              </div>
+
+              <div className="text-xs text-right text-gray-500 mt-1 italic">
+                Eklendi: {formatDate(project.createdAt)}
+              </div>
+            </Link>
+          ))
         )}
       </div>
-    );
-  }
-
-  // Proje ekleme formu
-  return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">Yeni Proje Ekle</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1 font-medium">Proje Adı *</label>
-          <input
-            type="text"
-            value={formData.name}
-            maxLength={250}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full border px-3 py-2 rounded"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1 font-medium">Açıklama</label>
-          <textarea
-            value={formData.description}
-            maxLength={500}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full border px-3 py-2 rounded"
-            rows="3"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1 font-medium">Başlangıç Tarihi</label>
-            <input
-              type="date"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-          <div>
-            <label className="block mb-1 font-medium">Bitiş Tarihi</label>
-            <input
-              type="date"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block mb-1 font-medium">Öncelik</label>
-          <select
-            value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-            className="w-full border px-3 py-2 rounded"
-          >
-            {priorityOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block mb-1 font-medium">Durum</label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            className="w-full border px-3 py-2 rounded"
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex justify-end gap-4 pt-4">
-          <button
-            type="button"
-            onClick={() => setCurrentPage("dashboard")}
-            className=" bg-red-500 border border-gray-300 px-4 py-2 rounded"
-          >
-            İptal
-          </button>
-          <button
-            type="submit"
-            className="bg-ivosis-400 text-white px-4 py-2 rounded"
-          >
-            Kaydet
-          </button>
-        </div>
-      </form>
     </div>
   );
 };

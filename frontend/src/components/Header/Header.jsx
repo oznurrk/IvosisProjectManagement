@@ -1,5 +1,5 @@
 import { ActionIcon } from "@mantine/core";
-import { IconLayoutSidebarLeftCollapseFilled, IconMenu2 } from "@tabler/icons-react";
+import { IconMenu2 } from "@tabler/icons-react";
 import ProfileMenu from "./ProfileMenu";
 
 const Header = () => {
