@@ -25,11 +25,7 @@ namespace IvosisProjectManagement.API.Services
                     StartDate = p.StartDate,
                     EndDate = p.EndDate,
                     Priority = p.Priority,
-                    Status = p.Status,
-                    AssignedUserName = _context.ProjectTasks
-                        .Where(pt => pt.ProjectId == p.Id)
-                        .Select(pt => pt.AssignedUser.Name) // navigation property varsa
-                        .FirstOrDefault()
+                    Status = p.Status
                 })
                 .ToListAsync();
         }

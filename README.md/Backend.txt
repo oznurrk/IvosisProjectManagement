@@ -43,6 +43,7 @@ git commit -m "your message"
 git pull 
 
 ----------------------------------------------------------
+git checkout backend
 git add .
 git commit -m "Backend: ProjeController güncellendi"
 git push origin backend
@@ -50,5 +51,5 @@ git push origin backend
 
 git checkout main
 git pull origin main
-git merge backend     # veya arkadaşın için: git merge frontend
+git merge backend     # veya : git merge frontend
 git push origin main
