@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+/*import React, { useEffect, useState } from "react";
 import { useParams} from "react-router-dom";
 import axios from "axios";
 import { Divider } from "@mantine/core";
@@ -102,14 +102,14 @@ const ProjectDetails = () => {
 
   return (
     <div className="p-6 max-w-3xl mx-auto flex flex-col gap-8">
-      {/* Üst Bölüm - Sabit Bilgiler */}
+      
       <div className="bg-white p-6 rounded shadow">
         <h2 className="text-2xl font-bold mb-2">{project.name}</h2>
         <p className="mb-4 text-gray-700">{project.description || "Açıklama yok"}</p>
         <p><strong>Başlama Tarihi:</strong> {new Date(project.startDate).toLocaleDateString("tr-TR")}</p>
       </div>
 
-      {/* Alt Bölüm - Düzenlenebilir Alanlar */}
+    
       <div className="bg-white p-6 rounded shadow flex flex-col gap-4">
         <label>
           <span className="font-semibold">Bitiş Tarihi:</span>
@@ -172,6 +172,99 @@ const ProjectDetails = () => {
         asdasdasdasdasdasdasdasdasda
       </div>
     </div>
+  );
+};
+
+export default ProjectDetails;
+*/
+
+
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Modal, Divider } from "@mantine/core";
+import ProcessSelect from "../components/Process/ProcessSelect";
+
+
+
+
+
+const ProjectDetails = ({ opened, onClose, projectId }) => {
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+
+  
+  useEffect(() => {
+    if (!opened || !projectId) return;
+
+    const fetchProject = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`http://localhost:5000/api/Projects/${projectId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setProject(res.data);
+        
+      } catch (err) {
+        setError("Proje bilgileri alınırken hata oluştu.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [opened, projectId]);
+
+  const handleEditClick = () => {
+    if (isEditing) saveChanges();
+    else setIsEditing(true);
+  };
+
+  const saveChanges = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
+      await axios.put(
+        `http://localhost:5000/api/Projects/${projectId}`,
+        {
+          ...project
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setProject({
+        ...project
+      });
+
+      setIsEditing(false);
+      alert("Proje başarıyla güncellendi.");
+    } catch {
+      alert("Güncelleme sırasında hata oluştu.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={<h2 className="text-2xl font-bold text-natural-950">
+      {project?.name || "Proje Detayları"}
+    </h2>}
+      size="xl"
+      centered
+    >
+      <Divider  my="sm" size="xs" color="natural.7"  />
+      <ProcessSelect onSelect={(id) => console.log("Seçilen Process ID:", id)} />
+
+    </Modal>
   );
 };
 

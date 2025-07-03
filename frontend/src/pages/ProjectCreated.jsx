@@ -20,6 +20,7 @@ const ProjectCreate = () => {
 
   const validate = () => {
     const newErrors = {};
+
     if (!formData.name) newErrors.name = 'Proje adı gerekli';
     if (!formData.description) newErrors.description = 'Açıklama gerekli';
     if (!formData.startDate) newErrors.startDate = 'Başlama tarihi gerekli';
@@ -28,59 +29,60 @@ const ProjectCreate = () => {
       newErrors.endDate = 'Bitiş tarihi başlama tarihinden önce olamaz';
     if (!formData.priority) newErrors.priority = 'Öncelik seçin';
     if (!formData.status) newErrors.status = 'Durum seçin';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleChange = ({ target: { name, value } }) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
   const submitForm = async () => {
-  setLoading(true);
-  setErrorMessage('');
-  const token = localStorage.getItem('token'); // Kullanıcı giriş yaptıysa token burada olur
+    setLoading(true);
+    setErrorMessage('');
 
-  if (!token) {
-    setErrorMessage('❌ Giriş yapmadan proje ekleyemezsiniz.');
-    setLoading(false);
-    return;
-  }
-
-  try {
-    const response = await fetch('http://localhost:5000/api/projects', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // Token buraya ekleniyor
-      },
-      body: JSON.stringify(formData),
-    });
-
-    if (!response.ok) {
-      throw new Error('Kayıt başarısız');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setErrorMessage('❌ Giriş yapmadan proje ekleyemezsiniz.');
+      setLoading(false);
+      return;
     }
 
-    setSuccessMessage('✅ Proje başarıyla kaydedildi!');
-    setTimeout(() => navigate('/projects'), 1500);
-  } catch (err) {
-    setErrorMessage('❌ Kayıt sırasında bir hata oluştu.');
-  } finally {
-    setLoading(false);
-    setShowConfirm(false);
-  }
-};
+    try {
+      const res = await fetch('http://localhost:5000/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
 
+      if (!res.ok) throw new Error('Kayıt başarısız');
+
+      setSuccessMessage('✅ Proje başarıyla kaydedildi!');
+      setTimeout(() => navigate('/projects'), 1500);
+    } catch {
+      setErrorMessage('❌ Kayıt sırasında bir hata oluştu.');
+    } finally {
+      setLoading(false);
+      setShowConfirm(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validate()) return;
-    setShowConfirm(true); // özel onay kutusu aç
+    if (validate()) {
+      setShowConfirm(true);
+    }
   };
+
+  const inputStyle = (hasError) =>
+    `w-full border rounded px-3 py-2 ${hasError ? 'border-red-500' : 'border-gray-300'}`;
 
   return (
     <div className="max-w-xl mx-auto mt-10 bg-white p-8 rounded-lg shadow">
@@ -104,7 +106,7 @@ const ProjectCreate = () => {
           <input
             type="text"
             name="name"
-            className={`w-full border rounded px-3 py-2 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+            className={inputStyle(errors.name)}
             value={formData.name}
             onChange={handleChange}
           />
@@ -117,7 +119,7 @@ const ProjectCreate = () => {
           <textarea
             name="description"
             rows={4}
-            className={`w-full border rounded px-3 py-2 ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
+            className={inputStyle(errors.description)}
             value={formData.description}
             onChange={handleChange}
           />
@@ -131,7 +133,7 @@ const ProjectCreate = () => {
             <input
               type="date"
               name="startDate"
-              className={`w-full border rounded px-3 py-2 ${errors.startDate ? 'border-red-500' : 'border-gray-300'}`}
+              className={inputStyle(errors.startDate)}
               value={formData.startDate}
               onChange={handleChange}
             />
@@ -142,7 +144,7 @@ const ProjectCreate = () => {
             <input
               type="date"
               name="endDate"
-              className={`w-full border rounded px-3 py-2 ${errors.endDate ? 'border-red-500' : 'border-gray-300'}`}
+              className={inputStyle(errors.endDate)}
               value={formData.endDate}
               onChange={handleChange}
             />
@@ -156,7 +158,7 @@ const ProjectCreate = () => {
             <label className="block mb-1 font-medium text-gray-700">Öncelik</label>
             <select
               name="priority"
-              className={`w-full border rounded px-3 py-2 ${errors.priority ? 'border-red-500' : 'border-gray-300'}`}
+              className={inputStyle(errors.priority)}
               value={formData.priority}
               onChange={handleChange}
             >
@@ -172,7 +174,7 @@ const ProjectCreate = () => {
             <label className="block mb-1 font-medium text-gray-700">Durum</label>
             <select
               name="status"
-              className={`w-full border rounded px-3 py-2 ${errors.status ? 'border-red-500' : 'border-gray-300'}`}
+              className={inputStyle(errors.status)}
               value={formData.status}
               onChange={handleChange}
             >
@@ -187,7 +189,6 @@ const ProjectCreate = () => {
           </div>
         </div>
 
-        {/* Buton */}
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
@@ -197,7 +198,7 @@ const ProjectCreate = () => {
         </button>
       </form>
 
-      {/* Özel Onay Kutusu */}
+      {/* Onay Kutusu */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">

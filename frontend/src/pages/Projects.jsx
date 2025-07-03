@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
 import { Text } from "@mantine/core";
+import ProjectDetails from "./ProjectDetails";
+
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("startDate");
   const [sortOrder, setSortOrder] = useState("asc");
+
+  // Modal state'leri
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -70,6 +75,12 @@ const Projects = () => {
       return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
     });
 
+  // Kart tıklanınca modalı aç
+  const handleCardClick = (projectId) => {
+    setSelectedProjectId(projectId);
+    setModalOpen(true);
+  };
+
   return (
     <div className="p-6">
       {/* Arama ve sıralama */}
@@ -111,10 +122,10 @@ const Projects = () => {
           <p>Arama sonucu bulunamadı.</p>
         ) : (
           filteredProjects.map((project) => (
-            <Link
+            <div
               key={project.id}
-              to={`/projectDetails/${project.id}`}
-              className="bg-white border border-ivosis-400 p-4 w-72 flex flex-col gap-1 rounded-xl hover:shadow-[0_0_5px_1px_yellow] !shadow-ivosis-400"
+              onClick={() => handleCardClick(project.id)}
+              className="cursor-pointer bg-white border border-ivosis-400 p-4 w-72 flex flex-col gap-1 rounded-xl hover:shadow-[0_0_5px_1px_yellow] !shadow-ivosis-400"
             >
               <div className="flex gap-2 items-center">
                 <div>
@@ -156,12 +167,19 @@ const Projects = () => {
               </div>
 
               <div className="text-xs text-right text-gray-500 mt-1 italic">
-                Eklendi: {formatDate(project.createdAt)}
+                Eklendi: {formatDate(project.CreatedAt)}
               </div>
-            </Link>
+            </div>
           ))
         )}
       </div>
+
+      {/* Proje Detayları Modalı */}
+      <ProjectDetails
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        projectId={selectedProjectId}
+      />
     </div>
   );
 };
