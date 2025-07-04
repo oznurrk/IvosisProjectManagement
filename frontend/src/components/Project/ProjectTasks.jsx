@@ -25,18 +25,6 @@ const ProjectTasks = () => {
       }
     };
 
-    const fetchProjectName = async () => {
-      try {
-        const res = await axios.get(`http://localhost:5000/api/projects/${projectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setProjectName(res.data.name);
-      } catch (error) {
-        console.error("Proje adı alınamadı:", error);
-        setProjectName("Bilinmeyen Proje");
-      }
-    };
-
     // seçilen sürecin id'sine göre taskları getirme
     const fetchProcessTasks = async () => {
       try {
