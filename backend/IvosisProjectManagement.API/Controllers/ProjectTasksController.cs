@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IvosisProjectManagement.API.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProjectTasksController : ControllerBase
     {
         private readonly IProjectTaskService _service;
@@ -18,40 +18,36 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var tasks = await _service.GetAllAsync();
-            return Ok(tasks);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> Get(int id)
         {
-            var task = await _service.GetByIdAsync(id);
-            if (task == null) return NotFound();
-            return Ok(task);
+            var item = await _service.GetByIdAsync(id);
+            return item == null ? NotFound() : Ok(item);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(ProjectTaskCreateDto dto)
         {
             var created = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id,ProjectTaskUpdateDto dto)
+        public async Task<IActionResult> Update(int id, ProjectTaskUpdateDto dto)
         {
-            if (id != dto.Id) return BadRequest();
-            var updated = await _service.UpdateAsync(dto);
-            return updated ? NoContent() : NotFound();
+            var updated = await _service.UpdateAsync(id, dto);
+            if (!updated) return NotFound();
+            return Ok(await _service.GetByIdAsync(id));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _service.DeleteAsync(id);
-            return deleted ? NoContent() : NotFound();
+            return deleted ? Ok() : NotFound();
         }
     }
+
 }

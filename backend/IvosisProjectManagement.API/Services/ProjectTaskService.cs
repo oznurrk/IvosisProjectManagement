@@ -17,85 +17,87 @@ namespace IvosisProjectManagement.API.Services
         public async Task<IEnumerable<ProjectTaskDto>> GetAllAsync()
         {
             return await _context.ProjectTasks
-                .Select(t => new ProjectTaskDto
+                .Select(pt => new ProjectTaskDto
                 {
-                    Id = t.Id,
-                    ProjectId = t.ProjectId,
-                    ProcessId = t.ProcessId,
-                    TaskId = t.TaskId,
-                    AssignedUserId = t.AssignedUserId,
-                    Description = t.Description,
-                    FilePath = t.FilePath
+                    Id = pt.Id,
+                    ProjectId = pt.ProjectId,
+                    ProcessId = pt.ProcessId,
+                    TaskId = pt.TaskId,
+                    AssignedUserId = pt.AssignedUserId,
+                    Status = pt.Status,
+                    StartDate = pt.StartDate,
+                    EndDate = pt.EndDate,
+                    Description = pt.Description,
+                    FilePath = pt.FilePath
                 }).ToListAsync();
         }
 
         public async Task<ProjectTaskDto?> GetByIdAsync(int id)
         {
-            var task = await _context.ProjectTasks.FindAsync(id);
-            if (task == null) return null;
+            var pt = await _context.ProjectTasks.FindAsync(id);
+            if (pt == null) return null;
 
             return new ProjectTaskDto
             {
-                Id = task.Id,
-                ProjectId = task.ProjectId,
-                ProcessId = task.ProcessId,
-                TaskId = task.TaskId,
-                AssignedUserId = task.AssignedUserId,
-                Description = task.Description,
-                FilePath = task.FilePath
+                Id = pt.Id,
+                ProjectId = pt.ProjectId,
+                ProcessId = pt.ProcessId,
+                TaskId = pt.TaskId,
+                AssignedUserId = pt.AssignedUserId,
+                Status = pt.Status,
+                StartDate = pt.StartDate,
+                EndDate = pt.EndDate,
+                Description = pt.Description,
+                FilePath = pt.FilePath
             };
         }
 
         public async Task<ProjectTaskDto> CreateAsync(ProjectTaskCreateDto dto)
         {
-            var task = new ProjectTask
+            var pt = new ProjectTask
             {
                 ProjectId = dto.ProjectId,
                 ProcessId = dto.ProcessId,
                 TaskId = dto.TaskId,
                 AssignedUserId = dto.AssignedUserId,
+                Status = dto.Status,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
                 Description = dto.Description,
-                FilePath = dto.FilePath
+                FilePath = dto.FilePath,
+                CreatedAt = DateTime.Now,
+                CreatedByUserId = dto.CreatedByUserId
             };
-
-            _context.ProjectTasks.Add(task);
+            _context.ProjectTasks.Add(pt);
             await _context.SaveChangesAsync();
 
-            return new ProjectTaskDto
-            {
-                Id = task.Id,
-                ProjectId = task.ProjectId,
-                ProcessId = task.ProcessId,
-                TaskId = task.TaskId,
-                AssignedUserId = task.AssignedUserId,
-                Description = task.Description,
-                FilePath = task.FilePath
-            };
+            return await GetByIdAsync(pt.Id) ?? throw new Exception("Project task not found after creation.");
         }
 
-        public async Task<bool> UpdateAsync(ProjectTaskUpdateDto dto)
+        public async Task<bool> UpdateAsync(int id, ProjectTaskUpdateDto dto)
         {
-            var task = await _context.ProjectTasks.FindAsync(dto.Id);
-            if (task == null) return false;
+            var pt = await _context.ProjectTasks.FindAsync(id);
+            if (pt == null) return false;
 
-            task.ProjectId = dto.ProjectId;
-            task.ProcessId = dto.ProcessId;
-            task.TaskId = dto.TaskId;
-            task.AssignedUserId = dto.AssignedUserId;
-            task.Description = dto.Description;
-            task.FilePath = dto.FilePath;
+            pt.Status = dto.Status;
+            pt.StartDate = dto.StartDate;
+            pt.EndDate = dto.EndDate;
+            pt.Description = dto.Description;
+            pt.FilePath = dto.FilePath;
+            pt.UpdatedAt = DateTime.Now;
+            pt.UpdatedByUserId = dto.UpdatedByUserId;
 
-            _context.ProjectTasks.Update(task);
+            _context.ProjectTasks.Update(pt);
             await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var task = await _context.ProjectTasks.FindAsync(id);
-            if (task == null) return false;
+            var pt = await _context.ProjectTasks.FindAsync(id);
+            if (pt == null) return false;
 
-            _context.ProjectTasks.Remove(task);
+            _context.ProjectTasks.Remove(pt);
             await _context.SaveChangesAsync();
             return true;
         }

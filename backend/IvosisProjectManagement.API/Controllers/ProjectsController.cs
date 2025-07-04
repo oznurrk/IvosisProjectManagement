@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IvosisProjectManagement.API.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProjectsController : ControllerBase
     {
         private readonly IProjectService _projectService;
@@ -42,17 +42,18 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, ProjectUpdateDto dto)
         {
-            if (id != dto.Id) return BadRequest();
-            var updated = await _projectService.UpdateAsync(id,dto);
-            return updated ? NoContent() : NotFound();
+            var updated = await _projectService.UpdateAsync(id, dto);
+            if (!updated) return NotFound();
+            var result = await _projectService.GetByIdAsync(id);
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _projectService.DeleteAsync(id);
-            return deleted ? Ok(new { message = "Silme işlemi başarılı." }) : NotFound();
+            if (!deleted) return NotFound();
+            return Ok(new { message = "Proje silindi." });
         }
-
     }
 }

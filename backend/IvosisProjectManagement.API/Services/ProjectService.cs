@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IvosisProjectManagement.API.Services
 {
-    public class ProjectService : IProjectService
+   public class ProjectService : IProjectService
     {
         private readonly ApplicationDbContext _context;
 
@@ -16,35 +16,33 @@ namespace IvosisProjectManagement.API.Services
 
         public async Task<IEnumerable<ProjectDto>> GetAllAsync()
         {
-            return await _context.Projects
-                .Select(p => new ProjectDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    StartDate = p.StartDate,
-                    EndDate = p.EndDate,
-                    Priority = p.Priority,
-                    Status = p.Status
-                })
-                .ToListAsync();
+            return await _context.Projects.Select(p => new ProjectDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                StartDate = p.StartDate,
+                EndDate = p.EndDate,
+                Priority = p.Priority,
+                Status = p.Status
+            }).ToListAsync();
         }
 
         public async Task<ProjectDto?> GetByIdAsync(int id)
         {
-            return await _context.Projects
-                .Where(p => p.Id == id)
-                .Select(p => new ProjectDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    StartDate = p.StartDate,
-                    EndDate = p.EndDate,
-                    Priority = p.Priority,
-                    Status = p.Status
-                })
-                .FirstOrDefaultAsync();
+            var project = await _context.Projects.FindAsync(id);
+            if (project == null) return null;
+
+            return new ProjectDto
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description,
+                StartDate = project.StartDate,
+                EndDate = project.EndDate,
+                Priority = project.Priority,
+                Status = project.Status
+            };
         }
 
         public async Task<ProjectDto> CreateAsync(ProjectCreateDto dto)
@@ -56,7 +54,9 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 Priority = dto.Priority,
-                Status = dto.Status
+                Status = dto.Status,
+                CreatedByUserId = dto.CreatedByUserId,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Projects.Add(project);
@@ -85,6 +85,8 @@ namespace IvosisProjectManagement.API.Services
             project.EndDate = dto.EndDate;
             project.Priority = dto.Priority;
             project.Status = dto.Status;
+            project.UpdatedAt = DateTime.UtcNow;
+            project.UpdatedByUserId = dto.UpdatedByUserId;
 
             _context.Projects.Update(project);
             return await _context.SaveChangesAsync() > 0;
@@ -97,11 +99,6 @@ namespace IvosisProjectManagement.API.Services
 
             _context.Projects.Remove(project);
             return await _context.SaveChangesAsync() > 0;
-        }
-
-        public Task<ProjectDto> CreateAsync(ProcessCreateDto dto)
-        {
-            throw new NotImplementedException();
         }
     }
 }
