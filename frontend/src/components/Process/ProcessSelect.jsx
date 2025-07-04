@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Select, Stack } from "@mantine/core";
+import { Button, Select, Stack } from "@mantine/core";
 import axios from "axios";
 
 const ProcessSelect = ({ onTaskSelect }) => {
@@ -24,32 +24,6 @@ const ProcessSelect = ({ onTaskSelect }) => {
 
     fetchProcesses();
   }, []);
-
-  // Task'ları getir (process seçilince)
-  useEffect(() => {
-    if (!selectedProcessId) {
-      setTasks([]);
-      return;
-    }
-
-    const fetchTasks = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/tasks/byProcess/${selectedProcessId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setTasks(res.data);
-      } catch (err) {
-        console.error("Task verileri alınamadı:", err);
-        setTasks([]);
-      }
-    };
-
-    fetchTasks();
-  }, [selectedProcessId]);
 
   // Process seçeneklerini sırala ve girintili göster
   const getProcessOptions = () => {
@@ -85,8 +59,7 @@ const ProcessSelect = ({ onTaskSelect }) => {
         searchable
         clearable
       />
-
-      
+      <Button>Kaydet</Button>
     </Stack>
   );
 };
