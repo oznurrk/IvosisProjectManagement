@@ -49,6 +49,26 @@ namespace IvosisProjectManagement.API.Services
             };
         }
 
+        public async Task<IEnumerable<TaskItemDto>> GetTasksByProcessIdAsync(int processId)
+        {
+            var tasks = await _context.Tasks
+                .Where(t => t.ProcessId == processId)
+                .Select(t => new TaskItemDto
+                {
+                    Id = t.Id,
+                    ProcessId = t.ProcessId,
+                    Title = t.Title,
+                    Description = t.Description,
+                    CreatedAt = t.CreatedAt,
+                    CreatedByUserId = t.CreatedByUserId,
+                    UpdatedAt = t.UpdatedAt,
+                    UpdatedByUserId = t.UpdatedByUserId
+                })
+                .ToListAsync();
+
+            return tasks;
+        }
+
         public async Task<TaskItemDto> CreateAsync(TaskItemCreateDto dto)
         {
             var task = new TaskItem
