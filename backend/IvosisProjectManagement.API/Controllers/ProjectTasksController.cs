@@ -27,6 +27,13 @@ namespace IvosisProjectManagement.API.Controllers
             return item == null ? NotFound() : Ok(item);
         }
 
+        [HttpGet("by-project/{ProjectId}")]
+        public async Task<IActionResult> GetProject(int ProjectId)
+        {
+            var item = await _service.GetTasksByProjectIdAsync(ProjectId);
+            return item == null ? NotFound() : Ok(item);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(ProjectTaskCreateDto dto)
         {
