@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using IvosisProjectManagement.API.DTOs.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,9 +49,26 @@ builder.Services.AddCors(options =>
               .AllowAnyOrigin());
 });
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage)
+            .ToList();
+
+        var result = Result<List<string>>.Failure("Gönderilen veriler geçerli değil.", errors);
+
+        return new BadRequestObjectResult(result);
+    };
+});
+
+
 var app = builder.Build();
 
 app.UseCors("AllowAll");
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -59,5 +78,4 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.MapControllers();
-
 app.Run();

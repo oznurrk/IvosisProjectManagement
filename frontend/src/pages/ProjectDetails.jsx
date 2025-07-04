@@ -3,11 +3,13 @@ import axios from "axios";
 import { Modal, Divider } from "@mantine/core";
 import ProcessSelect from "../components/Process/ProcessSelect";
 
-const ProjectDetails = ({ opened, onClose, projectId }) => {
+const ProjectDetails = ({ opened, onClose, projectId: propProjectId }) => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+
+  // projectId hem prop'tan hem localStorage'tan alınabilir
+  const projectId = propProjectId || localStorage.getItem("selectedProjectId");
 
   useEffect(() => {
     if (!opened || !projectId) return;
@@ -25,46 +27,17 @@ const ProjectDetails = ({ opened, onClose, projectId }) => {
         setProject(res.data);
       } catch (err) {
         setError("Proje bilgileri alınırken hata oluştu.");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
+    // localStorage'a yedek olarak projectId yaz
+    localStorage.setItem("selectedProjectId", projectId);
+
     fetchProject();
   }, [opened, projectId]);
-
-  const handleEditClick = () => {
-    if (isEditing) saveChanges();
-    else setIsEditing(true);
-  };
-
-  const saveChanges = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-
-      await axios.put(
-        `http://localhost:5000/api/Projects/${projectId}`,
-        {
-          ...project,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      setProject({
-        ...project,
-      });
-
-      setIsEditing(false);
-      alert("Proje başarıyla güncellendi.");
-    } catch {
-      alert("Güncelleme sırasında hata oluştu.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Modal
@@ -77,22 +50,27 @@ const ProjectDetails = ({ opened, onClose, projectId }) => {
       }
       size="xl"
       centered
-      scrollAreaComponent="div" // mobilde overflow'lu içerik için
+      scrollAreaComponent="div"
       classNames={{
         body: "p-4 sm:p-6",
       }}
     >
       <Divider my="sm" size="xs" color="natural.7" />
 
-      {/* Ana İçerik */}
-      <div className="flex flex-col gap-6 w-full">
-        {/* Process Seçimi */}
-        <div className="w-full">
-          <ProcessSelect
-            onSelect={(id) => console.log("Seçilen Process ID:", id)}
-          />
+      {loading ? (
+        <p>Yükleniyor...</p>
+      ) : error ? (
+        <p className="text-red-600">{error}</p>
+      ) : (
+        <div className="flex flex-col gap-6 w-full">
+          {/* Process Seçimi */}
+          <div className="w-full">
+            <ProcessSelect
+              onSelect={(id) => console.log("Seçilen Process ID:", id)}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </Modal>
   );
 };

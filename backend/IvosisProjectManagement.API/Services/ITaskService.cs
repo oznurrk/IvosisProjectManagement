@@ -9,6 +9,7 @@ namespace IvosisProjectManagement.API.Services
         Task<TaskItemDto> CreateAsync(TaskItemCreateDto dto);
         Task<bool> UpdateAsync(int id, TaskItemUpdateDto dto);
         Task<bool> DeleteAsync(int id);
+         Task<IEnumerable<TaskItemDto>> GetTasksByProcessIdAsync(int processId);
     }
 
 }

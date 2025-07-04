@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Button, Select, Stack } from "@mantine/core";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-const ProcessSelect = ({ onTaskSelect }) => {
+const ProcessSelect = () => {
   const [processes, setProcesses] = useState([]);
   const [selectedProcessId, setSelectedProcessId] = useState(null);
-  const [tasks, setTasks] = useState([]);
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const navigate = useNavigate();
 
   // Process verilerini al
   useEffect(() => {
@@ -25,7 +25,7 @@ const ProcessSelect = ({ onTaskSelect }) => {
     fetchProcesses();
   }, []);
 
-  // Process seçeneklerini sırala ve girintili göster
+  // Seçenekleri oluştur
   const getProcessOptions = () => {
     const options = [];
     const parents = processes.filter((p) => p.parentProcessId === null);
@@ -44,22 +44,36 @@ const ProcessSelect = ({ onTaskSelect }) => {
     return options;
   };
 
+  // Butona tıklandığında yönlendir
+  const handleStartProcess = () => {
+    if (!selectedProcessId) return;
+
+    // Seçilen process ID'yi sakla
+    localStorage.setItem("selectedProcessId", selectedProcessId);
+
+    // Sayfaya yönlendir
+    navigate("/projectTasks");
+  };
+
   return (
     <Stack spacing="sm">
-      {/* Process Seçimi */}
       <Select
         label="Süreç Seç"
         placeholder="Bir süreç seçin"
         data={getProcessOptions()}
         value={selectedProcessId}
-        onChange={(value) => {
-          setSelectedProcessId(value);
-          setSelectedTaskId(null); // task resetle
-        }}
+        onChange={(value) => setSelectedProcessId(value)}
         searchable
         clearable
       />
-      <Button>Kaydet</Button>
+
+      <Button
+        color="green.6"
+        onClick={handleStartProcess}
+        disabled={!selectedProcessId}
+      >
+        Süreci Başlat
+      </Button>
     </Stack>
   );
 };

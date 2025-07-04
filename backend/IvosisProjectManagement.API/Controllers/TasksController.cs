@@ -33,6 +33,14 @@ namespace IvosisProjectManagement.API.Controllers
             return Ok(task);
         }
 
+        [HttpGet("by-process/{ProcessId}")]
+        public async Task<IActionResult> GetProcess(int ProcessId)
+        {
+            var task = await _taskService.GetTasksByProcessIdAsync(ProcessId);
+            if (task == null) return NotFound();
+            return Ok(task);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(TaskItemCreateDto dto)
         {

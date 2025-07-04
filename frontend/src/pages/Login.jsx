@@ -28,33 +28,36 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
-        email,
-        password,
-      });
+    const response = await axios.post('http://localhost:5000/api/auth/login', {
+      email,
+      password,
+    });
 
-      if (response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        setErrorMessage('');
-        navigate('/projects');
-      } else {
-        setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
-      }
-    } catch (error) {
+    // Eğer token geldiyse başarılı giriş kabul edilir
+    if (response.data && response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      setErrorMessage('');
+      navigate('/projects'); // ← Home değil, doğrudan Projects sayfası
+    } else {
       setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
-      setTimeout(() => setErrorMessage(''), 5000);
     }
+  } catch (error) {
+    setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+
+    // Hata mesajı 5 saniye sonra silinir
+    setTimeout(() => setErrorMessage(''), 5000);
+  }
   };
 
   return (
     <div
       style={{ background: 'url("kapak.JPG")' }}
-      className="h-screen w-screen bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center"
+      className="h-screen w-screen !bg-cover !bg-center !bg-no-repeat flex flex-col items-center justify-center"
     >
       <div className="w-[450px] backdrop-blur-md p-10 py-8 rounded-lg border border-primary-400">
         <form
           onSubmit={handleLogin}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-5 [&_input]:placeholder-natural-100 [&_.mantine-Input-input]:!border-white focus-within:[&_.mantine-Input-input]:!border-ivosis-400 [&_.mantine-Input-input]:!border [&_input]:!pl-2 [&_svg]:text-ivosis-950"
         >
           <img
             src="/ivosislogo3.png"
@@ -67,13 +70,13 @@ const Login = () => {
           </div>
 
           <TextInput
+            className="transition duration-300"
             variant="unstyled"
             size="md"
             radius="md"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.currentTarget.value)}
-            className="placeholder-natural-100 text-ivosis-950 border border-white focus-within:border-ivosis-400 px-2"
           />
 
           <PasswordInput
@@ -83,7 +86,6 @@ const Login = () => {
             placeholder="Şifre"
             value={password}
             onChange={(e) => setPassword(e.currentTarget.value)}
-            className="placeholder-natural-100 text-ivosis-950 border border-white focus-within:border-ivosis-400 px-2"
           />
 
           <Checkbox
@@ -92,7 +94,7 @@ const Login = () => {
             onChange={(event) => setRememberMe(event.currentTarget.checked)}
             className="text-white"
           />
-
+          
           {errorMessage && (
             <div className="text-red-700 text-md mt-2 text-center">
               {errorMessage}
@@ -102,6 +104,8 @@ const Login = () => {
           <Button type="submit" color="ivosis.8">
             Giriş Yap
           </Button>
+
+         
         </form>
       </div>
     </div>
