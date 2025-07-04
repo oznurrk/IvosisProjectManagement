@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Select, Stack } from "@mantine/core";
+import { Button, Select, Stack } from "@mantine/core";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-const ProcessSelect = ({ onTaskSelect }) => {
+const ProcessSelect = () => {
   const [processes, setProcesses] = useState([]);
   const [selectedProcessId, setSelectedProcessId] = useState(null);
-  const [tasks, setTasks] = useState([]);
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const navigate = useNavigate();
 
   // Process verilerini al
   useEffect(() => {
@@ -25,33 +25,7 @@ const ProcessSelect = ({ onTaskSelect }) => {
     fetchProcesses();
   }, []);
 
-  // Task'ları getir (process seçilince)
-  useEffect(() => {
-    if (!selectedProcessId) {
-      setTasks([]);
-      return;
-    }
-
-    const fetchTasks = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/tasks/byProcess/${selectedProcessId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setTasks(res.data);
-      } catch (err) {
-        console.error("Task verileri alınamadı:", err);
-        setTasks([]);
-      }
-    };
-
-    fetchTasks();
-  }, [selectedProcessId]);
-
-  // Process seçeneklerini sırala ve girintili göster
+  // Seçenekleri oluştur
   const getProcessOptions = () => {
     const options = [];
     const parents = processes.filter((p) => p.parentProcessId === null);
@@ -70,23 +44,36 @@ const ProcessSelect = ({ onTaskSelect }) => {
     return options;
   };
 
+  // Butona tıklandığında yönlendir
+  const handleStartProcess = () => {
+    if (!selectedProcessId) return;
+
+    // Seçilen process ID'yi sakla
+    localStorage.setItem("selectedProcessId", selectedProcessId);
+
+    // Sayfaya yönlendir
+    navigate("/projectTasks");
+  };
+
   return (
     <Stack spacing="sm">
-      {/* Process Seçimi */}
       <Select
         label="Süreç Seç"
         placeholder="Bir süreç seçin"
         data={getProcessOptions()}
         value={selectedProcessId}
-        onChange={(value) => {
-          setSelectedProcessId(value);
-          setSelectedTaskId(null); // task resetle
-        }}
+        onChange={(value) => setSelectedProcessId(value)}
         searchable
         clearable
       />
 
-      
+      <Button
+        color="green.6"
+        onClick={handleStartProcess}
+        disabled={!selectedProcessId}
+      >
+        Süreci Başlat
+      </Button>
     </Stack>
   );
 };

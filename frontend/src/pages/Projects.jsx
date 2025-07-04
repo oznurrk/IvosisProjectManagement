@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Text } from "@mantine/core";
 import ProjectDetails from "./ProjectDetails";
+import ProjectFilters from "../components/Project/ProjectFilters";
+import { useNavigate } from "react-router-dom"; // ekle
 
 
 const Projects = () => {
@@ -9,10 +11,10 @@ const Projects = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("startDate");
   const [sortOrder, setSortOrder] = useState("asc");
-
-  // Modal state'leri
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate(); 
+  
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -75,79 +77,55 @@ const Projects = () => {
       return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
     });
 
-  // Kart tıklanınca modalı aç
   const handleCardClick = (projectId) => {
     setSelectedProjectId(projectId);
     setModalOpen(true);
   };
 
   return (
-    <div className="p-6">
-      {/* Arama ve sıralama */}
-      <div className="mb-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <input
-          type="text"
-          placeholder="Proje adı, açıklama, tarih, öncelik veya durum ile ara..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-2 border border-ivosis-400 rounded-md"
-        />
+    <div className="p-4 sm:p-6">
+      {/* Arama & filtre bileşeni */}
+      <ProjectFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        sortField={sortField}
+        onSortFieldChange={setSortField}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
+      />
 
-        <div className="flex gap-2">
-          <select
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value)}
-            className="px-3 py-2 border border-ivosis-400 rounded-md"
-          >
-            <option value="startDate">Başlama Tarihi</option>
-            <option value="endDate">Bitiş Tarihi</option>
-            <option value="createdAt">Eklenme Tarihi</option>
-            <option value="priority">Öncelik</option>
-          </select>
-
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            className="px-3 py-2 border border-ivosis-400 rounded-md"
-          >
-            <option value="asc">Artan</option>
-            <option value="desc">Azalan</option>
-          </select>
-        </div>
+      <div className="flex justify-end my-4">
+        <button
+          onClick={() => navigate("/projectCreated")}
+          className="bg-ivosis-500 text-white px-4 py-2 rounded shadow hover:bg-ivosis-600 transition"
+        >
+          + Yeni Proje Ekle
+        </button>
       </div>
 
-      {/* Kart listesi */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Proje Kartları */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
         {filteredProjects.length === 0 ? (
-          <p>Arama sonucu bulunamadı.</p>
+          <p className="text-gray-600">Arama sonucu bulunamadı.</p>
         ) : (
           filteredProjects.map((project) => (
             <div
               key={project.id}
               onClick={() => handleCardClick(project.id)}
-              className="cursor-pointer bg-white border border-ivosis-400 p-4 w-72 flex flex-col gap-1 rounded-xl hover:shadow-[0_0_5px_1px_yellow] !shadow-ivosis-400"
+              className="cursor-pointer bg-white border border-ivosis-400 p-4 w-full max-w-xs flex flex-col gap-1 rounded-xl hover:shadow-[0_0_5px_1px_yellow] !shadow-ivosis-400 transition-shadow"
             >
               <div className="flex gap-2 items-center">
-                <div>
-                  <div className="font-semibold text-natural-950 text-xl">
-                    {project.name}
-                  </div>
+                <div className="font-semibold text-natural-950 text-xl">
+                  {project.name}
                 </div>
               </div>
 
-              <Text
-                className="!text-xs text-justify !text-natural-800"
-                lineClamp={3}
-              >
+              <Text className="!text-xs text-justify !text-natural-800" lineClamp={3}>
                 {project.description || "Açıklama yok"}
               </Text>
 
               <div className="flex gap-2 text-xs">
-                <div
-                  className={`${getPriorityClass(
-                    project.priority
-                  )} py-1 px-2 rounded-lg`}
-                >
+                <div className={`${getPriorityClass(project.priority)} py-1 px-2 rounded-lg`}>
                   {project.priority || "-"}
                 </div>
                 <div className="bg-white text-ivosis-400 py-1 px-2 rounded-lg">
@@ -174,7 +152,7 @@ const Projects = () => {
         )}
       </div>
 
-      {/* Proje Detayları Modalı */}
+      {/* Modal */}
       <ProjectDetails
         opened={modalOpen}
         onClose={() => setModalOpen(false)}

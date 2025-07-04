@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const getUserIdFromToken = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload?.nameid || payload?.sub || payload?.userId || null;
+  } catch {
+    return null;
+  }
+};
+
 const ProjectCreate = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -20,7 +29,6 @@ const ProjectCreate = () => {
 
   const validate = () => {
     const newErrors = {};
-
     if (!formData.name) newErrors.name = 'Proje adı gerekli';
     if (!formData.description) newErrors.description = 'Açıklama gerekli';
     if (!formData.startDate) newErrors.startDate = 'Başlama tarihi gerekli';
@@ -44,13 +52,23 @@ const ProjectCreate = () => {
   const submitForm = async () => {
     setLoading(true);
     setErrorMessage('');
-
     const token = localStorage.getItem('token');
-    if (!token) {
+    const userId = getUserIdFromToken(token);
+    const now = new Date().toISOString();
+
+    if (!token || !userId) {
       setErrorMessage('❌ Giriş yapmadan proje ekleyemezsiniz.');
       setLoading(false);
       return;
     }
+
+    const fullData = {
+      ...formData,
+      createdAt: now,
+      createdByUserId: userId,
+      updatedAt: now,
+      updatedByUserId: userId,
+    };
 
     try {
       const res = await fetch('http://localhost:5000/api/projects', {
@@ -59,7 +77,7 @@ const ProjectCreate = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(fullData),
       });
 
       if (!res.ok) throw new Error('Kayıt başarısız');
@@ -76,9 +94,7 @@ const ProjectCreate = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validate()) {
-      setShowConfirm(true);
-    }
+    if (validate()) setShowConfirm(true);
   };
 
   const inputStyle = (hasError) =>
@@ -100,7 +116,6 @@ const ProjectCreate = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Proje Adı */}
         <div>
           <label className="block mb-1 font-medium text-gray-700">Proje Adı</label>
           <input
@@ -113,7 +128,6 @@ const ProjectCreate = () => {
           {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
         </div>
 
-        {/* Açıklama */}
         <div>
           <label className="block mb-1 font-medium text-gray-700">Açıklama</label>
           <textarea
@@ -126,7 +140,6 @@ const ProjectCreate = () => {
           {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
         </div>
 
-        {/* Tarihler */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 font-medium text-gray-700">Başlama Tarihi</label>
@@ -152,7 +165,6 @@ const ProjectCreate = () => {
           </div>
         </div>
 
-        {/* Öncelik & Durum */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 font-medium text-gray-700">Öncelik</label>
@@ -198,7 +210,6 @@ const ProjectCreate = () => {
         </button>
       </form>
 
-      {/* Onay Kutusu */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
