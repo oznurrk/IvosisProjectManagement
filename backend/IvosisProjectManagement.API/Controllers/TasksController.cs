@@ -9,7 +9,7 @@ namespace IvosisProjectManagement.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class TasksController : ControllerBase
+    public class TasksController : BaseController
     {
         private readonly ITaskService _taskService;
 
@@ -44,7 +44,8 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(TaskItemCreateDto dto)
         {
-            var userId = GetCurrentUserId();
+            dto.CreatedByUserId = GetCurrentUserId();
+            
             var created = await _taskService.CreateAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }
@@ -52,7 +53,7 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, TaskItemUpdateDto dto)
         {
-            var userId = GetCurrentUserId();
+            dto.UpdatedByUserId = GetCurrentUserId();
             var success = await _taskService.UpdateAsync(id, dto);
 
             if (!success)
@@ -70,12 +71,6 @@ namespace IvosisProjectManagement.API.Controllers
                 return NotFound(new { message = "Kayıt bulunamadı." });
 
             return Ok(new { message = "Kayıt başarıyla silindi." });
-        }
-
-        private int GetCurrentUserId()
-        {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdStr, out var userId) ? userId : 0;
         }
     }
 }

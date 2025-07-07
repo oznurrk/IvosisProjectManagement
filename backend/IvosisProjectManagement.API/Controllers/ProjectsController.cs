@@ -8,8 +8,9 @@ namespace IvosisProjectManagement.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class ProjectsController : ControllerBase
+    public class ProjectsController : BaseController
     {
+        
         private readonly IProjectService _projectService;
 
         public ProjectsController(IProjectService projectService)
@@ -35,6 +36,8 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(ProjectCreateDto dto)
         {
+            dto.CreatedByUserId = GetCurrentUserId();
+            
             var created = await _projectService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
@@ -42,6 +45,8 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, ProjectUpdateDto dto)
         {
+            dto.UpdatedByUserId = GetCurrentUserId();
+
             var updated = await _projectService.UpdateAsync(id, dto);
             if (!updated) return NotFound();
             var result = await _projectService.GetByIdAsync(id);

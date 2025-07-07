@@ -7,7 +7,7 @@ namespace IvosisProjectManagement.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProcessesController : ControllerBase
+    public class ProcessesController : BaseController
     {
         private readonly IProcessService _service;
 
@@ -37,6 +37,7 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create( ProcessCreateDto dto)
         {
+            dto.CreatedByUserId = GetCurrentUserId();
             var created = await _service.CreateAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }
@@ -46,6 +47,8 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, ProcessUpdateDto dto)
         {
+            dto.UpdatedByUserId = GetCurrentUserId();
+            
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();
             var updatedProcess = await _service.GetByIdAsync(id);

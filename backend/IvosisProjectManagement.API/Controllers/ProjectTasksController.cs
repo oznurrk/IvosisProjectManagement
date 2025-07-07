@@ -1,3 +1,4 @@
+using System.Text.Json;
 using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +9,7 @@ namespace IvosisProjectManagement.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class ProjectTasksController : ControllerBase
+    public class ProjectTasksController : BaseController
     {
         private readonly IProjectTaskService _service;
 
@@ -35,10 +36,39 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(ProjectTaskCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] object input)
         {
-            var created = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+            int userId = GetCurrentUserId();
+
+            // Tek nesne mi yoksa liste mi kontrol et
+            if (input is null) return BadRequest();
+
+            var json = input.ToString();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            List<ProjectTaskCreateDto> dtos;
+
+            if (json!.TrimStart().StartsWith("["))
+            {
+                // Liste
+                dtos = JsonSerializer.Deserialize<List<ProjectTaskCreateDto>>(json, options)!;
+            }
+            else
+            {
+                // Tek nesne
+                var single = JsonSerializer.Deserialize<ProjectTaskCreateDto>(json, options)!;
+                dtos = new List<ProjectTaskCreateDto> { single };
+            }
+
+            // Hepsine CreatedByUserId ekle
+            foreach (var dto in dtos)
+            {
+                dto.CreatedByUserId = userId;
+            }
+
+            var result = await _service.CreateManyAsync(dtos);
+            return Created("api/ProjectTasks", result); 
+
         }
 
         [HttpPut("{id}")]

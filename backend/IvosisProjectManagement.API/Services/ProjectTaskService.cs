@@ -100,6 +100,43 @@ namespace IvosisProjectManagement.API.Services
             return await GetByIdAsync(pt.Id) ?? throw new Exception("Project task not found after creation.");
         }
 
+        public async Task<IEnumerable<ProjectTaskDto>> CreateManyAsync(List<ProjectTaskCreateDto> dtos)
+        {
+            var entities = dtos.Select(dto => new ProjectTask
+            {
+                ProjectId = dto.ProjectId,
+                ProcessId = dto.ProcessId,
+                TaskId = dto.TaskId,
+                AssignedUserId = dto.AssignedUserId,
+                Status = dto.Status,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                Description = dto.Description,
+                FilePath = dto.FilePath,
+                CreatedAt = DateTime.Now,
+                CreatedByUserId = dto.CreatedByUserId
+            }).ToList();
+
+            _context.ProjectTasks.AddRange(entities);
+            await _context.SaveChangesAsync();
+
+            return entities.Select(entity => new ProjectTaskDto
+            {
+                Id = entity.Id,
+                ProjectId = entity.ProjectId,
+                ProcessId = entity.ProcessId,
+                TaskId = entity.TaskId,
+                AssignedUserId = entity.AssignedUserId,
+                Status = entity.Status,
+                StartDate = entity.StartDate,
+                EndDate = entity.EndDate,
+                Description = entity.Description,
+                FilePath = entity.FilePath,
+                CreatedAt = entity.CreatedAt,
+                CreatedByUserId = entity.CreatedByUserId
+            }).ToList();
+        }
+
         public async Task<bool> UpdateAsync(int id, ProjectTaskUpdateDto dto)
         {
             var pt = await _context.ProjectTasks.FindAsync(id);

@@ -24,7 +24,19 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = p.StartDate,
                 EndDate = p.EndDate,
                 Priority = p.Priority,
-                Status = p.Status
+                Status = p.Status,
+                PanelCount = p.PanelCount,
+                PanelPower = p.PanelPower,
+                PanelBrandId = p.PanelBrandId,
+                InverterCount = p.InverterCount,
+                InverterPower = p.InverterPower,
+                InverterBrandId = p.InverterBrandId,
+                HasAdditionalStructure = p.HasAdditionalStructure,
+                AdditionalPanelCount = p.AdditionalPanelCount,
+                AdditionalInverterCount = p.AdditionalInverterCount,
+                CreatedAt = p.CreatedAt,
+                CreatedByUserId = p.CreatedByUserId,
+                UpdatedAt = p.UpdatedAt
             }).ToListAsync();
         }
 
@@ -41,7 +53,19 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = project.StartDate,
                 EndDate = project.EndDate,
                 Priority = project.Priority,
-                Status = project.Status
+                Status = project.Status,
+                PanelCount = project.PanelCount,
+                PanelPower = project.PanelPower,
+                PanelBrandId = project.PanelBrandId,
+                InverterCount = project.InverterCount,
+                InverterPower = project.InverterPower,
+                InverterBrandId = project.InverterBrandId,
+                HasAdditionalStructure = project.HasAdditionalStructure,
+                AdditionalPanelCount = project.AdditionalPanelCount,
+                AdditionalInverterCount = project.AdditionalInverterCount,
+                CreatedAt = project.CreatedAt,
+                CreatedByUserId = project.CreatedByUserId,
+                UpdatedAt = project.UpdatedAt
             };
         }
 
@@ -70,7 +94,18 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = project.StartDate,
                 EndDate = project.EndDate,
                 Priority = project.Priority,
-                Status = project.Status
+                Status = project.Status,
+                PanelCount = dto.PanelCount,
+                PanelPower = dto.PanelPower,
+                PanelBrandId = dto.PanelBrandId,
+                InverterCount = dto.InverterCount,
+                InverterPower = dto.InverterPower,
+                InverterBrandId = dto.InverterBrandId,
+                HasAdditionalStructure = dto.HasAdditionalStructure,
+                AdditionalPanelCount = dto.AdditionalPanelCount,
+                AdditionalInverterCount = dto.AdditionalInverterCount,
+                CreatedAt = DateTime.Now,
+                CreatedByUserId = dto.CreatedByUserId
             };
         }
 
@@ -86,6 +121,17 @@ namespace IvosisProjectManagement.API.Services
             project.Priority = dto.Priority;
             project.Status = dto.Status;
             project.UpdatedAt = DateTime.UtcNow;
+            project.UpdatedByUserId = dto.UpdatedByUserId;
+            project.PanelCount = dto.PanelCount;
+            project.PanelPower = dto.PanelPower;
+            project.PanelBrandId = dto.PanelBrandId;
+            project.InverterCount = dto.InverterCount;
+            project.InverterPower = dto.InverterPower;
+            project.InverterBrandId = dto.InverterBrandId;
+            project.HasAdditionalStructure = dto.HasAdditionalStructure;
+            project.AdditionalPanelCount = dto.AdditionalPanelCount;
+            project.AdditionalInverterCount = dto.AdditionalInverterCount;
+            project.UpdatedAt = DateTime.Now;
             project.UpdatedByUserId = dto.UpdatedByUserId;
 
             _context.Projects.Update(project);
