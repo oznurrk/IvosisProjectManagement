@@ -86,3 +86,29 @@ PROJE EKLE
 -DC VE AC DEĞERLERİ
 -İL İLÇE MAHALLE ADA PARSEL
 -PROJE TÜRÜ
+
+
+// proje türlerini getirme
+  useEffect(() => {
+    const fetchProjectTypes = async () => {
+      try{
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:5000/api/projectTypes", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const projectTypesOptions = response.data.map((types) => ({
+          value: types.id.toString(),
+          label: types.name,
+        }));
+
+        setProjectTypes(projectTypesOptions);
+      }catch(error){
+        console.error("Proje Türü Verileri alınmadı: ", error );
+      }
+    };
+
+    fetchProjectTypes();
+  },[])

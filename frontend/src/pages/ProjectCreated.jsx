@@ -7,7 +7,8 @@ import axios from 'axios';
 const ProjectCreate = () => {
   const [hasEkYapi, setHasEkYapi] = useState(false);
   const [cities, setCities] = useState([]);
-const [districts, setDistricts] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [neighborhood, setNeighborhood] = useState([]);
 
 
   const [formData, setFormData] = useState({
@@ -39,58 +40,86 @@ const [districts, setDistricts] = useState([]);
     updatedAt: null,
     updatedByUserId: 0
   });
-  
+
   // şehirleri getirme
   useEffect(() => {
-  const fetchCities = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/cities", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const fetchCities = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:5000/api/cities", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      const cityOptions = response.data.map((city) => ({
-        value: city.id.toString(), // Mantine Select için string olmalı
-        label: city.name,
-      }));
+        const cityOptions = response.data.map((city) => ({
+          value: city.id.toString(), // Mantine Select için string olmalı
+          label: city.name,
+        }));
 
-      setCities(cityOptions);
-    } catch (error) {
-      console.error("Şehir verileri alınamadı:", error);
-    }
-  };
-  fetchCities();
-}, []);
+        setCities(cityOptions);
+      } catch (error) {
+        console.error("Şehir verileri alınamadı:", error);
+      }
+    };
+    fetchCities();
+  }, []);
 
+  // şehire göre ilçeleri getir
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      if (!formData.cityId) return;
 
-// şehire göre ilçeleri getir
-useEffect(() => {
-  const fetchDistricts = async () => {
-    if (!formData.cityId) return;
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`http://localhost:5000/api/cities/by-districts/${formData.cityId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${formData.cityId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const districtOptions = response.data.map((district) => ({
+          value: district.id.toString(),
+          label: district.name,
+        }));
 
-      const districtOptions = response.data.map((district) => ({
-        value: district.id.toString(),
-        label: district.name,
-      }));
+        setDistricts(districtOptions);
+      } catch (error) {
+        console.error("İlçe verileri alınamadı:", error);
+      }
+    };
 
-      setDistricts(districtOptions);
-    } catch (error) {
-      console.error("İlçe verileri alınamadı:", error);
-    }
-  };
+    fetchDistricts();
+  }, [formData.cityId]);
 
-  fetchDistricts();
-}, [formData.cityId]);
+  //ilçeye göre mahalle getirme
+  useEffect(() => {
+    const fetchNeighborhoods = async () => {
+      if (!formData.districtId) return;
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${formData.districtId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const neighborhoodsOptions = response.data.map((neighborhood) => ({
+          value: neighborhood.id.toString(),
+          label: neighborhood.name,
+        }));
+
+        setNeighborhood(neighborhoodsOptions);
+      } catch (error) {
+        console.error("Mahalle verileri alınmadı: ", error);
+      }
+    };
+
+    fetchNeighborhoods();
+  }, [formData.districtId]);
+
+  
+
 
 
   return (
@@ -137,7 +166,7 @@ useEffect(() => {
             </div>
 
             {/*  Durum - Önem */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Durum <span className="text-red-500">*</span>
@@ -150,9 +179,10 @@ useEffect(() => {
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e })}
                   data={[
-                    { value: "Şanlıurfa", label: "Şanlıurfa" },
-                    { value: "Sakarya", label: "Sakarya" },
-                    { value: "İstanbul", label: "İstanbul" },
+                    { value: "isPlanned", label: "Planlanıyor"},
+                    { value: "ToDo", label: "Yapılıyor"},
+                    { value: "Done", label: "Tamamlandı"},
+                    { value: "Canceled", label: "İptal Edildi"}
                   ]} />
               </div>
 
@@ -168,10 +198,26 @@ useEffect(() => {
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e })}
                   data={[
-                    { value: "low", label: "Düşük" },
-                    { value: "medium", label: "Orta" },
-                    { value: "high", label: "Yüksek" },
+                    { value: "Low", label: "Düşük" },
+                    { value: "Medium", label: "Orta" },
+                    { value: "High", label: "Yüksek" },
+                    { value: "Critical", label: "Kritik"}
                   ]} />
+              </div>
+
+              <div>
+                <label className='text-natural-800 font-semibold block mb-1'>
+                  Proje Türü <span className='text-red-500'>*</span>
+                </label>
+                <Select
+                  placeholder='Proje Türü Seçin'
+                  searchable
+                  clearable
+                  className='w-full'
+                  data={prorjectTypes}
+                  value={formData.projectTypeId?.toString()}
+                  onChange={(e) => setFormData({...formData, projectTypeId: e ? Number(e) : null})}
+                />
               </div>
             </div>
 
@@ -191,16 +237,16 @@ useEffect(() => {
                 Şehir <span className="text-red-500">*</span>
               </label>
               <Select
-  placeholder="Şehir Seçin"
-  searchable
-  clearable
-  className="w-full"
-  data={cities}
-  value={formData.cityId?.toString()}
-  onChange={(e) =>
-    setFormData({ ...formData, cityId: e ? Number(e) : null, districtId: null })
-  }
-/>
+                placeholder="Şehir Seçin"
+                searchable
+                clearable
+                className="w-full"
+                data={cities}
+                value={formData.cityId?.toString()}
+                onChange={(e) =>
+                  setFormData({ ...formData, cityId: e ? Number(e) : null, districtId: null })
+                }
+              />
             </div>
 
             {/* İlçe */}
@@ -209,16 +255,14 @@ useEffect(() => {
                 İlçe <span className="text-red-500">*</span>
               </label>
               <Select
-  placeholder="İlçe Seçin"
-  searchable
-  clearable
-  className="w-full"
-  data={districts}
-  value={formData.districtId?.toString()}
-  onChange={(e) =>
-    setFormData({ ...formData, districtId: e ? Number(e) : null })
-  }
-/>
+                placeholder='Mahalle Seçin'
+                searchable
+                clearable
+                className='w-full'
+                data={districts}
+                value={formData.districtId?.toString()}
+                onChange={(e) => setFormData({ ...formData, districtId: e ? Number(e) : null, neighborhoodId: null })}
+              />
             </div>
 
             {/* Mahalle */}
@@ -227,17 +271,13 @@ useEffect(() => {
                 Mahalle <span className="text-red-500">*</span>
               </label>
               <Select
-                placeholder="Mahalle Seçin"
+                placeholder='Mahalle Seçin'
                 searchable
                 clearable
-                className="w-full"
-                value={formData.neighborhoodId}
+                className='w-full'
+                data={neighborhood}
+                value={formData.neighborhoodId?.toString()}
                 onChange={(e) => setFormData({ ...formData, neighborhoodId: e ? Number(e) : null })}
-                data={[
-                  { value: "1", label: "Düşük" },
-                  { value: "2", label: "Orta" },
-                  { value: "3", label: "Yüksek" },
-                ]}
               />
             </div>
           </div>
