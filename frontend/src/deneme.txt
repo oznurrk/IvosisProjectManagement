@@ -46,3 +46,43 @@ PROJE EKRANLARI
     -> Proje Listeleme (Eklenen Projeler Görüntülenecek, tüm alanlar görüntülenmeyecek, proje detay butonu olacak
     butona tıklandığında proje detay sayfası açılacak)
     -> Proje Detay (Proje ekleme ekranında girilen tüm bilgiler görüntülenecek)
+
+
+
+dashboarda görüntülenecekler:
+projelerin durumları -> biten devam eden başlanılacaklar(opsiyonel)
+
+
+Proje ekleme sayfası
+-Proje adresi -> il ilçe mahalle ada parsel
+-(Panel sayısı * panel gücü) / 1000  = kWp
+-Adres: Şehir, ilçe, mahalle, ada parsel (çoklu seçim),
+
+Process seçme ekranı
+-tasklar değil süreçler bir kullanıcıya atanacak(tüm görevleri bir kişi kontrol edecek)
+
+Task ekranı
+-task ekranında tüm bilgiler aynı ekranda görünecek (modal şeklinde değil)
+
+dashboard
+-raporlamalar görüntülenecek
+-hangi projenin hangi süreci yüzde kaç tamamlandı grafiği
+-toplam yapılan projelerin güçleri
+-yönetici bazlı raporlar oluşturma 
+------------------------------------------------------------------------------------------------------------------------------
+Proje Kart
+-Proje adı
+-açıklaması
+-başlama bitiş tarihi
+-durumu
+-DC ve AC değeri (DC gücü formül ile hesaplanacak-> (Panel sayısı * panel gücü) / 1000  = kWp ) (değiştirilemez olacak)
+-panel gücü ve sayısı
+-invörter sayı ve güç.
+-proje lokasyon il/ilçe
+-Ek yapı varsa DC değeri gösterilecek
+-proje tadilat veya DC güç artışı ise sağ üst köşede gösterilir.
+
+PROJE EKLE
+-DC VE AC DEĞERLERİ
+-İL İLÇE MAHALLE ADA PARSEL
+-PROJE TÜRÜ

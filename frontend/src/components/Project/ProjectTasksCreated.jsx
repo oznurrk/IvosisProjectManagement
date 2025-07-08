@@ -1,7 +1,6 @@
 const ProjectTasksCreated = () => {
     return(
         <div>
-            deneme
         </div>
     )
 }

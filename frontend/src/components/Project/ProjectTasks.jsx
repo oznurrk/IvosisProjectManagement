@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import ProjectTasksCreated from "./ProjectTasksCreated";
-import { Divider, TextInput } from "@mantine/core";
+import { Divider, Select, Textarea, TextInput } from "@mantine/core";
 
 const ProjectTasks = () => {
   const [processName, setProcessName] = useState("");
   const [projectName, setProjectName] = useState("");
   const [projectTasks, setProjectTasks] = useState([]);
   const [users,setUsers] = useState([]);
+
 
   const processId = localStorage.getItem("selectedProcessId");
   const projectId = localStorage.getItem("selectedProjectId");
@@ -84,7 +85,6 @@ const ProjectTasks = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-md font-bold text-gray-800 mb-4">Proje ve Süreç:</h2>
       <h1 className="text-2xl md:text-3xl font-semibold text-ivosis-600 mb-6 ">{projectName}</h1>
       <div className="text-2xl md:text-3xl font-semibold text-ivosis-600 mb-6">
         {processName}
@@ -101,9 +101,29 @@ const ProjectTasks = () => {
             >
               <h3 className="text-lg font-semibold text-gray-800 mb-2">{task.title}</h3>
               <Divider size="md" />
-              <div className="flex flex-row gap-8 py-4">
-                <h1>Görevi Yapacak Kişi: </h1>
-                <TextInput></TextInput>
+              {/*durum ve açıklama */}
+              <div className="flex flex-row gap-x-8">
+              <Select
+                label="Durum"
+                data={[
+                  { value: "pending", label: "Beklemede" },
+                  { value: "in_progress", label: "Devam Ediyor" },
+                  { value: "completed", label: "Tamamlandı" },
+                ]}
+                className="w-40 text-natural-800"
+              />
+              <Textarea
+                label="Açıklama"
+                placeholder="Açıklama Girin"
+                className="w-80 text-natural-800"
+              />
+              </div>
+              {/*başlangıç bitiş tarihi */}
+              <div className="flex flex-row gap-x-8">
+                <div className="flex flex-col">
+                  <label className="text-natural-800 font-semibold">Başlangıç tarihi</label>
+                  <input type="date" className="border py-1"/>
+                </div>
               </div>
             </div>
           ))

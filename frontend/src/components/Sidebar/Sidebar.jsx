@@ -18,7 +18,20 @@ import { NavLink } from "react-router-dom";
 
 const links = [
   { name: "Dashboard", url: "/dashboard", icon: <IconLayoutGrid size={20} /> },
-  { name: "Projeler", url: "/projects", icon: <IconSunElectricity size={20} /> },
+
+  {
+    name: "Projeler",
+    url: "/projects",
+    icon: <IconSunElectricity size={20} />,
+    children: [
+      {
+        name: "Görevlerim",
+        url: "/my-tasks",
+        icon: <IconSunElectricity size={18} />,
+      },
+    ],
+  },
+
   { name: "Süreçler", url: "/processes", icon: <IconLoader size={20} /> },
   { name: "Belgeler", url: "/documents", icon: <IconClipboardText size={20} /> },
   { name: "Ayarlar", url: "/settings", icon: <IconSettings size={20} /> },
@@ -66,23 +79,47 @@ const Sidebar = () => {
 
         {/* MENÜ LİSTESİ */}
         <div className="flex flex-col gap-1 w-full px-4">
-          {links.map((link) => (
+  {links.map((link) => (
+    <div key={link.url} className="flex flex-col">
+      <NavLink
+        to={link.url}
+        className={({ isActive }) =>
+          `flex items-center gap-3 font-medium text-white px-4 py-2 rounded-lg ${
+            isActive
+              ? "bg-ivosis-400 text-natural-950"
+              : "hover:bg-gray-100 hover:text-natural-950"
+          }`
+        }
+      >
+        {link.icon}
+        <span>{link.name}</span>
+      </NavLink>
+
+      {/* Eğer children varsa onları da göster */}
+      {link.children && (
+        <div className="ml-6 mt-1 flex flex-col gap-1">
+          {link.children.map((child) => (
             <NavLink
-              to={link.url}
-              key={link.url}
+              key={child.url}
+              to={child.url}
               className={({ isActive }) =>
-                `flex items-center gap-3 font-medium text-white px-4 py-2 rounded-lg ${
+                `flex items-center gap-2 text-white text-sm px-4 py-1 rounded-md ${
                   isActive
-                    ? "bg-ivosis-400 text-natural-950"
-                    : "hover:bg-gray-100 hover:text-natural-950"
+                    ? "bg-ivosis-300 text-natural-900"
+                    : "hover:bg-gray-100 hover:text-natural-900"
                 }`
               }
             >
-              {link.icon}
-              <span>{link.name}</span>
+              {child.icon}
+              <span>{child.name}</span>
             </NavLink>
           ))}
         </div>
+      )}
+    </div>
+  ))}
+</div>
+
       </div>
 
       {/* ALTTAN SABİT KAPATMA BUTONU */}
