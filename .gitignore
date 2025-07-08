@@ -40,6 +40,8 @@ frontend/build/
 frontend/dist/
 frontend/.next/
 frontend/.cache/
+*.eslintcache
+
 
 # -------------------------
 # Environment & Secrets
@@ -63,3 +65,7 @@ Thumbs.db
 # VS Code / Editor Settings
 # -------------------------
 .vscode/
+
+# .gitignore içinde mutlaka olmalı:
+node_modules/
+
