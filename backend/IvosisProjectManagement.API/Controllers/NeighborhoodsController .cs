@@ -27,6 +27,14 @@ public class NeighborhoodsController : BaseController
         return Ok(item);
     }
 
+    [HttpGet("by-districts/{id}")]
+    public async Task<IActionResult> GetByDistrictsId(int id)
+    {
+        var item = await _service.GetByIdAsync(id);
+        if (item == null) return NotFound();
+        return Ok(item);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] NeighborhoodDto dto)
     {

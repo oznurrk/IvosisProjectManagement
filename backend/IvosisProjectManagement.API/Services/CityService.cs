@@ -33,6 +33,18 @@ public class CityService
         };
     }
 
+    public async Task<IEnumerable<DistrictDto>> GetDistrictsByCityIdAsync(int cityId)
+    {
+        return await _context.Districts
+            .Where(d => d.CityId == cityId)
+            .Select(d => new DistrictDto
+            {
+                Id = d.Id,
+                Name = d.Name
+            })
+            .ToListAsync();
+    }
+
     public async Task<CityDto> CreateAsync(CityDto dto)
     {
         var entity = new City
