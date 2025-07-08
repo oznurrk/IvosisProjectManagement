@@ -72,7 +72,7 @@ useEffect(() => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/districts/by-city/${formData.cityId}`, {
+      const response = await axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${formData.cityId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
