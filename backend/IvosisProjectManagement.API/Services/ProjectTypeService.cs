@@ -15,9 +15,4 @@ public class ProjectTypeService : IProjectTypeService
     {
         return await _context.ProjectTypes.ToListAsync();
     }
-
-    Task<IEnumerable<ProjectType>> IProjectTypeService.GetAllAsync()
-    {
-        throw new NotImplementedException();
-    }
 }
