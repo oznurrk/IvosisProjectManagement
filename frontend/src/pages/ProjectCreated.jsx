@@ -6,8 +6,11 @@ import axios from 'axios';
 
 const ProjectCreate = () => {
   const [hasEkYapi, setHasEkYapi] = useState(false);
+  const [cities, setCities] = useState([]);
+const [districts, setDistricts] = useState([]);
 
-   const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
     startDate: "",
@@ -25,7 +28,7 @@ const ProjectCreate = () => {
     additionalInverterCount: 0,
     acValue: 0,
     dcValue: 0,
-    cityId: 1,
+    cityId: null,
     districtId: 1,
     neighborhoodId: 1,
     ada: "",
@@ -36,27 +39,60 @@ const ProjectCreate = () => {
     updatedAt: null,
     updatedByUserId: 0
   });
-
-const handleSubmit = async () => {
+  
+  // şehirleri getirme
+  useEffect(() => {
+  const fetchCities = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post("http://localhost:5000/api/projects", formData, {
+      const response = await axios.get("http://localhost:5000/api/cities", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Proje kaydedildi:", response.data);
+
+      const cityOptions = response.data.map((city) => ({
+        value: city.id.toString(), // Mantine Select için string olmalı
+        label: city.name,
+      }));
+
+      setCities(cityOptions);
     } catch (error) {
-      console.error("Kayıt hatası:", error);
+      console.error("Şehir verileri alınamadı:", error);
+    }
+  };
+  fetchCities();
+}, []);
+
+
+// şehire göre ilçeleri getir
+useEffect(() => {
+  const fetchDistricts = async () => {
+    if (!formData.cityId) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${formData.cityId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const districtOptions = response.data.map((district) => ({
+        value: district.id.toString(),
+        label: district.name,
+      }));
+
+      setDistricts(districtOptions);
+    } catch (error) {
+      console.error("İlçe verileri alınamadı:", error);
     }
   };
 
-  const citiesOptions =[
-    {value: "1", label: "Şanlıurfa"},
-    {value: "2", label: "Sakarya"},
-    {value: "3", label: "İstanbul"}
-  ]
-  
+  fetchDistricts();
+}, [formData.cityId]);
+
+
   return (
     <div className="py-6 px-6">
       <h2 className="text-2xl font-bold  mb-6 text-ivosis-700">Proje Ekle</h2>
@@ -72,7 +108,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 Proje Adı <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.name} onChange={(e) => setFormData({...formData, name:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.currentTarget.value })} />
             </div>
 
             {/* Açıklama */}
@@ -80,7 +116,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 Açıklama
               </label>
-              <Textarea placeholder="Açıklama yazın" rows={4} className="w-full"  value={formData.description} onChange={(e) => setFormData({...formData, description:e.currentTarget.value})}/>
+              <Textarea placeholder="Açıklama yazın" rows={4} className="w-full" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.currentTarget.value })} />
             </div>
 
             {/* Tarihler */}
@@ -89,53 +125,53 @@ const handleSubmit = async () => {
                 <label className="text-natural-800 font-semibold block mb-1">
                   Başlangıç Tarihi <span className="text-red-500">*</span>
                 </label>
-                <input type="date" className="border rounded-md px-3 py-2 w-full" value={formData.startDate} onChange={(e) => setFormData({...formData, startDate:e.currentTarget.value})}/>
+                <input type="date" className="border rounded-md px-3 py-2 w-full" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.currentTarget.value })} />
               </div>
 
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Bitiş Tarihi <span className="text-red-500">*</span>
                 </label>
-                <input type="date" className="border rounded-md px-3 py-2 w-full" value={formData.endDate} onChange={(e) => setFormData({...formData,endDate:e.currentTarget.value})}/>
+                <input type="date" className="border rounded-md px-3 py-2 w-full" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.currentTarget.value })} />
               </div>
             </div>
 
-            {/* Şehir - Durum - Önem */}
+            {/*  Durum - Önem */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Durum <span className="text-red-500">*</span>
                 </label>
-                <Select 
-                  placeholder="Durum Seçin" 
-                  searchable 
-                  clearable 
-                  className="w-full" 
-                  value={formData.status} 
-                  onChange={(e) => setFormData({...formData, status:e})}
+                <Select
+                  placeholder="Durum Seçin"
+                  searchable
+                  clearable
+                  className="w-full"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e })}
                   data={[
-    { value: "Şanlıurfa", label: "Şanlıurfa" },
-    { value: "Sakarya", label: "Sakarya" },
-    { value: "İstanbul", label: "İstanbul" },
-  ]}/>
+                    { value: "Şanlıurfa", label: "Şanlıurfa" },
+                    { value: "Sakarya", label: "Sakarya" },
+                    { value: "İstanbul", label: "İstanbul" },
+                  ]} />
               </div>
 
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Önem <span className="text-red-500">*</span>
                 </label>
-                <Select 
-                  placeholder="Önem Seçin" 
-                  searchable 
-                  clearable 
-                  className="w-full" 
-                  value={formData.priority} 
-                  onChange={(e) => setFormData({...formData, priority:e})}
+                <Select
+                  placeholder="Önem Seçin"
+                  searchable
+                  clearable
+                  className="w-full"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e })}
                   data={[
-    { value: "low", label: "Düşük" },
-    { value: "medium", label: "Orta" },
-    { value: "high", label: "Yüksek" },
-  ]}/>
+                    { value: "low", label: "Düşük" },
+                    { value: "medium", label: "Orta" },
+                    { value: "high", label: "Yüksek" },
+                  ]} />
               </div>
             </div>
 
@@ -155,12 +191,16 @@ const handleSubmit = async () => {
                 Şehir <span className="text-red-500">*</span>
               </label>
               <Select
-                placeholder="Şehir Seçin"
-                searchable
-                clearable
-                className="w-full"
-                
-              />
+  placeholder="Şehir Seçin"
+  searchable
+  clearable
+  className="w-full"
+  data={cities}
+  value={formData.cityId?.toString()}
+  onChange={(e) =>
+    setFormData({ ...formData, cityId: e ? Number(e) : null, districtId: null })
+  }
+/>
             </div>
 
             {/* İlçe */}
@@ -169,18 +209,16 @@ const handleSubmit = async () => {
                 İlçe <span className="text-red-500">*</span>
               </label>
               <Select
-                placeholder="İlçe Seçin"
-                searchable
-                clearable
-                className="w-full"
-                value={formData.districtId}
-                onChange={(e) => setFormData({...formData,districtId:e ? Number(e) : null})}
-                data={[
-   { value: "1", label: "Düşük" },
-  { value: "2", label: "Orta" },
-  { value: "3", label: "Yüksek" },
-  ]}
-              />
+  placeholder="İlçe Seçin"
+  searchable
+  clearable
+  className="w-full"
+  data={districts}
+  value={formData.districtId?.toString()}
+  onChange={(e) =>
+    setFormData({ ...formData, districtId: e ? Number(e) : null })
+  }
+/>
             </div>
 
             {/* Mahalle */}
@@ -194,12 +232,12 @@ const handleSubmit = async () => {
                 clearable
                 className="w-full"
                 value={formData.neighborhoodId}
-                onChange={(e) => setFormData({...formData,neighborhoodId:e ? Number(e) : null})}
+                onChange={(e) => setFormData({ ...formData, neighborhoodId: e ? Number(e) : null })}
                 data={[
-    { value: "1", label: "Düşük" },
-  { value: "2", label: "Orta" },
-  { value: "3", label: "Yüksek" },
-  ]}
+                  { value: "1", label: "Düşük" },
+                  { value: "2", label: "Orta" },
+                  { value: "3", label: "Yüksek" },
+                ]}
               />
             </div>
           </div>
@@ -210,7 +248,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 Ada <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.ada} onChange={(e) => setFormData({...formData,ada:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.ada} onChange={(e) => setFormData({ ...formData, ada: e.currentTarget.value })} />
             </div>
 
             {/* Parsel */}
@@ -218,7 +256,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 Parsel <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.parsel} onChange={(e) => setFormData({...formData,parsel:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.parsel} onChange={(e) => setFormData({ ...formData, parsel: e.currentTarget.value })} />
             </div>
           </div>
         </div>
@@ -237,7 +275,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 Panel Sayısı <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.panelCount} onChange={(e) => setFormData({...formData,panelCount:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.panelCount} onChange={(e) => setFormData({ ...formData, panelCount: e.currentTarget.value })} />
             </div>
 
             {/* Panel Gücü */}
@@ -245,7 +283,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 Panel Gücü <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.panelPower} onChange={(e) => setFormData({...formData,panelPower:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.panelPower} onChange={(e) => setFormData({ ...formData, panelPower: e.currentTarget.value })} />
             </div>
 
             {/* Panel Markası */}
@@ -253,18 +291,18 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 Panel Markası <span className="text-red-500">*</span>
               </label>
-              <Select 
-                placeholder="Marka Seçin" 
-                searchable 
-                clearable 
-                className="w-full" 
-                value={formData.panelBrandId} 
-                onChange={(e) => setFormData({...formData,panelBrandId:e ? Number(e) : null})}
+              <Select
+                placeholder="Marka Seçin"
+                searchable
+                clearable
+                className="w-full"
+                value={formData.panelBrandId}
+                onChange={(e) => setFormData({ ...formData, panelBrandId: e ? Number(e) : null })}
                 data={[
-    { value: "1", label: "Düşük" },
-  { value: "2", label: "Orta" },
-  { value: "3", label: "Yüksek" },
-  ]}/>
+                  { value: "1", label: "Düşük" },
+                  { value: "2", label: "Orta" },
+                  { value: "3", label: "Yüksek" },
+                ]} />
             </div>
 
             {/* DC (kWp) */}
@@ -272,7 +310,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 DC (kWp) <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.dcValue} onChange={(e) => setFormData({...formData,dcValue:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.dcValue} onChange={(e) => setFormData({ ...formData, dcValue: e.currentTarget.value })} />
             </div>
           </div>
 
@@ -283,7 +321,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 İnvertör Sayısı <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.inverterCount} onChange={(e) => setFormData({...formData,inverterCount:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.inverterCount} onChange={(e) => setFormData({ ...formData, inverterCount: e.currentTarget.value })} />
             </div>
 
             {/* İnvertör Gücü */}
@@ -291,7 +329,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 İnvertör Gücü <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.inverterPower} onChange={(e) => setFormData({...formData, inverterPower:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.inverterPower} onChange={(e) => setFormData({ ...formData, inverterPower: e.currentTarget.value })} />
             </div>
 
             {/* İnvertör Markası */}
@@ -299,18 +337,18 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 İnvertör Markası <span className="text-red-500">*</span>
               </label>
-              <Select 
-                placeholder="Marka Seçin" 
-                searchable 
-                clearable 
-                className="w-full" 
-                value={formData.inverterBrandId} 
-                onChange={(e) => setFormData({...formData,inverterBrandId: e ? Number(e) : null})}
+              <Select
+                placeholder="Marka Seçin"
+                searchable
+                clearable
+                className="w-full"
+                value={formData.inverterBrandId}
+                onChange={(e) => setFormData({ ...formData, inverterBrandId: e ? Number(e) : null })}
                 data={[
                   { value: "1", label: "Düşük" },
-  { value: "2", label: "Orta" },
-  { value: "3", label: "Yüksek" },
-  ]}/>
+                  { value: "2", label: "Orta" },
+                  { value: "3", label: "Yüksek" },
+                ]} />
             </div>
 
             {/* AC (kWe) */}
@@ -318,7 +356,7 @@ const handleSubmit = async () => {
               <label className="text-natural-800 font-semibold block mb-1">
                 AC (kWe) <span className="text-red-500">*</span>
               </label>
-              <TextInput className="w-full" value={formData.acValue} onChange={(e) => setFormData({...formData,acValue:e.currentTarget.value})}/>
+              <TextInput className="w-full" value={formData.acValue} onChange={(e) => setFormData({ ...formData, acValue: e.currentTarget.value })} />
             </div>
           </div>
         </div>
@@ -373,7 +411,7 @@ const handleSubmit = async () => {
 
         {/* SUBMIT BUTTON */}
         <div className="-full md:w-1/2 space-y-6 text-center">
-          <Button className="bg-green-500 hover:!bg-green-500" onClick={handleSubmit}>Projeyi Kaydet</Button>
+          <Button className="bg-green-500 hover:!bg-green-500" >Projeyi Kaydet</Button>
         </div>
       </div>
 
