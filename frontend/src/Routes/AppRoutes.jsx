@@ -1,12 +1,12 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
 import Projects from "../pages/Projects";
-import Login from "../pages/Login";
 import Random from "../components/Header/Random";
 import ProjectCreated from "../pages/ProjectCreated";
 import ProjectDetails from "../pages/ProjectDetails";
 import ProjectTasks from "../components/Project/ProjectTasks";
 import MyTasks from "../pages/MyTasks";
+import Login from "../pages/Login";
 
 
 const AppRoutes = () => {
