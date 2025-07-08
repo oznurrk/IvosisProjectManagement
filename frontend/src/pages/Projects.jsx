@@ -33,19 +33,19 @@ const Projects = () => {
   };
 
   const priorityClassMap = {
-    Düşük: "bg-blue-500 text-white",
-    Orta: "bg-green-500 text-white",
-    Yüksek: "bg-orange-500 text-white",
-    Kritik: "bg-red-500 text-white",
+    Low: "bg-blue-500 text-white",
+    Medium: "bg-green-500 text-white",
+    High: "bg-orange-500 text-white",
+    Critical: "bg-red-500 text-white",
   };
 
   const priorityOrderMap = {
-    Düşük: 1,
-    Orta: 2,
-    Yüksek: 3,
-    Kritik: 4,
+    Low: 1,
+    Medium: 2,
+    High: 3,
+    Critical: 4,
   };
-
+  
   const getPriorityClass = (priority) =>
     priorityClassMap[priority] || "bg-white text-gray-800";
 
@@ -123,6 +123,12 @@ const Projects = () => {
               <Text className="!text-xs text-justify !text-natural-800" lineClamp={3}>
                 {project.description || "Açıklama yok"}
               </Text>
+              <div className="text-natural-800">
+                DC:
+              </div>
+              <div>
+                AC:
+              </div>
 
               <div className="flex gap-2 text-xs">
                 <div className={`${getPriorityClass(project.priority)} py-1 px-2 rounded-lg`}>
@@ -145,7 +151,7 @@ const Projects = () => {
               </div>
 
               <div className="text-xs text-right text-gray-500 mt-1 italic">
-                Eklendi: {formatDate(project.CreatedAt)}
+                Eklendi: 
               </div>
             </div>
           ))

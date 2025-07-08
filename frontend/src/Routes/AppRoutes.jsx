@@ -6,6 +6,7 @@ import Random from "../components/Header/Random";
 import ProjectCreated from "../pages/ProjectCreated";
 import ProjectDetails from "../pages/ProjectDetails";
 import ProjectTasks from "../components/Project/ProjectTasks";
+import MyTasks from "../pages/MyTasks";
 
 
 const AppRoutes = () => {
@@ -21,6 +22,7 @@ const AppRoutes = () => {
                     <Route path="/projectCreated" element={<ProjectCreated />} />
                     <Route path="/projectDetails/:id" element={<ProjectDetails />} />
                     <Route path="/projectTasks" element={<ProjectTasks />} />
+                    <Route path="//my-tasks/:id" element={<MyTasks />} />
                 </Route>
             </Routes>
         </BrowserRouter>
