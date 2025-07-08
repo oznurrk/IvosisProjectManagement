@@ -45,6 +45,7 @@ namespace IvosisProjectManagement.API.Services
                 HasAdditionalStructure = p.HasAdditionalStructure,
                 AdditionalPanelCount = p.AdditionalPanelCount,
                 AdditionalInverterCount = p.AdditionalInverterCount,
+                AdditionalPanelPower = p.AdditionalPanelPower,
                 CreatedAt = p.CreatedAt,
                 CreatedByUserId = p.CreatedByUserId,
                 UpdatedAt = p.UpdatedAt
@@ -85,6 +86,7 @@ namespace IvosisProjectManagement.API.Services
                 HasAdditionalStructure = project.HasAdditionalStructure,
                 AdditionalPanelCount = project.AdditionalPanelCount,
                 AdditionalInverterCount = project.AdditionalInverterCount,
+                AdditionalPanelPower = project.AdditionalPanelPower,
                 CreatedAt = project.CreatedAt,
                 CreatedByUserId = project.CreatedByUserId,
                 UpdatedAt = project.UpdatedAt
@@ -122,7 +124,8 @@ namespace IvosisProjectManagement.API.Services
                 InverterBrandId = dto.InverterBrandId,
                 HasAdditionalStructure = dto.HasAdditionalStructure ?? false,
                 AdditionalPanelCount = dto.AdditionalPanelCount,
-                AdditionalInverterCount = dto.AdditionalInverterCount
+                AdditionalInverterCount = dto.AdditionalInverterCount,
+                AdditionalPanelPower = dto.AdditionalPanelPower
             };
 
 
@@ -157,6 +160,7 @@ namespace IvosisProjectManagement.API.Services
                 HasAdditionalStructure = dto.HasAdditionalStructure,
                 AdditionalPanelCount = dto.AdditionalPanelCount,
                 AdditionalInverterCount = dto.AdditionalInverterCount,
+                AdditionalPanelPower = dto.AdditionalPanelPower,
                 CreatedAt = DateTime.Now,
                 CreatedByUserId = dto.CreatedByUserId
             };
@@ -184,6 +188,7 @@ namespace IvosisProjectManagement.API.Services
             project.HasAdditionalStructure = dto.HasAdditionalStructure ?? false;
             project.AdditionalPanelCount = dto.AdditionalPanelCount;
             project.AdditionalInverterCount = dto.AdditionalInverterCount;
+            project.AdditionalPanelPower = dto.AdditionalPanelPower;
             project.UpdatedAt = DateTime.Now;
             project.UpdatedByUserId = dto.UpdatedByUserId;
 
