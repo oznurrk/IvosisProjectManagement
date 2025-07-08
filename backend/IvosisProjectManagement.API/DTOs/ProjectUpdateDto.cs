@@ -17,14 +17,11 @@ namespace IvosisProjectManagement.API.DTOs
         public bool? HasAdditionalStructure { get; set; }
         public int? AdditionalPanelCount { get; set; }
         public int? AdditionalInverterCount { get; set; }
+        public decimal? AdditionalPanelPower { get; set; }
         public int UpdatedByUserId { get; set; }
         public decimal ACValue { get; set; }
         public decimal DCValue { get; set; }
-        public int CityId { get; set; }
-        public int DistrictId { get; set; }
-        public int NeighborhoodId { get; set; }
-        public string Ada { get; set; }
-        public string Parsel { get; set; }
         public int ProjectTypeId { get; set; }
+        public ProjectAddressDto Address { get; set; }
     }
 }

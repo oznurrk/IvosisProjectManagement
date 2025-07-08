@@ -24,6 +24,13 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IProcessService, ProcessService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
+builder.Services.AddScoped<CityService>();
+builder.Services.AddScoped<DistrictService>();
+builder.Services.AddScoped<NeighborhoodService>();
+builder.Services.AddScoped<IProjectTypeService, ProjectTypeService>();
+builder.Services.AddScoped<IPanelBrandService, PanelBrandService>();
+builder.Services.AddScoped<IInverterBrandService, InverterBrandService>();
+
 
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IvosisProjectManagement.API.Services
 {
-   public class ProjectService : IProjectService
+    public class ProjectService : IProjectService
     {
         private readonly ApplicationDbContext _context;
 
@@ -16,46 +16,54 @@ namespace IvosisProjectManagement.API.Services
 
         public async Task<IEnumerable<ProjectDto>> GetAllAsync()
         {
-            return await _context.Projects.Select(p => new ProjectDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                StartDate = p.StartDate,
-                EndDate = p.EndDate,
-                Priority = p.Priority,
-                Status = p.Status,
+            return await _context.Projects
+                .Include(p => p.Address) // ProjectAddress dahil
+                .Select(p => new ProjectDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    StartDate = p.StartDate,
+                    EndDate = p.EndDate,
+                    Priority = p.Priority,
+                    Status = p.Status,
 
-                // Yeni alanlar
-                ACValue = p.ACValue,
-                DCValue = p.DCValue,
-                CityId = p.CityId,
-                DistrictId = p.DistrictId,
-                NeighborhoodId = p.NeighborhoodId,
-                Ada = p.Ada,
-                Parsel = p.Parsel,
-                ProjectTypeId = p.ProjectTypeId,
+                    ACValue = p.ACValue,
+                    DCValue = p.DCValue,
 
-                PanelCount = p.PanelCount,
-                PanelPower = p.PanelPower,
-                PanelBrandId = p.PanelBrandId,
-                InverterCount = p.InverterCount,
-                InverterPower = p.InverterPower,
-                InverterBrandId = p.InverterBrandId,
-                HasAdditionalStructure = p.HasAdditionalStructure,
-                AdditionalPanelCount = p.AdditionalPanelCount,
-                AdditionalInverterCount = p.AdditionalInverterCount,
-                AdditionalPanelPower = p.AdditionalPanelPower,
-                CreatedAt = p.CreatedAt,
-                CreatedByUserId = p.CreatedByUserId,
-                UpdatedAt = p.UpdatedAt
-            }).ToListAsync();
+                    Address = new ProjectAddressDto
+                    {
+                        CityId = p.Address.CityId,
+                        DistrictId = p.Address.DistrictId,
+                        NeighborhoodId = p.Address.NeighborhoodId,
+                        Ada = p.Address.Ada,
+                        Parsel = p.Address.Parsel
+                    },
 
+                    ProjectTypeId = p.ProjectTypeId,
+
+                    PanelCount = p.PanelCount,
+                    PanelPower = p.PanelPower,
+                    PanelBrandId = p.PanelBrandId,
+                    InverterCount = p.InverterCount,
+                    InverterPower = p.InverterPower,
+                    InverterBrandId = p.InverterBrandId,
+                    HasAdditionalStructure = p.HasAdditionalStructure,
+                    AdditionalPanelCount = p.AdditionalPanelCount,
+                    AdditionalInverterCount = p.AdditionalInverterCount,
+                    AdditionalPanelPower = p.AdditionalPanelPower,
+                    CreatedAt = p.CreatedAt,
+                    CreatedByUserId = p.CreatedByUserId,
+                    UpdatedAt = p.UpdatedAt
+                }).ToListAsync();
         }
 
         public async Task<ProjectDto?> GetByIdAsync(int id)
         {
-            var project = await _context.Projects.FindAsync(id);
+            var project = await _context.Projects
+                .Include(p => p.Address)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (project == null) return null;
 
             return new ProjectDto
@@ -70,11 +78,15 @@ namespace IvosisProjectManagement.API.Services
 
                 ACValue = project.ACValue,
                 DCValue = project.DCValue,
-                CityId = project.CityId,
-                DistrictId = project.DistrictId,
-                NeighborhoodId = project.NeighborhoodId,
-                Ada = project.Ada,
-                Parsel = project.Parsel,
+
+                Address = new ProjectAddressDto
+                {
+                    CityId = project.Address.CityId,
+                    DistrictId = project.Address.DistrictId,
+                    NeighborhoodId = project.Address.NeighborhoodId,
+                    Ada = project.Address.Ada,
+                    Parsel = project.Address.Parsel
+                },
                 ProjectTypeId = project.ProjectTypeId,
 
                 PanelCount = project.PanelCount,
@@ -91,8 +103,8 @@ namespace IvosisProjectManagement.API.Services
                 CreatedByUserId = project.CreatedByUserId,
                 UpdatedAt = project.UpdatedAt
             };
-
         }
+
 
         public async Task<ProjectDto> CreateAsync(ProjectCreateDto dto)
         {
@@ -109,11 +121,14 @@ namespace IvosisProjectManagement.API.Services
 
                 ACValue = dto.ACValue,
                 DCValue = dto.ACValue,
-                CityId = dto.CityId,
-                DistrictId = dto.DistrictId,
-                NeighborhoodId = dto.NeighborhoodId,
-                Ada = dto.Ada,
-                Parsel = dto.Parsel,
+                Address = new ProjectAddress
+                {
+                    CityId = dto.Address.CityId,
+                    DistrictId = dto.Address.DistrictId,
+                    NeighborhoodId = dto.Address.NeighborhoodId,
+                    Ada = dto.Address.Ada,
+                    Parsel = dto.Address.Parsel
+                },
                 ProjectTypeId = dto.ProjectTypeId,
 
                 PanelCount = dto.PanelCount,
@@ -144,13 +159,15 @@ namespace IvosisProjectManagement.API.Services
 
                 ACValue = dto.ACValue,
                 DCValue = dto.ACValue,
-                CityId = dto.CityId,
-                DistrictId = dto.DistrictId,
-                NeighborhoodId = dto.NeighborhoodId,
-                Ada = dto.Ada,
-                Parsel = dto.Parsel,
                 ProjectTypeId = dto.ProjectTypeId,
-
+                Address = new ProjectAddressDto
+                {
+                    CityId = dto.Address.CityId,
+                    DistrictId = dto.Address.DistrictId,
+                    NeighborhoodId = dto.Address.NeighborhoodId,
+                    Ada = dto.Address.Ada,
+                    Parsel = dto.Address.Parsel
+                },
                 PanelCount = dto.PanelCount,
                 PanelPower = dto.PanelPower,
                 PanelBrandId = dto.PanelBrandId,
@@ -168,7 +185,10 @@ namespace IvosisProjectManagement.API.Services
 
         public async Task<bool> UpdateAsync(int id, ProjectUpdateDto dto)
         {
-            var project = await _context.Projects.FindAsync(id);
+            var project = await _context.Projects
+                .Include(p => p.Address)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
             if (project == null) return false;
 
             project.Name = dto.Name;
@@ -179,6 +199,7 @@ namespace IvosisProjectManagement.API.Services
             project.Status = dto.Status;
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedByUserId = dto.UpdatedByUserId;
+
             project.PanelCount = dto.PanelCount;
             project.PanelPower = dto.PanelPower;
             project.PanelBrandId = dto.PanelBrandId;
@@ -189,13 +210,22 @@ namespace IvosisProjectManagement.API.Services
             project.AdditionalPanelCount = dto.AdditionalPanelCount;
             project.AdditionalInverterCount = dto.AdditionalInverterCount;
             project.AdditionalPanelPower = dto.AdditionalPanelPower;
-            project.UpdatedAt = DateTime.Now;
-            project.UpdatedByUserId = dto.UpdatedByUserId;
+
+            // ProjectAddress güncellemesi:
+            if (project.Address == null)
+            {
+                project.Address = new ProjectAddress();
+            }
+            project.Address.CityId = dto.Address.CityId;
+            project.Address.DistrictId = dto.Address.DistrictId;
+            project.Address.NeighborhoodId = dto.Address.NeighborhoodId;
+            project.Address.Ada = dto.Address.Ada;
+            project.Address.Parsel = dto.Address.Parsel;
 
             _context.Projects.Update(project);
             return await _context.SaveChangesAsync() > 0;
         }
-
+        
         public async Task<bool> DeleteAsync(int id)
         {
             var project = await _context.Projects.FindAsync(id);
@@ -204,5 +234,6 @@ namespace IvosisProjectManagement.API.Services
             _context.Projects.Remove(project);
             return await _context.SaveChangesAsync() > 0;
         }
+
     }
 }

@@ -18,26 +18,16 @@ namespace IvosisProjectManagement.API.Models
         public bool HasAdditionalStructure { get; set; }
         public int? AdditionalPanelCount { get; set; }
         public int? AdditionalInverterCount { get; set; }
+        public decimal? AdditionalPanelPower { get; set; }
         public DateTime CreatedAt { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedByUserId { get; set; }
         public decimal? ACValue { get; set; }
         public decimal? DCValue { get; set; }
-
-        public int? CityId { get; set; }
-        public City? City { get; set; }
-
-        public int? DistrictId { get; set; }
-        public District? District { get; set; }
-
-        public int? NeighborhoodId { get; set; }
-        public Neighborhood? Neighborhood { get; set; }
-
-        public string? Ada { get; set; }
-        public string? Parsel { get; set; }
-
         public int? ProjectTypeId { get; set; }
         public ProjectType? ProjectType { get; set; }
+        public ProjectAddress? Address { get; set; }
+
     }
 }

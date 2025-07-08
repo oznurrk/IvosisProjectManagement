@@ -16,7 +16,21 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<District> Districts { get; set; }
         public DbSet<Neighborhood> Neighborhoods { get; set; }
         public DbSet<ProjectType> ProjectTypes { get; set; }
+        public DbSet<PanelBrand> PanelBrands { get; set; }
+        public DbSet<InverterBrand> InverterBrands { get; set; }
+        public DbSet<ProjectAddress> ProjectAddresses { get; set; }
+    
+        
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
+            // Buraya ilişki tanımlamaları yapılır
+            modelBuilder.Entity<Project>()
+                .HasOne(p => p.Address)
+                .WithOne(a => a.Project)
+                .HasForeignKey<ProjectAddress>(a => a.ProjectId);
+        }
 
     }
 }
