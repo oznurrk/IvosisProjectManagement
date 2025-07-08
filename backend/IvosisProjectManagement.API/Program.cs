@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using IvosisProjectManagement.API.DTOs.Common;
+using IvosisProjectManagement.API.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 

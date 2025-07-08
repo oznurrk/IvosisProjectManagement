@@ -14,9 +14,17 @@ namespace IvosisProjectManagement.API.DTOs
         public int? InverterCount { get; set; }
         public decimal? InverterPower { get; set; }
         public int? InverterBrandId { get; set; }
-        public bool HasAdditionalStructure { get; set; }
+        public bool? HasAdditionalStructure { get; set; }
         public int? AdditionalPanelCount { get; set; }
         public int? AdditionalInverterCount { get; set; }
         public int CreatedByUserId { get; set; }
+        public decimal ACValue { get; set; }
+        public decimal DCValue { get; set; }
+        public int CityId { get; set; }
+        public int DistrictId { get; set; }
+        public int NeighborhoodId { get; set; }
+        public string Ada { get; set; }
+        public string Parsel { get; set; }
+        public int ProjectTypeId { get; set; }
     }
 }

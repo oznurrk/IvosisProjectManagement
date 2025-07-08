@@ -25,6 +25,17 @@ namespace IvosisProjectManagement.API.Services
                 EndDate = p.EndDate,
                 Priority = p.Priority,
                 Status = p.Status,
+
+                // Yeni alanlar
+                ACValue = p.ACValue,
+                DCValue = p.DCValue,
+                CityId = p.CityId,
+                DistrictId = p.DistrictId,
+                NeighborhoodId = p.NeighborhoodId,
+                Ada = p.Ada,
+                Parsel = p.Parsel,
+                ProjectTypeId = p.ProjectTypeId,
+
                 PanelCount = p.PanelCount,
                 PanelPower = p.PanelPower,
                 PanelBrandId = p.PanelBrandId,
@@ -38,6 +49,7 @@ namespace IvosisProjectManagement.API.Services
                 CreatedByUserId = p.CreatedByUserId,
                 UpdatedAt = p.UpdatedAt
             }).ToListAsync();
+
         }
 
         public async Task<ProjectDto?> GetByIdAsync(int id)
@@ -54,6 +66,16 @@ namespace IvosisProjectManagement.API.Services
                 EndDate = project.EndDate,
                 Priority = project.Priority,
                 Status = project.Status,
+
+                ACValue = project.ACValue,
+                DCValue = project.DCValue,
+                CityId = project.CityId,
+                DistrictId = project.DistrictId,
+                NeighborhoodId = project.NeighborhoodId,
+                Ada = project.Ada,
+                Parsel = project.Parsel,
+                ProjectTypeId = project.ProjectTypeId,
+
                 PanelCount = project.PanelCount,
                 PanelPower = project.PanelPower,
                 PanelBrandId = project.PanelBrandId,
@@ -67,6 +89,7 @@ namespace IvosisProjectManagement.API.Services
                 CreatedByUserId = project.CreatedByUserId,
                 UpdatedAt = project.UpdatedAt
             };
+
         }
 
         public async Task<ProjectDto> CreateAsync(ProjectCreateDto dto)
@@ -80,8 +103,28 @@ namespace IvosisProjectManagement.API.Services
                 Priority = dto.Priority,
                 Status = dto.Status,
                 CreatedByUserId = dto.CreatedByUserId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+
+                ACValue = dto.ACValue,
+                DCValue = dto.ACValue,
+                CityId = dto.CityId,
+                DistrictId = dto.DistrictId,
+                NeighborhoodId = dto.NeighborhoodId,
+                Ada = dto.Ada,
+                Parsel = dto.Parsel,
+                ProjectTypeId = dto.ProjectTypeId,
+
+                PanelCount = dto.PanelCount,
+                PanelPower = dto.PanelPower,
+                PanelBrandId = dto.PanelBrandId,
+                InverterCount = dto.InverterCount,
+                InverterPower = dto.InverterPower,
+                InverterBrandId = dto.InverterBrandId,
+                HasAdditionalStructure = dto.HasAdditionalStructure ?? false,
+                AdditionalPanelCount = dto.AdditionalPanelCount,
+                AdditionalInverterCount = dto.AdditionalInverterCount
             };
+
 
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
@@ -95,6 +138,16 @@ namespace IvosisProjectManagement.API.Services
                 EndDate = project.EndDate,
                 Priority = project.Priority,
                 Status = project.Status,
+
+                ACValue = dto.ACValue,
+                DCValue = dto.ACValue,
+                CityId = dto.CityId,
+                DistrictId = dto.DistrictId,
+                NeighborhoodId = dto.NeighborhoodId,
+                Ada = dto.Ada,
+                Parsel = dto.Parsel,
+                ProjectTypeId = dto.ProjectTypeId,
+
                 PanelCount = dto.PanelCount,
                 PanelPower = dto.PanelPower,
                 PanelBrandId = dto.PanelBrandId,
@@ -128,7 +181,7 @@ namespace IvosisProjectManagement.API.Services
             project.InverterCount = dto.InverterCount;
             project.InverterPower = dto.InverterPower;
             project.InverterBrandId = dto.InverterBrandId;
-            project.HasAdditionalStructure = dto.HasAdditionalStructure;
+            project.HasAdditionalStructure = dto.HasAdditionalStructure ?? false;
             project.AdditionalPanelCount = dto.AdditionalPanelCount;
             project.AdditionalInverterCount = dto.AdditionalInverterCount;
             project.UpdatedAt = DateTime.Now;

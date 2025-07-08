@@ -12,6 +12,11 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<TaskItem> Tasks { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectTask> ProjectTasks { get; set; }
+        public DbSet<City> Cities { get; set; }
+        public DbSet<District> Districts { get; set; }
+        public DbSet<Neighborhood> Neighborhoods { get; set; }
+        public DbSet<ProjectType> ProjectTypes { get; set; }
+
 
     }
 }
