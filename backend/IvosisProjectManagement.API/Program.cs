@@ -7,17 +7,25 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using IvosisProjectManagement.API.DTOs.Common;
 using IvosisProjectManagement.API.Middlewares;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+// ⬇️ .env dosyasını yükle
+DotNetEnv.Env.Load();
+
+// ⬇️ .env dosyasındaki bağlantı cümlesini al
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+
+// ⬇️ DbContext'e bağlantı cümlesini tanımla
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
 // 🔽 Swagger hizmeti ekle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
