@@ -7,26 +7,25 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using IvosisProjectManagement.API.DTOs.Common;
 using IvosisProjectManagement.API.Middlewares;
-using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ⬇️ Controller desteği
 builder.Services.AddControllers();
 
-// ⬇️ .env dosyasını yükle
+// ⬇️ .env dosyasını oku
 DotNetEnv.Env.Load();
-
-// ⬇️ .env dosyasındaki bağlantı cümlesini al
 var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
 
-// ⬇️ DbContext'e bağlantı cümlesini tanımla
+// ⬇️ DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// 🔽 Swagger hizmeti ekle
+// ⬇️ Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// ⬇️ Servis Katmanı
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IProcessService, ProcessService>();
@@ -38,9 +37,9 @@ builder.Services.AddScoped<NeighborhoodService>();
 builder.Services.AddScoped<IProjectTypeService, ProjectTypeService>();
 builder.Services.AddScoped<IPanelBrandService, PanelBrandService>();
 builder.Services.AddScoped<IInverterBrandService, InverterBrandService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
-
-
+// ⬇️ JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -57,14 +56,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// ⬇️ CORS (Geliştirme için tamamen açık)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowAnyOrigin());
+    options.AddPolicy("CorsPolicy", policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod());
 });
 
+// ⬇️ Model Validasyon Hatalarını Özelleştir
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
@@ -80,18 +81,27 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
+// ⬇️ SignalR
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-app.UseCors("AllowAll");
-app.UseMiddleware<ExceptionMiddleware>();
-app.UseAuthentication();
-app.UseAuthorization();
-
+// ⬇️ Geliştirme Ortamında Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// ⬇️ Middleware Sıralaması
+app.UseRouting();
+app.UseCors("CorsPolicy");           // Routing'ten hemen sonra
+app.UseMiddleware<ExceptionMiddleware>(); // Exception handler
+app.UseAuthentication();
+app.UseAuthorization();
+
+// ⬇️ Controller ve Hub Routing
 app.MapControllers();
+app.MapHub<ChatHub>("/chatHub");
+
 app.Run();
