@@ -24,6 +24,7 @@ import {
 import ProjectDetails from "./ProjectDetails";
 import ProjectFilters from "../components/Project/ProjectFilters";
 import { useNavigate } from "react-router-dom";
+import ProjectCartSelectModal from "../components/Project/ProjectCartSelectModal";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -386,12 +387,6 @@ const Projects = () => {
       <Text size="sm" c="dimmed">
   Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
 </Text>
-
-      <ProjectDetails
-        opened={modalOpen}
-        onClose={() => setModalOpen(false)}
-        projectId={selectedProjectId}
-      />
     </div>
   );
 };

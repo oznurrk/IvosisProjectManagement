@@ -7,6 +7,7 @@ import ProjectDetails from "../pages/ProjectDetails";
 import ProjectTasks from "../components/Project/ProjectTasks";
 import MyTasks from "../pages/MyTasks";
 import Login from "../pages/Login";
+import TaskChat from "../components/TaskChat/TaskChat";
 
 
 const AppRoutes = () => {
@@ -23,6 +24,7 @@ const AppRoutes = () => {
                     <Route path="/projectDetails/:id" element={<ProjectDetails />} />
                     <Route path="/projectTasks" element={<ProjectTasks />} />
                     <Route path="//my-tasks/:id" element={<MyTasks />} />
+                    <Route path="/taskChat" element={<TaskChat />} />
                 </Route>
             </Routes>
         </BrowserRouter>
