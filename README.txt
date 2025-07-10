@@ -56,7 +56,7 @@ git push origin main
 cd backend/IvosisProjectManagement.API
 dotnet build
 dotnet run
-
+ 
 ------Frontend:
 cd frontend
 npm install

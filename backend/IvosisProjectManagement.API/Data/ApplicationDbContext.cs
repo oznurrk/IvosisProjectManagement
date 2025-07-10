@@ -19,6 +19,8 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<PanelBrand> PanelBrands { get; set; }
         public DbSet<InverterBrand> InverterBrands { get; set; }
         public DbSet<ProjectAddress> ProjectAddresses { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+
     
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
