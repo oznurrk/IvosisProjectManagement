@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import ProjectTasksCreated from "./ProjectTasksCreated";
-import { Divider, Select, Textarea, TextInput } from "@mantine/core";
+import { Divider, Select, Textarea } from "@mantine/core";
 
 const ProjectTasks = () => {
   const [processName, setProcessName] = useState("");

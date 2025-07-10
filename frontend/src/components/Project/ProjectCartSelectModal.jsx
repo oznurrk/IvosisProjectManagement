@@ -1,40 +1,22 @@
-import {  Button, Divider, Modal, Stack, Text } from "@mantine/core"
-import { useState } from "react";
+import { Modal, Button, Stack } from "@mantine/core";
 
-const ProjectCartSelectModal = ({opened,onClose}) => {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+const ProjectCartSelectModal = ({ opened, onClose, projectId, onShowDetails }) => {
+  const goToTasks = () => {
+    window.location.href = `/projectTasks/${projectId}`; // veya navigate kullanabilirsin
+  };
 
-    return(
-        <Modal
-            opened={opened}
-            onClose={onClose}
-            size="xl"
-            centered
-            scrollAreaComponent="div"
-            title={
-                <Text size="lg" fw={700}>
-                    İşlem Seç
-                </Text>
-            }
-            classNames={{
-                body: "p-4 sm:p-6",
-            }}
-        >
-            <Divider my="sm" size="xs" color="gray" />
-
-            {loading ? (
-                <Text>Yükleniyor</Text>
-            ) : error ? (
-                <Text color="red">{error}</Text>
-            ) : (
-                <>
-                    <Button mt="lg" fullWidth>Deneme</Button>
-                </>
-            )}
-        </Modal>
-    )
-}
-
+  return (
+    <Modal opened={opened} onClose={onClose} title="Proje İşlemleri" centered>
+      <Stack>
+        <Button fullWidth onClick={goToTasks} color="blue">
+          Görevleri Görüntüle
+        </Button>
+        <Button fullWidth onClick={onShowDetails} color="gray">
+          Proje Detaylarına Git
+        </Button>
+      </Stack>
+    </Modal>
+  );
+};
 
 export default ProjectCartSelectModal;

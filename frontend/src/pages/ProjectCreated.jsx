@@ -1,10 +1,9 @@
-import { Button, Checkbox, Divider, Select, Textarea, TextInput } from '@mantine/core';
+import { Button, Checkbox, Divider, Select, Textarea, TextInput, Modal } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 import 'dayjs/locale/tr';
 import axios from 'axios';
 
-
-const ProjectCreate = () => {
+const ProjectCreated = () => {
   const [hasEkYapi, setHasEkYapi] = useState(false);
   const [cities, setCities] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -12,6 +11,10 @@ const ProjectCreate = () => {
   const [projectTypes, setProjectTypes] = useState([]);
   const [panelBrand, setPanelBrand] = useState([]);
   const [inverterBrand, setInverterBrand] = useState([]);
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -96,31 +99,31 @@ const ProjectCreate = () => {
     setFormData((prev) => ({ ...prev, dcValue: dc.toFixed(2) }));
   }, [formData.panelCount, formData.panelPower]);
 
-  const handleSubmit = async () => {
+  const submitProject = async () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post("http://localhost:5000/api/projects", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      alert("Proje başarıyla kaydedildi");
+      setShowSuccess(true);
     } catch (err) {
       console.error("Proje kaydı başarısız:", err);
-      alert("Hata oluştu");
+      setShowError(true);
+    } finally {
+      setShowConfirm(false);
     }
   };
 
-
-
+  const handleClickSave = () => {
+    setShowConfirm(true);
+  };
   return (
     <div className="py-6 px-6">
       <h2 className="text-2xl font-bold  mb-6 text-ivosis-700">Proje Ekle</h2>
       <div className="border rounded-lg p-6 bg-white space-y-8 ">
-
         {/* GENEL BİLGİLER */}
-
         <h6 className="text-lg font-bold text-ivosis-700 mb-4">Genel Bilgiler</h6>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
           {/* Sol Sütun - Proje Adı ve Açıklama */}
           <div className="space-y-6">
             {/* Proje Adı */}
@@ -134,7 +137,6 @@ const ProjectCreate = () => {
                 onChange={(e) => setFormData({ ...formData, name: e.currentTarget.value })}
               />
             </div>
-
             {/* Açıklama */}
             <div>
               <label className="text-natural-800 font-semibold block mb-1">
@@ -149,12 +151,10 @@ const ProjectCreate = () => {
               />
             </div>
           </div>
-
           {/* Sağ Sütun - Diğer Bilgiler */}
           <div className="space-y-6">
-
-            {/* Tarihler */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/*Başlangıç Tarihi*/}
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Başlangıç Tarihi <span className="text-red-500">*</span>
@@ -166,7 +166,7 @@ const ProjectCreate = () => {
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 />
               </div>
-
+              {/* Bitiş Tarihi */}
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Bitiş Tarihi <span className="text-red-500">*</span>
@@ -180,8 +180,8 @@ const ProjectCreate = () => {
               </div>
             </div>
 
-            {/* Durum - Önem - Proje Türü */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Durum */}
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Durum <span className="text-red-500">*</span>
@@ -201,7 +201,7 @@ const ProjectCreate = () => {
                   onChange={(e) => setFormData({ ...formData, status: e })}
                 />
               </div>
-
+              {/*Önem */}
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Önem <span className="text-red-500">*</span>
@@ -221,7 +221,7 @@ const ProjectCreate = () => {
                   onChange={(e) => setFormData({ ...formData, priority: e })}
                 />
               </div>
-
+              {/* Proje Türü */}
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   Proje Türü <span className="text-red-500">*</span>
@@ -239,9 +239,6 @@ const ProjectCreate = () => {
             </div>
           </div>
         </div>
-
-
-
         <Divider />
         <h6 className="text-lg font-bold text-ivosis-700 mb-4">Konum Bilgileri</h6>
         <div className="grid grid-cols-5 gap-6 mb-6">
@@ -264,7 +261,6 @@ const ProjectCreate = () => {
               }
             />
           </div>
-
           {/* İlçe */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -284,7 +280,6 @@ const ProjectCreate = () => {
               }
             />
           </div>
-
           {/* Mahalle */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -304,7 +299,6 @@ const ProjectCreate = () => {
               }
             />
           </div>
-
           {/* Ada */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -320,7 +314,6 @@ const ProjectCreate = () => {
               }
             />
           </div>
-
           {/* Parsel */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -337,11 +330,7 @@ const ProjectCreate = () => {
             />
           </div>
         </div>
-
-
-
         <Divider />
-
         {/* TEKNİK BİLGİLER */}
         <div className="w-full space-y-6">
           <h6 className="text-lg font-bold text-ivosis-700 mb-6">Teknik Bilgiler</h6>
@@ -359,7 +348,6 @@ const ProjectCreate = () => {
                 }
               />
             </div>
-
             {/* Panel Gücü */}
             <div className="col-span-1">
               <label className="text-natural-800 font-semibold block mb-1">
@@ -373,7 +361,6 @@ const ProjectCreate = () => {
                 }
               />
             </div>
-
             {/* Panel Markası */}
             <div className="col-span-1">
               <label className="text-natural-800 font-semibold block mb-1">
@@ -391,7 +378,6 @@ const ProjectCreate = () => {
                 }
               />
             </div>
-
             {/* DC (kWp) */}
             <div className="col-span-1">
               <label className="text-natural-800 font-semibold block mb-1">
@@ -399,7 +385,6 @@ const ProjectCreate = () => {
               </label>
               <TextInput className="w-full" value={formData.dcValue} readOnly />
             </div>
-
             {/* İnvertör Sayısı */}
             <div className="col-span-1">
               <label className="text-natural-800 font-semibold block mb-1">
@@ -413,7 +398,6 @@ const ProjectCreate = () => {
                 }
               />
             </div>
-
             {/* İnvertör Gücü */}
             <div className="col-span-1">
               <label className="text-natural-800 font-semibold block mb-1">
@@ -427,7 +411,6 @@ const ProjectCreate = () => {
                 }
               />
             </div>
-
             {/* İnvertör Markası */}
             <div className="col-span-1">
               <label className="text-natural-800 font-semibold block mb-1">
@@ -445,7 +428,6 @@ const ProjectCreate = () => {
                 }
               />
             </div>
-
             {/* AC (kWe) */}
             <div className="col-span-1">
               <label className="text-natural-800 font-semibold block mb-1">
@@ -462,11 +444,9 @@ const ProjectCreate = () => {
           </div>
         </div>
         <Divider />
-
         {/* EK YAPI BİLGİLERİ */}
         <div className="w-full md:w-1/2 space-y-6">
           <h6 className="text-lg font-bold text-ivosis-700 mb-4">Ek Yapı Bilgileri</h6>
-
           {/* Checkbox */}
           <div className="mb-6">
             <Checkbox label="Ek Yapı mı?" checked={hasEkYapi} onChange={(e) => {
@@ -475,7 +455,6 @@ const ProjectCreate = () => {
               setFormData({ ...formData, hasAdditionalStructure: checked });
             }} />
           </div>
-
           {/* Grid alanlar sadece checkbox işaretliyse görünsün */}
           {hasEkYapi && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -484,37 +463,83 @@ const ProjectCreate = () => {
                 <label className="text-natural-800 font-semibold block mb-1">
                   Panel Sayısı <span className="text-red-500">*</span>
                 </label>
-                <TextInput className="w-full" value={formData.additionalPanelCount} onChange={(e) => setFormData({ ...formData, additionalPanelCount: Number(e.currentTarget.value) })} />
+                <TextInput
+                  className="w-full"
+                  value={formData.additionalPanelCount}
+                  onChange={(e) => setFormData({ ...formData, additionalPanelCount: Number(e.currentTarget.value) })}
+                />
               </div>
-
               {/* Panel Gücü */}
               <div>
                 <label className='text-natural-800 font-semibold block mb-1'>
                   Panel Gücü <span className='text-red-500'>*</span>
                 </label>
-                <TextInput className='w-full' value={formData.additionalPanelPower} onChange={(e) => setFormData({ ...formData, additionalPanelPower: Number(e.currentTarget.value) })} />
+                <TextInput
+                  className='w-full'
+                  value={formData.additionalPanelPower}
+                  onChange={(e) => setFormData({ ...formData, additionalPanelPower: Number(e.currentTarget.value) })}
+                />
               </div>
-
               {/* İnvertör Sayısı */}
               <div>
                 <label className="text-natural-800 font-semibold block mb-1">
                   İnvertör Sayısı <span className="text-red-500">*</span>
                 </label>
-                <TextInput className="w-full" value={formData.additionalInverterCount} onChange={(e) => setFormData({ ...formData, additionalInverterCount: Number(e.currentTarget.value) })} />
+                <TextInput
+                  className="w-full"
+                  value={formData.additionalInverterCount}
+                  onChange={(e) => setFormData({ ...formData, additionalInverterCount: Number(e.currentTarget.value) })}
+                />
               </div>
             </div>
           )}
         </div>
-
-
-        {/* SUBMIT BUTTON */}
-        <div className="-full md:w-1/2 space-y-6 text-center">
-          <Button className="bg-green-500 hover:!bg-green-500" onClick={handleSubmit} >Projeyi Kaydet</Button>
+        {/* KAYDET BUTONU */}
+        <div className="w-full flex justify-end">
+          <Button className="bg-green-500 hover:!bg-green-600" onClick={handleClickSave}>
+            Projeyi Kaydet
+          </Button>
         </div>
       </div>
-
+      {/* Onay Modalı */}
+      <Modal
+        opened={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        title="Proje Kaydetme Onayı"
+        centered
+      >
+        <p>Projeyi kaydetmek istiyor musunuz?</p>
+        <div className="flex justify-end gap-4 mt-4">
+          <Button variant="default" onClick={() => setShowConfirm(false)}>Hayır</Button>
+          <Button color="green" onClick={submitProject}>Evet</Button>
+        </div>
+      </Modal>
+      {/* Başarı Modalı */}
+      <Modal
+        opened={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Başarılı"
+        centered
+      >
+        <p>Proje başarıyla kaydedildi.</p>
+        <div className="flex justify-end mt-4">
+          <Button onClick={() => setShowSuccess(false)}>Tamam</Button>
+        </div>
+      </Modal>
+      {/* Hata Modalı */}
+      <Modal
+        opened={showError}
+        onClose={() => setShowError(false)}
+        title="Hata"
+        centered
+      >
+        <p>Proje kaydı sırasında bir hata oluştu.</p>
+        <div className="flex justify-end mt-4">
+          <Button color="red" onClick={() => setShowError(false)}>Tamam</Button>
+        </div>
+      </Modal>
     </div> //ana div
   );
 };
 
-export default ProjectCreate;
+export default ProjectCreated;
