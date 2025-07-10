@@ -39,6 +39,7 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false); // yeni modal kontrolü
 
   const pageSize = 8;
 
@@ -107,6 +108,8 @@ const Projects = () => {
     High: 3,
     Critical: 4,
   };
+
+  
 
   const filteredProjects = projects
     .filter((project) => {
@@ -386,9 +389,25 @@ const Projects = () => {
       )}
       <Text size="sm" c="dimmed">
   Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
-</Text>
+</Text> 
+      <ProjectCartSelectModal
+  opened={modalOpen}
+  onClose={() => setModalOpen(false)}
+  projectId={selectedProjectId}
+  onShowDetails={() => {
+    setModalOpen(false);         // önce ilk modal kapanmalı
+    setDetailsModalOpen(true);   // sonra detay modalı açılır
+  }}
+/>
+
+<ProjectDetails
+  opened={detailsModalOpen}
+  onClose={() => setDetailsModalOpen(false)}
+  projectId={selectedProjectId}
+/>
     </div>
   );
 };
+
 
 export default Projects;

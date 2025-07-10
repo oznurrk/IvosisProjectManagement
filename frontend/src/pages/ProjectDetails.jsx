@@ -1,252 +1,235 @@
 import React, { useEffect, useState } from "react";
+import { Modal, Select, Button, Stack, Group, Divider } from "@mantine/core";
 import axios from "axios";
-import {
-  Modal,
-  Divider,
-  Text,
-  Button,
-  Card,
-  Group,
-  Stack,
-  Select,
-  Box,
-} from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 
-const ProjectDetails = ({ opened, onClose, projectId: propProjectId }) => {
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const ProjectDetails = ({ opened, onClose, projectId }) => {
   const [processes, setProcesses] = useState([]);
-  const [assignedEngineers, setAssignedEngineers] = useState({});
   const [users, setUsers] = useState([]);
-  const [selectingProcessId, setSelectingProcessId] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [existingProcessIds, setExistingProcessIds] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+
   const navigate = useNavigate();
 
-  const projectId = propProjectId || localStorage.getItem("selectedProjectId");
-
   useEffect(() => {
-    if (!opened || !projectId) return;
+    if (!opened) return;
 
-    const fetchProject = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
       try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        const res = await axios.get(
-          `http://localhost:5000/api/Projects/${projectId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setProject(res.data);
+        const [procRes, userRes, existingTasksRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/processes", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:5000/api/users", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`http://localhost:5000/api/projectTasks/by-project/${projectId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        setProcesses(procRes.data.map((p) => ({ value: p.id.toString(), label: p.name })));
+        setUsers(userRes.data.map((u) => ({ value: u.id.toString(), label: u.name })));
+
+        const existingProcesses = existingTasksRes.data.map(task => task.processId.toString());
+        const uniqueExistingProcesses = [...new Set(existingProcesses)];
+        setExistingProcessIds(uniqueExistingProcesses);
+
+        setAssignments([{ processId: null, userId: null, id: Date.now() }]);
       } catch (err) {
-        setError("Proje bilgileri alınırken hata oluştu.");
-        console.error(err);
+        console.error("Veri alınırken hata:", err);
+        setShowError(true);
       } finally {
         setLoading(false);
       }
     };
 
-    localStorage.setItem("selectedProjectId", projectId);
-    fetchProject();
+    fetchData();
   }, [opened, projectId]);
 
-  useEffect(() => {
-    const fetchProcesses = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await axios.get("http://localhost:5000/api/processes", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setProcesses(res.data);
-      } catch (err) {
-        console.error("Süreç verileri alınamadı:", err);
-      }
-    };
-
-    fetchProcesses();
-  }, []);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await axios.get("http://localhost:5000/api/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const formattedUsers = res.data.map((user) => ({
-          value: user.id.toString(),
-          label: user.name,
-        }));
-
-        setUsers(formattedUsers);
-      } catch (err) {
-        console.error("Kullanıcı Listesi alınamadı:", err);
-      }
-    };
-
-    fetchUsers();
-  }, []);
-
-  const handleAssignEngineer = (processId, userId) => {
-    setAssignedEngineers((prev) => ({
-      ...prev,
-      [processId]: userId || null,
-    }));
-    setSelectingProcessId(null);
+  const updateAssignment = (id, field, value) => {
+    setAssignments((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
+    );
   };
 
-  const handleSaveAssignments = async () => {
-    const token = localStorage.getItem("token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
+  const addAssignment = () => {
+    setAssignments((prev) => [
+      ...prev,
+      { processId: null, userId: null, id: Date.now() },
+    ]);
+  };
 
-    const payloads = Object.entries(assignedEngineers)
-      .filter(([_, userId]) => userId)
-      .map(([processId, userId]) => ({
-        projectId: Number(projectId),
-        processId: Number(processId),
-        assignedUserId: Number(userId),
-        taskId: null,
-        status: null,
-        startDate: null,
-        endDate: null,
-        description: null,
-        filePath: null,
-        createdAt: null,
-        createdByUserId: null,
-        updatedAt: null,
-        updatedByUserId: null,
-      }));
+  const canSave = assignments.every((a) => a.processId && a.userId);
+
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+    setSaving(true);
 
     try {
-      setSaving(true);
-      await Promise.all(
-        payloads.map((payload) =>
-          axios.post("http://localhost:5000/api/projectTasks", payload, {
-            headers,
-          })
-        )
+      const allPayloads = [];
+
+      for (const { processId, userId } of assignments) {
+        const taskRes = await axios.get(
+          `http://localhost:5000/api/tasks/by-process/${processId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const taskList = taskRes.data;
+        if (!Array.isArray(taskList) || taskList.length === 0) continue;
+
+        const payloads = taskList.map((task) => ({
+          projectId: parseInt(projectId),
+          processId: parseInt(processId),
+          taskId: parseInt(task.id),
+          assignedUserId: parseInt(userId),
+          status: "ToDo",
+          startDate: new Date().toISOString(),
+          endDate: null,
+          description: task.description || "",
+          filePath: null,
+          createdAt: new Date().toISOString(),
+          createdByUserId: 1,
+          updatedAt: null,
+          updatedByUserId: null,
+        }));
+
+        allPayloads.push(...payloads);
+      }
+
+      if (allPayloads.length === 0) {
+        setShowError(true);
+        return;
+      }
+
+      const promises = allPayloads.map((payload) =>
+        axios.post("http://localhost:5000/api/projectTasks", payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
       );
-      alert("Atamalar başarıyla kaydedildi.");
-      onClose(); // modal kapatılır
+
+      await Promise.all(promises);
+      setShowSuccess(true);
     } catch (err) {
-      console.error("Atamalar kaydedilirken hata oluştu:", err);
-      alert("Atamalar kaydedilirken bir hata oluştu.");
+      console.error("Görev atanırken hata:", err);
+      setShowError(true);
     } finally {
       setSaving(false);
     }
   };
 
-  const renderProcessCard = (proc, isChild = false) => {
-    const selectedUserId = assignedEngineers[proc.id];
-    const selectedUser = users.find((u) => u.value === selectedUserId);
+  const usedProcessIds = assignments.map((a) => a.processId).filter(Boolean);
+  const allUnavailableProcessIds = [...usedProcessIds, ...existingProcessIds];
 
-    return (
-      <Card
-        key={proc.id}
-        shadow="sm"
-        radius="md"
-        withBorder
-        style={{
-          marginBottom: 12,
-          marginLeft: isChild ? 24 : 0,
-          borderLeft: isChild ? "3px solid #ccc" : undefined,
-        }}
-      >
-        <Group position="apart" align="start">
-          <Box>
-            <Text fw={500}>
-              {isChild ? "↳ " : ""}
-              {proc.name}
-            </Text>
-            {selectedUser && (
-              <Text size="sm" c="dimmed" mt={4}>
-                Atanan Sorumlu: <strong>{selectedUser.label}</strong>
-              </Text>
-            )}
-          </Box>
-
-          <Button
-            size="xs"
-            variant="light"
-            onClick={() => setSelectingProcessId(proc.id)}
-          >
-            {selectedUser ? "Atamayı Düzenle" : "Mühendis Ata"}
-          </Button>
-        </Group>
-
-        {selectingProcessId === proc.id && (
-          <Select
-            data={users}
-            placeholder="Bir mühendis seçin"
-            value={selectedUserId || null}
-            onChange={(val) => handleAssignEngineer(proc.id, val)}
-            searchable
-            clearable
-            mt="sm"
-          />
-        )}
-      </Card>
-    );
-  };
-
-  const renderProcessTree = () => {
-    const parents = processes.filter((p) => p.parentProcessId === null);
-    const children = processes.filter((p) => p.parentProcessId !== null);
-
-    return parents.map((parent) => {
-      const childProcesses = children.filter(
-        (c) => c.parentProcessId === parent.id
-      );
-      return (
-        <div key={parent.id}>
-          {renderProcessCard(parent)}
-          {childProcesses.map((child) => renderProcessCard(child, true))}
-        </div>
-      );
-    });
-  };
+  const availableProcesses = processes.filter(
+    (p) => !allUnavailableProcessIds.includes(p.value)
+  );
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      size="xl"
-      centered
-      scrollAreaComponent="div"
-      title={
-        <Text size="lg" fw={700}>
-          {project?.name || "Proje Detayları"}
-        </Text>
-      }
-      classNames={{
-        body: "p-4 sm:p-6",
-      }}
-    >
-      <Divider my="sm" size="xs" color="gray" />
-
-      {loading ? (
-        <Text>Yükleniyor...</Text>
-      ) : error ? (
-        <Text color="red">{error}</Text>
-      ) : (
-        <>
-          <Stack spacing="md">{renderProcessTree()}</Stack>
+    <>
+      <Modal
+        opened={opened}
+        onClose={onClose}
+        title="Proje Süreçleri ve Atamalar"
+        size="lg"
+        centered
+        scrollAreaComponent="div"
+      >
+        <Stack spacing="md">
+          {assignments.map(({ id, processId, userId }, index) => (
+            <Group key={id} grow>
+              <Select
+                label={index === 0 ? "Süreç Seçin" : undefined}
+                placeholder="Süreç Seçin"
+                data={processId ? processes : availableProcesses}
+                value={processId}
+                onChange={(val) => updateAssignment(id, "processId", val)}
+                searchable
+                clearable
+                required
+              />
+              <Select
+                label={index === 0 ? "Mühendis Seçin" : undefined}
+                placeholder="Mühendis Seçin"
+                data={users}
+                value={userId}
+                onChange={(val) => updateAssignment(id, "userId", val)}
+                searchable
+                clearable
+                required
+              />
+            </Group>
+          ))}
 
           <Button
-            mt="lg"
-            fullWidth
-            onClick={handleSaveAssignments}
-            loading={saving}
+            disabled={
+              assignments.length === 0 ||
+              !assignments[assignments.length - 1].processId ||
+              !assignments[assignments.length - 1].userId
+            }
+            onClick={addAssignment}
           >
-            Atamaları Kaydet
+            Süreç Ekle
           </Button>
-        </>
-      )}
-    </Modal>
+
+          <Divider />
+
+          <Button
+            fullWidth
+            color="blue"
+            disabled={!canSave}
+            loading={saving}
+            onClick={handleSave}
+          >
+            Süreci Başlat
+          </Button>
+        </Stack>
+      </Modal>
+
+      {/* Başarı Modalı */}
+      <Modal
+        opened={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          navigate("/projectTasks");
+          onClose();
+        }}
+        title="Başarılı"
+        centered
+      >
+        <p>Süreçler başarıyla oluşturuldu.</p>
+        <div className="flex justify-end mt-4">
+          <Button onClick={() => {
+            setShowSuccess(false);
+            navigate("/projectTasks");
+            onClose();
+          }}>Tamam</Button>
+        </div>
+      </Modal>
+
+      {/* Hata Modalı */}
+      <Modal
+        opened={showError}
+        onClose={() => setShowError(false)}
+        title="Hata"
+        centered
+      >
+        <p>Görev atanırken bir hata oluştu. Lütfen tekrar deneyin.</p>
+        <div className="flex justify-end mt-4">
+          <Button color="red" onClick={() => setShowError(false)}>Tamam</Button>
+        </div>
+      </Modal>
+    </>
   );
 };
 
