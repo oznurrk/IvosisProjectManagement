@@ -50,7 +50,6 @@ const ProjectDetails = ({ opened, onClose, projectId }) => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [opened, projectId]);
 
@@ -119,6 +118,9 @@ const ProjectDetails = ({ opened, onClose, projectId }) => {
       );
 
       await Promise.all(promises);
+
+      // 🌟 Proje ID’yi kaydet ve yönlendir
+      localStorage.setItem("selectedProjectId", projectId);
       setShowSuccess(true);
     } catch (err) {
       console.error("Görev atanırken hata:", err);
@@ -201,8 +203,8 @@ const ProjectDetails = ({ opened, onClose, projectId }) => {
         opened={showSuccess}
         onClose={() => {
           setShowSuccess(false);
-          navigate("/projectTasks");
           onClose();
+          navigate("/projectTasks");
         }}
         title="Başarılı"
         centered
@@ -211,8 +213,8 @@ const ProjectDetails = ({ opened, onClose, projectId }) => {
         <div className="flex justify-end mt-4">
           <Button onClick={() => {
             setShowSuccess(false);
-            navigate("/projectTasks");
             onClose();
+            navigate("/projectTasks");
           }}>Tamam</Button>
         </div>
       </Modal>

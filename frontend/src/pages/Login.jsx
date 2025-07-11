@@ -28,25 +28,44 @@ const Login = () => {
     }
 
     try {
-    const response = await axios.post('http://localhost:5000/api/auth/login', {
-      email,
-      password,
-    });
+      const response = await axios.post('http://localhost:5000/api/auth/login', {
+        email,
+        password,
+      });
 
-    // Eğer token geldiyse başarılı giriş kabul edilir
-    if (response.data && response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      setErrorMessage('');
-      navigate('/projects'); // ← Home değil, doğrudan Projects sayfası
-    } else {
+      if (response.data && response.data.token) {
+        const token = response.data.token;
+        localStorage.setItem('token', token);
+        localStorage.setItem('email', email); // email'i de sakla
+
+        // Tüm kullanıcıları çekip giriş yapan email ile eşleşeni bul
+        const usersResponse = await axios.get('http://localhost:5000/api/users', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const allUsers = usersResponse.data;
+        const matchedUser = allUsers.find((user) => user.email === email);
+
+        if (matchedUser) {
+          localStorage.setItem(
+            'user',
+            JSON.stringify({
+              name: matchedUser.name || email,
+              role: matchedUser.role || 'Rol Yok',
+              avatar: matchedUser.avatar || '/avatar.png',
+            })
+          );
+        }
+
+        setErrorMessage('');
+        navigate('/projects');
+      } else {
+        setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+      }
+    } catch (error) {
       setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+      setTimeout(() => setErrorMessage(''), 5000);
     }
-  } catch (error) {
-    setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
-
-    // Hata mesajı 5 saniye sonra silinir
-    setTimeout(() => setErrorMessage(''), 5000);
-  }
   };
 
   return (
@@ -94,7 +113,7 @@ const Login = () => {
             onChange={(event) => setRememberMe(event.currentTarget.checked)}
             className="text-white"
           />
-          
+
           {errorMessage && (
             <div className="text-red-700 text-md mt-2 text-center">
               {errorMessage}
@@ -104,8 +123,6 @@ const Login = () => {
           <Button type="submit" color="ivosis.8">
             Giriş Yap
           </Button>
-
-         
         </form>
       </div>
     </div>
