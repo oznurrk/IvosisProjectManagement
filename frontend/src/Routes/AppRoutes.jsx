@@ -8,6 +8,7 @@ import ProjectTasks from "../components/Project/ProjectTasks";
 import MyTasks from "../pages/MyTasks";
 import Login from "../pages/Login";
 import TaskChat from "../components/TaskChat/TaskChat";
+import Processes from "../pages/Processes";
 
 
 const AppRoutes = () => {
@@ -17,14 +18,14 @@ const AppRoutes = () => {
                 <Route path="/" element={<Login />} />
                 <Route path="/" element={<AdminDashboard />}>
                     <Route path="/projects" element={<Projects />} />
-                    <Route path="/processes" element={<Random />} />
                     <Route path="/documents" element={<Random />} />
                     <Route path="/settings" element={<Random />} />
                     <Route path="/projectCreated" element={<ProjectCreated />} />
                     <Route path="/projectDetails/:id" element={<ProjectDetails />} />
                     <Route path="/projectTasks" element={<ProjectTasks />} />
-                    <Route path="//my-tasks/:id" element={<MyTasks />} />
+                    <Route path="//my-tasks" element={<MyTasks />} />
                     <Route path="/taskChat" element={<TaskChat />} />
+                    <Route path="/processes" element={<Processes />} />
                 </Route>
             </Routes>
         </BrowserRouter>
