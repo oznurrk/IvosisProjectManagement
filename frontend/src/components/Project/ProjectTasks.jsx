@@ -610,7 +610,7 @@ const ProjectTasks = () => {
                     size="sm"
                     onClick={() => handleComplete(task)}
                     style={{
-                      background: 'linear-gradient(135deg, #058c42 0%, #04471c 100%)',
+                      background: 'linear-gradient(135deg,   #112d3b 0%, #24809c 100%)',
                       border: 'none',
                       marginTop: 'auto'
                     }}
@@ -665,7 +665,3 @@ const ProjectTasks = () => {
 };
 
 export default ProjectTasks;
-
-// dosya seçimi çoklu olmalı
-// defaultta başlamadı olarak gelmeli. başlamadı oranı %100 olmalı
-// responsive yapılacak.
