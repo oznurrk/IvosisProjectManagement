@@ -610,7 +610,7 @@ const ProjectTasks = () => {
                     size="sm"
                     onClick={() => handleComplete(task)}
                     style={{
-                      background: 'linear-gradient(135deg,   #112d3b 0%, #24809c 100%)',
+                      background: 'linear-gradient(135deg,   #2d6a4f 0%, #1b4332 100%)',
                       border: 'none',
                       marginTop: 'auto'
                     }}
