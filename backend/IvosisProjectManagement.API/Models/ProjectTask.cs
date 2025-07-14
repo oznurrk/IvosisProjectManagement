@@ -16,5 +16,9 @@ namespace IvosisProjectManagement.API.Models
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedByUserId { get; set; }
+        public Project? Project { get; set; }
+        public TaskItem? Task { get; set; }
+        public Process? Process { get; set; }
+
     }
 }

@@ -1,5 +1,8 @@
+using System.Collections;
+using System.Collections.Generic;
 using System.Text.Json;
 using IvosisProjectManagement.API.DTOs;
+using IvosisProjectManagement.API.DTOs.Common;
 using IvosisProjectManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +36,26 @@ namespace IvosisProjectManagement.API.Controllers
         {
             var item = await _service.GetTasksByProjectIdAsync(ProjectId);
             return item == null ? NotFound() : Ok(item);
+        }
+
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetProjectTasksByUserId(int userId)
+        {
+            var result = await _service.GetTasksByUserIdAsync(userId);
+            return Ok(Result<IList>.SuccessResult(result));
+        }
+
+        [HttpGet("my-tasks")]
+        [Authorize]
+        public async Task<IActionResult> GetMyTasks()
+        {
+            var userIdClaim = User.FindFirst("userId")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(Result<string>.Failure("Kullanıcı kimliği alınamadı."));
+
+            var tasks = await _service.GetTasksByUserIdAsync(userId);
+            return Ok(Result<IList>.SuccessResult(tasks));
         }
 
         [HttpPost]

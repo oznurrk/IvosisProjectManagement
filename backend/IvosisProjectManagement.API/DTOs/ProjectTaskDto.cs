@@ -16,5 +16,9 @@ namespace IvosisProjectManagement.API.DTOs
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedByUserId { get; set; }
+        public string? ProjectName { get; set; }
+        public string? TaskTitle { get; set; }
+        public string? ProcessName { get; set; }
+
     }
 }
