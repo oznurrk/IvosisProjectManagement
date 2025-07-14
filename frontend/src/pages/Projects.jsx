@@ -109,7 +109,7 @@ const Projects = () => {
     Critical: 4,
   };
 
-  
+
 
   const filteredProjects = projects
     .filter((project) => {
@@ -213,7 +213,7 @@ const Projects = () => {
         </div>
         <button
           onClick={() => navigate("/projectCreated")}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+          className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
         >
           <IconPlus size={20} />
           Yeni Proje Ekle
@@ -230,153 +230,153 @@ const Projects = () => {
         ) : (
           pagedProjects.map((project) => (
             <Card
-    key={project.id}
-    onClick={() => handleCardClick(project.id)}
-    className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
-    withBorder
-    shadow="sm"
-    radius="lg"
-    padding="lg"
-  >
-    <Card.Section withBorder inheritPadding py="sm">
-      <Group justify="space-between" align="flex-start">
-        <Stack gap="xs" style={{ flex: 1 }}>
-          <Text size="lg" fw={700} c="dark" lineClamp={1}>
-            {project.name}
-          </Text>
-          <Text size="sm" c="dimmed" lineClamp={2}>
-            {project.description || "Açıklama yok"}
-          </Text>
-          <InfoItem
-            icon={IconInfoCircle}
-            label="Proje Türü"
-            value={getProjectTypeName(project.projectTypeId)}
-            color="indigo"
-          />
-        </Stack>
-        <Tooltip label="Detayları görüntüle">
-          <ActionIcon variant="light" color="blue" size="sm">
-            <IconInfoCircle size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    </Card.Section>
+              key={project.id}
+              onClick={() => handleCardClick(project.id)}
+              className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
+              withBorder
+              shadow="sm"
+              radius="lg"
+              padding="lg"
+            >
+              <Card.Section withBorder inheritPadding py="sm">
+                <Group justify="space-between" align="flex-start">
+                  <Stack gap="xs" style={{ flex: 1 }}>
+                    <Text size="lg" fw={700} c="dark" lineClamp={1}>
+                      {project.name}
+                    </Text>
+                    <Text size="sm" c="dimmed" lineClamp={2}>
+                      {project.description || "Açıklama yok"}
+                    </Text>
+                    <InfoItem
+                      icon={IconInfoCircle}
+                      label="Proje Türü"
+                      value={getProjectTypeName(project.projectTypeId)}
+                      color="indigo"
+                    />
+                  </Stack>
+                  <Tooltip label="Detayları görüntüle">
+                    <ActionIcon variant="light" color="blue" size="sm">
+                      <IconInfoCircle size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              </Card.Section>
 
-    <Stack gap="md" mt="md">
-      <Group justify="space-between">
-        <Badge
-          color={statusConfig[project.status]?.color || "gray"}
-          variant="light"
-          size="sm"
-        >
-          {statusConfig[project.status]?.label || project.status || "Belirsiz"}
-        </Badge>
-        <Badge
-          color={priorityConfig[project.priority]?.color || "gray"}
-          variant="filled"
-          size="sm"
-        >
-          {priorityConfig[project.priority]?.label || project.priority || "-"}
-        </Badge>
-      </Group>
+              <Stack gap="md" mt="md">
+                <Group justify="space-between">
+                  <Badge
+                    color={statusConfig[project.status]?.color || "gray"}
+                    variant="light"
+                    size="sm"
+                  >
+                    {statusConfig[project.status]?.label || project.status || "Belirsiz"}
+                  </Badge>
+                  <Badge
+                    color={priorityConfig[project.priority]?.color || "gray"}
+                    variant="filled"
+                    size="sm"
+                  >
+                    {priorityConfig[project.priority]?.label || project.priority || "-"}
+                  </Badge>
+                </Group>
 
-      <Group grow>
-        <InfoItem
-          icon={IconCalendar}
-          label="Başlama"
-          value={formatDate(project.startDate)}
-          color="green"
-        />
-        <InfoItem
-          icon={IconCalendar}
-          label="Bitiş"
-          value={formatDate(project.endDate)}
-          color="red"
-        />
-      </Group>
+                <Group grow>
+                  <InfoItem
+                    icon={IconCalendar}
+                    label="Başlama"
+                    value={formatDate(project.startDate)}
+                    color="green"
+                  />
+                  <InfoItem
+                    icon={IconCalendar}
+                    label="Bitiş"
+                    value={formatDate(project.endDate)}
+                    color="red"
+                  />
+                </Group>
 
-      <Group grow>
-        <PowerCard
-          title="DC Gücü"
-          value={project.dcValue}
-          unit="kWp"
-          icon={IconBolt}
-        />
-        <PowerCard
-          title="AC Gücü"
-          value={project.acValue}
-          unit="kWe"
-          icon={IconBolt}
-        />
-      </Group>
+                <Group grow>
+                  <PowerCard
+                    title="DC Gücü"
+                    value={project.dcValue}
+                    unit="kWp"
+                    icon={IconBolt}
+                  />
+                  <PowerCard
+                    title="AC Gücü"
+                    value={project.acValue}
+                    unit="kWe"
+                    icon={IconBolt}
+                  />
+                </Group>
 
-      <Group grow>
-        <InfoItem
-          icon={IconSolarPanel}
-          label="Panel"
-          value={`${project.panelCount} adet / ${project.panelPower} W`}
-          color="orange"
-        />
-        <InfoItem
-          icon={IconCpu}
-          label="İnverter"
-          value={`${project.inverterCount} adet / ${project.inverterPower} kW`}
-          color="purple"
-        />
-      </Group>
+                <Group grow>
+                  <InfoItem
+                    icon={IconSolarPanel}
+                    label="Panel"
+                    value={`${project.panelCount} adet / ${project.panelPower} W`}
+                    color="orange"
+                  />
+                  <InfoItem
+                    icon={IconCpu}
+                    label="İnverter"
+                    value={`${project.inverterCount} adet / ${project.inverterPower} kW`}
+                    color="purple"
+                  />
+                </Group>
 
-      {project.hasAdditionalStructure && (
-        <Card withBorder padding="sm" radius="md" bg="blue.0">
-          <Text size="xs" fw={600} c="blue" mb="xs">
-            EK YAPI BİLGİLERİ
-          </Text>
-          <Group grow>
-            <InfoItem
-              icon={IconSolarPanel}
-              label="Panel"
-              value={`${project.additionalPanelCount} / ${project.additionalPanelPower} W`}
-              color="blue"
-            />
-            <InfoItem
-              icon={IconCpu}
-              label="İnverter"
-              value={`${project.additionalInverterCount} adet`}
-              color="blue"
-            />
-          </Group>
-          <InfoItem
-            icon={IconBolt}
-            label="DC Gücü"
-            value={`${project.additionalDcValue || "-"} kW`}
-            color="blue"
-          />
-        </Card>
-      )}
+                {project.hasAdditionalStructure && (
+                  <Card withBorder padding="sm" radius="md" bg="blue.0">
+                    <Text size="xs" fw={600} c="blue" mb="xs">
+                      EK YAPI BİLGİLERİ
+                    </Text>
+                    <Group grow>
+                      <InfoItem
+                        icon={IconSolarPanel}
+                        label="Panel"
+                        value={`${project.additionalPanelCount} / ${project.additionalPanelPower} W`}
+                        color="blue"
+                      />
+                      <InfoItem
+                        icon={IconCpu}
+                        label="İnverter"
+                        value={`${project.additionalInverterCount} adet`}
+                        color="blue"
+                      />
+                    </Group>
+                    <InfoItem
+                      icon={IconBolt}
+                      label="DC Gücü"
+                      value={`${project.additionalDcValue || "-"} kW`}
+                      color="blue"
+                    />
+                  </Card>
+                )}
 
-      <Divider />
+                <Divider />
 
-      <Stack gap="xs">
-        <InfoItem
-          icon={IconMapPin}
-          label="Lokasyon"
-          value={`${getCityName(project.address?.cityId)} / ${getDistrictName(project.address?.districtId)}`}
-          color="teal"
-        />
-        <Group grow>
-          <InfoItem
-            icon={IconMapPin}
-            label="Ada / Parsel"
-            value={`${project.address?.ada || "-"} / ${project.address?.parsel || "-"}`}
-            color="gray"
-          />
-        </Group>
-      </Stack>
+                <Stack gap="xs">
+                  <InfoItem
+                    icon={IconMapPin}
+                    label="Lokasyon"
+                    value={`${getCityName(project.address?.cityId)} / ${getDistrictName(project.address?.districtId)}`}
+                    color="teal"
+                  />
+                  <Group grow>
+                    <InfoItem
+                      icon={IconMapPin}
+                      label="Ada / Parsel"
+                      value={`${project.address?.ada || "-"} / ${project.address?.parsel || "-"}`}
+                      color="gray"
+                    />
+                  </Group>
+                </Stack>
 
-      <Text size="xs" c="dimmed" ta="right" fs="italic">
-        Eklendi: {formatDate(project.createdAt)}
-      </Text>
-    </Stack>
-  </Card>
+                <Text size="xs" c="dimmed" ta="right" fs="italic">
+                  Eklendi: {formatDate(project.createdAt)}
+                </Text>
+              </Stack>
+            </Card>
           ))
         )}
       </div>
@@ -388,23 +388,23 @@ const Projects = () => {
         </div>
       )}
       <Text size="sm" c="dimmed">
-  Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
-</Text> 
+        Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
+      </Text>
       <ProjectCartSelectModal
-  opened={modalOpen}
-  onClose={() => setModalOpen(false)}
-  projectId={selectedProjectId}
-  onShowDetails={() => {
-    setModalOpen(false);         // önce ilk modal kapanmalı
-    setDetailsModalOpen(true);   // sonra detay modalı açılır
-  }}
-/>
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        projectId={selectedProjectId}
+        onShowDetails={() => {
+          setModalOpen(false);         // önce ilk modal kapanmalı
+          setDetailsModalOpen(true);   // sonra detay modalı açılır
+        }}
+      />
 
-<ProjectDetails
-  opened={detailsModalOpen}
-  onClose={() => setDetailsModalOpen(false)}
-  projectId={selectedProjectId}
-/>
+      <ProjectDetails
+        opened={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+        projectId={selectedProjectId}
+      />
     </div>
   );
 };

@@ -14,7 +14,8 @@ import {
   Paper,
   Divider
 } from "@mantine/core";
-import { IconSearch, IconFilter, IconX, IconHierarchy, IconCalendar, IconSettings } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconX, IconHierarchy, IconCalendar, IconSettings, IconPlus } from '@tabler/icons-react';
+import { useNavigate } from "react-router-dom";
 
 const Processes = () => {
   const [processes, setProcesses] = useState([]);
@@ -26,6 +27,7 @@ const Processes = () => {
     description: "",
     type: "" // "main" for ana süreç, "sub" for alt süreç, "" for all
   });
+  const navigate = useNavigate();
 
   const ITEMS_PER_PAGE = 9;
   const CARD_HEIGHT = 280;
@@ -46,7 +48,7 @@ const Processes = () => {
         const processesWithParentInfo = await Promise.all(
           processesRes.data.map(async (process) => {
             let parentProcessName = null;
-            
+
             if (process.ParentProcessId) {
               try {
                 const parentRes = await axios.get(
@@ -140,7 +142,7 @@ const Processes = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "Tarih belirtilmemiş";
-    
+
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR', {
       year: 'numeric',
@@ -171,7 +173,7 @@ const Processes = () => {
     const total = filteredProcesses.length;
     const mainProcesses = filteredProcesses.filter(p => p.isMainProcess).length;
     const subProcesses = filteredProcesses.filter(p => !p.isMainProcess).length;
-    
+
     return {
       total,
       mainProcesses,
@@ -337,12 +339,20 @@ const Processes = () => {
             </Grid.Col>
           </Grid>
         </Paper>
-
+        <div className="flex justify-end mb-5">
+          <button
+            onClick={() => navigate("/add-process")}
+            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+          >
+            <IconPlus size={20} />
+            Yeni Süreç Ekle
+          </button>
+        </div>
         {/* Process Cards Grid */}
         <Grid gutter="lg">
           {paginatedProcesses.map((process) => {
             const typeInfo = getProcessTypeInfo(process);
-            
+
             return (
               <Grid.Col key={process.id} span={{ base: 12, sm: 6, lg: 4 }}>
                 <Card
@@ -469,7 +479,7 @@ const Processes = () => {
         {filteredProcesses.length === 0 && !loading && (
           <Paper shadow="md" padding="xl" style={{ textAlign: 'center', marginTop: '32px' }}>
             <Text size="lg" color="#6c5ce7" weight={500}>
-              {processes.length === 0 
+              {processes.length === 0
                 ? "Henüz süreç bulunmamaktadır."
                 : "Arama kriterlerinize uygun süreç bulunamadı."
               }
