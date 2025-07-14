@@ -20,117 +20,146 @@ import {
 import { IconSearch, IconFilter, IconX, IconUser, IconCalendar } from '@tabler/icons-react';
 
 const MyTasks = () => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [myTasks, setMyTasks] = useState([]);
-  const [filteredTasks, setFilteredTasks] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchFilters, setSearchFilters] = useState({
-    projectName: "",
-    processName: "",
-    taskName: "",
-    status: "",
-    startDate: "",
-    endDate: ""
-  });
+const [currentUser, setCurrentUser] = useState(null);
+const [myTasks, setMyTasks] = useState([]);
+const [filteredTasks, setFilteredTasks] = useState([]);
+const [loading, setLoading] = useState(false);
+const [currentPage, setCurrentPage] = useState(1);
+const [searchFilters, setSearchFilters] = useState({
+  projectName: "",
+  processName: "",
+  taskName: "",
+  status: "",
+  startDate: "",
+  endDate: ""
+});
 
-  const ITEMS_PER_PAGE = 6;
-  const CARD_HEIGHT = 420;
+const ITEMS_PER_PAGE = 6;
+const CARD_HEIGHT = 450;
 
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId"); // Kullanıcı ID'sini localStorage'dan al
+// Login işleminden sonra localStorage'a kaydedilen token ve user bilgilerini al
+const token = localStorage.getItem("token");
+const userObj = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
+const userId = userObj?.id || null;
 
-  useEffect(() => {
-    const fetchMyTasks = async () => {
-      if (!userId || !token) return;
+useEffect(() => {
+  const fetchMyTasks = async () => {
+    // Eğer token veya userId yoksa işlem yapma
+    if (!token || !userId) {
+      console.error("Token veya kullanıcı ID bulunamadı. Lütfen giriş yapın.");
+      return;
+    }
 
-      setLoading(true);
-      try {
-        // 1. Kullanıcı bilgilerini al
-        const userRes = await axios.get(
-          `http://localhost:5000/api/users/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setCurrentUser(userRes.data);
+    setLoading(true);
 
-        // 2. Kullanıcıya atanmış tüm görevleri al
-        const myTasksRes = await axios.get(
-          `http://localhost:5000/api/projectTasks/by-user/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+    try {
+      // 1. Kullanıcı bilgilerini al
+      const userRes = await axios.get(
+        `http://localhost:5000/api/users/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCurrentUser(userRes.data);
 
-        // 3. Her görev için proje, süreç ve görev detaylarını al
-        const tasksWithDetails = await Promise.all(
-          myTasksRes.data.map(async (projectTask) => {
-            let projectName = "";
-            let processName = "";
-            let taskDetails = {};
+      // 2. Kullanıcıya atanmış tüm görevleri al
+      const myTasksRes = await axios.get(
+        `http://localhost:5000/api/projectTasks/user/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-            try {
-              // Proje adını al
-              const projectRes = await axios.get(
-                `http://localhost:5000/api/projects/${projectTask.projectId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              projectName = projectRes.data.name;
-            } catch (error) {
-              console.error("Proje bilgisi alınamadı:", error);
-            }
+      // API'den gelen veri dizisi mi kontrol et
+      const tasksData = myTasksRes.data?.data || [];
 
-            try {
-              // Süreç adını al
-              const processRes = await axios.get(
-                `http://localhost:5000/api/processes/${projectTask.processId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              processName = processRes.data.name;
-            } catch (error) {
-              console.error("Süreç bilgisi alınamadı:", error);
-            }
-
-            try {
-              // Görev detaylarını al
-              const taskRes = await axios.get(
-                `http://localhost:5000/api/tasks/${projectTask.taskId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              taskDetails = taskRes.data;
-            } catch (error) {
-              console.error("Görev bilgisi alınamadı:", error);
-              taskDetails = { title: "Bilinmeyen Görev", description: "" };
-            }
-
-            return {
-              ...projectTask,
-              projectName,
-              processName,
-              taskDetails
-            };
-          })
-        );
-
-        // Görevleri proje ve süreç adına göre sırala
-        const sortedTasks = tasksWithDetails.sort((a, b) => {
-          if (a.projectName !== b.projectName) {
-            return a.projectName.localeCompare(b.projectName);
-          }
-          if (a.processName !== b.processName) {
-            return a.processName.localeCompare(b.processName);
-          }
-          return (a.taskDetails.order || 0) - (b.taskDetails.order || 0);
-        });
-
-        setMyTasks(sortedTasks);
-        setFilteredTasks(sortedTasks);
-      } catch (error) {
-        console.error("Görevler alınamadı:", error);
-      } finally {
-        setLoading(false);
+      if (!Array.isArray(tasksData)) {
+        console.error("Beklenen dizi değil:", tasksData);
+        setMyTasks([]);
+        setFilteredTasks([]);
+        return;
       }
-    };
 
-    fetchMyTasks();
-  }, [userId, token]);
+      // 3. Her görev için proje, süreç ve görev detaylarını al
+      const tasksWithDetails = await Promise.all(
+        tasksData.map(async (projectTask) => {
+          let projectName = "";
+          let processName = "";
+          let taskDetails = {};
+
+          try {
+            const projectRes = await axios.get(
+              `http://localhost:5000/api/projects/${projectTask.projectId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            projectName = projectRes.data.name;
+          } catch (error) {
+            console.error("Proje bilgisi alınamadı:", error);
+            projectName = "Bilinmeyen Proje";
+          }
+
+          try {
+            const processRes = await axios.get(
+              `http://localhost:5000/api/processes/${projectTask.processId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            processName = processRes.data.name;
+          } catch (error) {
+            console.error("Süreç bilgisi alınamadı:", error);
+            processName = "Bilinmeyen Süreç";
+          }
+
+          try {
+            const taskRes = await axios.get(
+              `http://localhost:5000/api/tasks/${projectTask.taskId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            taskDetails = taskRes.data;
+          } catch (error) {
+            console.error("Görev bilgisi alınamadı:", error);
+            taskDetails = { title: "Bilinmeyen Görev", description: "" };
+          }
+
+          return {
+            ...projectTask,
+            projectName,
+            processName,
+            taskDetails,
+          };
+        })
+      );
+
+      // Görevleri isimlere göre sırala
+      const sortedTasks = tasksWithDetails.sort((a, b) => {
+        if (a.projectName !== b.projectName) {
+          return a.projectName.localeCompare(b.projectName);
+        }
+        if (a.processName !== b.processName) {
+          return a.processName.localeCompare(b.processName);
+        }
+        return (a.taskDetails.order || 0) - (b.taskDetails.order || 0);
+      });
+
+      setMyTasks(sortedTasks);
+      setFilteredTasks(sortedTasks);
+
+    } catch (error) {
+      if (error.response) {
+        console.error("Sunucu hatası:", error.response.status, error.response.data);
+        if (error.response.status === 401) {
+          console.error("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
+          // Token geçersizse localStorage'ı temizle
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
+      } else if (error.request) {
+        console.error("Sunucuya erişilemedi, istek gönderildi ama cevap yok", error.request);
+      } else {
+        console.error("Hata mesajı:", error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchMyTasks();
+}, [userId, token]);
 
   useEffect(() => {
     applyFilters();
@@ -199,6 +228,11 @@ const MyTasks = () => {
   };
 
   const handleUpdateTask = async (task) => {
+    if (!token) {
+      alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
+      return;
+    }
+
     try {
       await axios.put(
         `http://localhost:5000/api/projectTasks/${task.id}`,
@@ -213,11 +247,20 @@ const MyTasks = () => {
       alert("Görev başarıyla güncellendi");
     } catch (error) {
       console.error("Güncelleme hatası:", error);
-      alert("Görev güncellenirken bir hata oluştu");
+      if (error.response && error.response.status === 401) {
+        alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
+      } else {
+        alert("Görev güncellenirken bir hata oluştu");
+      }
     }
   };
 
   const handleFileUpload = async (taskId, file) => {
+    if (!token) {
+      alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -236,9 +279,14 @@ const MyTasks = () => {
       setMyTasks(prev =>
         prev.map(task => task.id === taskId ? { ...task, filePath: response.data.filePath } : task)
       );
+      alert("Dosya başarıyla yüklendi");
     } catch (error) {
       console.error("Dosya yükleme hatası:", error);
-      alert("Dosya yüklenirken bir hata oluştu");
+      if (error.response && error.response.status === 401) {
+        alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
+      } else {
+        alert("Dosya yüklenirken bir hata oluştu");
+      }
     }
   };
 
@@ -326,6 +374,31 @@ const MyTasks = () => {
   const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
   const paginatedTasks = filteredTasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
+  // Eğer token veya userId yoksa login mesajı göster
+  if (!token || !userId) {
+    return (
+      <div style={{
+        padding: '2rem',
+        textAlign: 'center',
+        minHeight: '400px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8f9fa'
+      }}>
+        <Stack align="center" spacing="md">
+          <IconUser size={64} color="#007bff" />
+          <Text size="xl" color="#007bff" weight={500}>
+            Lütfen Giriş Yapın
+          </Text>
+          <Text size="md" color="dimmed">
+            Görevlerinizi görüntülemek için sisteme giriş yapmanız gerekmektedir.
+          </Text>
+        </Stack>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div style={{
@@ -386,7 +459,7 @@ const MyTasks = () => {
                 Benim Görevlerim
               </Text>
               <Text size="sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                {currentUser?.name || 'Kullanıcı'} - Kişisel Görev Dashboard
+                {currentUser?.name || userObj?.name || 'Kullanıcı'} - Kişisel Görev Dashboard
               </Text>
               <Text size="xs" style={{ color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>
                 📊 Toplam {filteredTasks.length} görev
@@ -637,7 +710,7 @@ const MyTasks = () => {
                     size="sm"
                     onClick={() => handleUpdateTask(task)}
                     style={{
-                      background: 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)',
+                      background: 'linear-gradient(135deg,   #2d6a4f 0%, #1b4332 100%)',
                       border: 'none',
                       marginTop: 'auto'
                     }}

@@ -33,34 +33,26 @@ const Login = () => {
         password,
       });
 
-      if (response.data && response.data.token) {
-        const token = response.data.token;
-        localStorage.setItem('token', token);
-        localStorage.setItem('email', email); // email'i de sakla
+      const data = response.data;
 
-        // Tüm kullanıcıları çekip giriş yapan email ile eşleşeni bul
-        const usersResponse = await axios.get('http://localhost:5000/api/users', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      if (data?.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('email', email);
 
-        const allUsers = usersResponse.data;
-        const matchedUser = allUsers.find((user) => user.email === email);
-
-        if (matchedUser) {
-          localStorage.setItem(
-            'user',
-            JSON.stringify({
-              name: matchedUser.name || email,
-              role: matchedUser.role || 'Rol Yok',
-              avatar: matchedUser.avatar || '/avatar.png',
-            })
-          );
-        }
+        // Kullanıcı bilgilerini kaydet
+        localStorage.setItem(
+          'user',
+          JSON.stringify({
+            id: data.userId,
+            name: data.userName,
+            role: data.role,
+          })
+        );
 
         setErrorMessage('');
         navigate('/projects');
       } else {
-        setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+        setErrorMessage('Giriş başarısız. Yanıt geçersiz.');
       }
     } catch (error) {
       setErrorMessage('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');

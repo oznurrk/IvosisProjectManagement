@@ -17,13 +17,10 @@ import {
   IconProgressCheck,
 } from "@tabler/icons-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import axios from "axios";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: "Yükleniyor...", role: "..." });
-
- 
 
   const links = [
     { name: "Dashboard", url: "/dashboard", icon: <IconLayoutGrid size={20} /> },
@@ -56,34 +53,15 @@ const Sidebar = () => {
     { name: "Çıkış Yap", url: "/#", icon: <IconLogout size={20} />}
   ];
 
-
-
   useEffect(() => {
-    const email = localStorage.getItem("email");
-    const token = localStorage.getItem("token");
-
-    if (email && token) {
-      axios
-        .get("http://localhost:5000/api/users", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => {
-          const allUsers = res.data;
-          const currentUser = allUsers.find((user) => user.email === email);
-          if (currentUser) {
-            setUserInfo({
-              name: currentUser.name || currentUser.email,
-              role: currentUser.role || "Rol Yok",
-            });
-          } else {
-            setUserInfo({ name: email, role: "Rol Yok" });
-          }
-        })
-        .catch(() => {
-          setUserInfo({ name: email || "Kullanıcı", role: "Rol Yok" });
-        });
-    } else {
-      setUserInfo({ name: "Kullanıcı", role: "Rol Yok" });
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setUserInfo({ name: user.name || "Kullanıcı", role: user.role || "Rol Yok" });
+      } catch {
+        setUserInfo({ name: "Kullanıcı", role: "Rol Yok" });
+      }
     }
   }, []);
 
@@ -96,6 +74,11 @@ const Sidebar = () => {
       <div
         onDoubleClick={handleDoubleClick}
         className="min-h-screen bg-ivosis-950 w-14 flex flex-col justify-between items-center"
+        style={{
+          
+          background: "linear-gradiet(180deg, #24809c 0%, #112d3b 100%)",
+          color: "white"
+        }}
       >
         <div></div>
         <Tooltip label="Menüyü Aç" position="right">
@@ -118,8 +101,7 @@ const Sidebar = () => {
       onDoubleClick={handleDoubleClick}
       className="min-h-screen bg-ivosis-950 w-64 flex flex-col justify-between"
       style={{
-        marginBottom: "32px",
-        background: "linear-gradient(135deg,  #24809c 0%, #112d3b 100%)",
+        background: "linear-gradient(180deg,  #24809c 0%, #112d3b 100%)",
         color: "white",
       }}
     >

@@ -349,7 +349,7 @@ const ProjectTasks = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#effafc',
+      backgroundColor: 'white',
       padding: 0,             // padding kaldırıldı
       margin: 0
     }}>
