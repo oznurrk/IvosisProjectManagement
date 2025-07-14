@@ -39,13 +39,20 @@ namespace IvosisProjectManagement.API.Controllers
                 return Unauthorized("Geçersiz şifre.");
 
             var token = GenerateJwtToken(user);
-            return Ok(new { token });
+            return Ok(new
+            {
+                token,
+                userId = user.Id,
+                userName = user.Name,
+                role = user.Role
+            });
         }
 
         private string GenerateJwtToken(User user)
         {
             var claims = new[] {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("userId", user.Id.ToString()),
                 new Claim(ClaimTypes.Email,user.Email!),
                 new Claim(ClaimTypes.Role,user.Role!),
             };

@@ -77,6 +77,39 @@ namespace IvosisProjectManagement.API.Services
 
             return projectTasks;
         }
+       public async Task<List<ProjectTaskDto>> GetTasksByUserIdAsync(int userId)
+        {
+            var tasks = await _context.ProjectTasks
+                .Include(pt => pt.Project)
+                .Include(pt => pt.Task)
+                .Include(pt => pt.Process)
+                .Where(pt => pt.AssignedUserId == userId)
+                .OrderByDescending(pt => pt.CreatedAt)
+                .ToListAsync();
+
+            return tasks.Select(pt => new ProjectTaskDto
+            {
+                Id = pt.Id,
+                ProjectId = pt.ProjectId,
+                ProcessId = pt.ProcessId,
+                TaskId = pt.TaskId,
+                AssignedUserId = pt.AssignedUserId,
+                Status = pt.Status,
+                StartDate = pt.StartDate,
+                EndDate = pt.EndDate,
+                Description = pt.Description,
+                FilePath = pt.FilePath,
+                CreatedAt = pt.CreatedAt,
+                CreatedByUserId = pt.CreatedByUserId,
+                UpdatedAt = pt.UpdatedAt,
+                UpdatedByUserId = pt.UpdatedByUserId,
+                ProjectName = pt.Project?.Name,
+                TaskTitle = pt.Task?.Title,
+                ProcessName = pt.Process?.Name
+            }).ToList();
+        }
+                                                                        
+
 
         public async Task<ProjectTaskDto> CreateAsync(ProjectTaskCreateDto dto)
         {
