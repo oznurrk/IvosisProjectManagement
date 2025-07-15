@@ -1,22 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  Avatar,
-  Text,
-  Button,
-  Tooltip,
-} from "@mantine/core";
-import {
-  IconClipboardText,
-  IconLayoutGrid,
-  IconLoader,
-  IconSettings,
-  IconSunElectricity,
-  IconArrowBarLeft,
-  IconArrowBarRight,
-  IconLogout,
-  IconProgressCheck,
-  IconClipboardPlus,
-} from "@tabler/icons-react";
+import { Avatar,  Text,  Button,   Tooltip} from "@mantine/core";
+import {  IconClipboardText,  IconLayoutGrid,  IconLoader,  IconSettings,  IconSunElectricity,  IconArrowBarLeft,  IconArrowBarRight,  IconLogout,  IconProgressCheck,  IconClipboardPlus,  IconCalendarUser,} from "@tabler/icons-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
@@ -33,7 +17,7 @@ const Sidebar = () => {
         {
           name: "Görevlerim",
           url: "/my-tasks",
-          icon: <IconSunElectricity size={18} />,
+          icon: <IconCalendarUser size={20} />,
         },
       ],
     },
@@ -81,12 +65,10 @@ const Sidebar = () => {
         onDoubleClick={handleDoubleClick}
         className="min-h-screen bg-ivosis-950 w-14 flex flex-col justify-between items-center"
         style={{
-          
           background: "linear-gradiet(180deg, #24809c 0%, #112d3b 100%)",
           color: "white"
         }}
       >
-        <div></div>
         <Tooltip label="Menüyü Aç" position="right">
           <Button
             variant="subtle"
@@ -113,7 +95,6 @@ const Sidebar = () => {
     >
       <div className="flex flex-col gap-6 items-center py-4 overflow-y-auto">
         <img src="ivosislogo4.webp" alt="logo" className="w-48" />
-
         <div className="flex flex-col gap-1 items-center">
           <div className="p-1 bg-white rounded-full shadow-lg">
             <Avatar variant="filled" size="xl" alt="avatar" />
@@ -121,7 +102,6 @@ const Sidebar = () => {
           <span className="font-medium text-white">{userInfo.name}</span>
           <Text c="dimmed" size="xs">{userInfo.role}</Text>
         </div>
-
         <div className="flex flex-col gap-1 w-full px-4">
           {links.map((link) => (
             <div key={link.url} className="flex flex-col">
@@ -137,7 +117,6 @@ const Sidebar = () => {
                 {link.icon}
                 <span>{link.name}</span>
               </NavLink>
-
               {link.children && (
                 <div className="ml-6 mt-1 flex flex-col gap-1">
                   {link.children.map((child) => (
@@ -161,7 +140,6 @@ const Sidebar = () => {
           ))}
         </div>
       </div>
-
       <div className="flex justify-center py-3">
         <Button
           variant="light"
@@ -175,5 +153,4 @@ const Sidebar = () => {
     </div>
   );
 };
-
 export default Sidebar;

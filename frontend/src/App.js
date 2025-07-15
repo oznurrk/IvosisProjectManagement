@@ -19,7 +19,13 @@ const theme = createTheme({
     deg:132
   }
 });
-
+window.addEventListener('error', (event) => {
+  if (event.message.includes('ResizeObserver loop completed with undelivered notifications')) {
+    event.stopImmediatePropagation();
+    event.preventDefault();
+    console.warn('ResizeObserver loop hatası yoksayıldı');
+  }
+});
 function App() {
   return (
     <MantineProvider theme={theme}>

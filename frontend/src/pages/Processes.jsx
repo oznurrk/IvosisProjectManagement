@@ -1,21 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  Card,
-  Text,
-  Group,
-  Stack,
-  Badge,
-  Button,
-  TextInput,
-  Pagination,
-  Grid,
-  ActionIcon,
-  Paper,
-  Divider
-} from "@mantine/core";
-import { IconSearch, IconFilter, IconX, IconHierarchy, IconCalendar, IconSettings, IconPlus } from '@tabler/icons-react';
+import {  Card,  Text,  Group,  Stack,  Badge,  Button,  TextInput,  Pagination,  Grid,  ActionIcon,  Paper,  Divider} from "@mantine/core";
+import { IconSearch, IconFilter, IconX, IconHierarchy, IconCalendar, IconSettings, IconPlus, IconLoader } from '@tabler/icons-react';
 import { useNavigate } from "react-router-dom";
+import Header from "../components/Header/Header";
 
 const Processes = () => {
   const [processes, setProcesses] = useState([]);
@@ -31,7 +19,6 @@ const Processes = () => {
 
   const ITEMS_PER_PAGE = 9;
   const CARD_HEIGHT = 280;
-
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -43,7 +30,6 @@ const Processes = () => {
           `http://localhost:5000/api/processes`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         // Her süreç için parent process bilgisini ekle
         const processesWithParentInfo = await Promise.all(
           processesRes.data.map(async (process) => {
@@ -61,7 +47,6 @@ const Processes = () => {
                 parentProcessName = "Bilinmeyen Süreç";
               }
             }
-
             return {
               ...process,
               parentProcessName,
@@ -228,58 +213,31 @@ const Processes = () => {
       <div style={{ width: '100%' }}>
 
         {/* Header */}
-        <Card
-          shadow="lg"
-          style={{
-            marginBottom: '32px',
-            background: 'linear-gradient(135deg,  #24809c 0%, #112d3b 100%)',
-            color: 'white',
-            borderRadius: 0
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '24px'
-          }}>
-            <div>
-              <Text size="xl" weight={700} style={{ color: 'white', marginBottom: '8px' }}>
-                <IconHierarchy size={24} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                Süreç Yönetimi
-              </Text>
-              <Text size="sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                İş Süreçleri ve Hiyerarşi Dashboard
-              </Text>
-              <Text size="xs" style={{ color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>
-                📊 Toplam {processStats.total} süreç
-              </Text>
-            </div>
-            <div style={{ minWidth: '300px', flex: 1, maxWidth: '400px' }}>
-              <Text size="sm" weight={500} style={{ color: 'white', marginBottom: '12px' }}>
-                🎯 Süreç Dağılımı
-              </Text>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <Text size="xs" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                  Ana Süreç: {processStats.mainProcesses} ({processStats.mainPercentage}%)
-                </Text>
-                <Text size="xs" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                  Alt Süreç: {processStats.subProcesses} ({processStats.subPercentage}%)
-                </Text>
-              </div>
-              <div style={{ display: 'flex', gap: 2 }}>
-                {processStats.mainPercentage > 0 && (
-                  <div style={{ flex: processStats.mainPercentage, backgroundColor: '#00b894', height: '8px', borderRadius: '4px' }} />
-                )}
-                {processStats.subPercentage > 0 && (
-                  <div style={{ flex: processStats.subPercentage, backgroundColor: '#fd79a8', height: '8px', borderRadius: '4px' }} />
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-
+        <Header
+          title="Süreç Yönetimi"
+          subtitle="İş Süreçleri ve Hiyerarşi Dashboard"
+          icon={IconLoader}
+          stats={[
+            {
+              label: "Ana Süreç",
+              value: processStats.mainProcesses,
+              percentage: processStats.mainPercentage,
+              barColor: "#00b894",
+            },
+            {
+              label: "Alt Süreç",
+              value: processStats.mainProcesses,
+              percentage: processStats.mainPercentage,
+              barColor: "#fd79a8"
+            }
+          ]}
+        />
+              <div style={{
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          paddingTop: '0',
+          paddingBottom: '0'
+        }}>
         {/* Search and Filter Section */}
         <Paper shadow="md" padding="lg" style={{ marginBottom: '24px', backgroundColor: 'white', paddingLeft: 12, paddingRight: 12 }}>
           <Group position="apart" style={{ marginBottom: '16px' }}>
@@ -356,19 +314,11 @@ const Processes = () => {
             return (
               <Grid.Col key={process.id} span={{ base: 12, sm: 6, lg: 4 }}>
                 <Card
-                  withBorder
-                  padding="lg"
-                  style={{
-                    height: CARD_HEIGHT,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    backgroundColor: 'white',
-                    borderColor: '#e9ecef',
-                    borderWidth: '1px',
-                    transition: 'all 0.2s ease',
-                    cursor: 'pointer'
-                  }}
-                  className="process-card"
+                  className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
+              withBorder
+              shadow="sm"
+              radius="lg"
+              padding="lg"
                 >
                   <Stack spacing="md" style={{ height: '100%' }}>
                     {/* Process Header */}
@@ -461,7 +411,7 @@ const Processes = () => {
             );
           })}
         </Grid>
-
+</div>
         {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
