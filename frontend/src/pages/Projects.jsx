@@ -11,6 +11,11 @@ import {
   ActionIcon,
   Tooltip,
   Pagination,
+  TextInput,
+  Select,
+  Button,
+  Paper,
+  Grid,
 } from "@mantine/core";
 import {
   IconCalendar,
@@ -20,32 +25,38 @@ import {
   IconCpu,
   IconPlus,
   IconInfoCircle,
+  IconSearch,
+  IconFilter,
+  IconX,
 } from "@tabler/icons-react";
 import ProjectDetails from "./ProjectDetails";
-import ProjectFilters from "../components/Project/ProjectFilters";
-import { useNavigate } from "react-router-dom";
 import ProjectCartSelectModal from "../components/Project/ProjectCartSelectModal";
+import { useNavigate } from "react-router-dom";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [cities, setCities] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [projectTypes, setProjectTypes] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState("startDate");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [loading, setLoading] = useState(true);
+
+  // Yeni filtreleme state (Processes tarzı)
+  const [searchFilters, setSearchFilters] = useState({
+    name: "",
+    description: "",
+    status: "", // Active, Passive, Completed, Cancelled veya boş
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const navigate = useNavigate();
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false); // yeni modal kontrolü
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
+  const navigate = useNavigate();
   const pageSize = 8;
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
     const fetchAll = async () => {
       try {
         setLoading(true);
@@ -76,17 +87,54 @@ const Projects = () => {
     };
 
     fetchAll();
-  }, []);
+  }, [token]);
 
+  // Filtreleri uygula (Processes tarzı)
+  const filteredProjects = projects
+    .filter((project) => {
+      // İsim filtre
+      if (
+        searchFilters.name &&
+        !project.name.toLowerCase().includes(searchFilters.name.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Açıklama filtre
+      if (
+        searchFilters.description &&
+        !(project.description || "")
+          .toLowerCase()
+          .includes(searchFilters.description.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Durum filtre (status)
+      if (searchFilters.status && project.status !== searchFilters.status) {
+        return false;
+      }
+
+      return true;
+    });
+
+  // Pagination için
+  const totalPages = Math.ceil(filteredProjects.length / pageSize);
+  const pagedProjects = filteredProjects.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Yardımcı fonksiyonlar
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
     return date.toLocaleDateString("tr-TR");
   };
-
   const getCityName = (id) => cities.find((c) => c.id === id)?.name || `Şehir ID: ${id}`;
   const getDistrictName = (id) => districts.find((d) => d.id === id)?.name || `İlçe ID: ${id}`;
-  const getProjectTypeName = (id) => projectTypes.find((p) => p.id === id)?.name || `Tür ID: ${id}`;
+  const getProjectTypeName = (id) =>
+    projectTypes.find((p) => p.id === id)?.name || `Tür ID: ${id}`;
 
   const priorityConfig = {
     Low: { color: "blue", label: "Düşük" },
@@ -102,52 +150,28 @@ const Projects = () => {
     Cancelled: { color: "red", label: "İptal Edildi" },
   };
 
-  const priorityOrderMap = {
-    Low: 1,
-    Medium: 2,
-    High: 3,
-    Critical: 4,
+  const handleFilterChange = (key, value) => {
+    setSearchFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+    setCurrentPage(1); // filtre değişince sayfa 1'e dönsün
   };
 
-
-
-  const filteredProjects = projects
-    .filter((project) => {
-      const valuesToSearch = [
-        project.name,
-        project.description,
-        project.startDate,
-        project.endDate,
-        project.priority,
-        project.status,
-      ];
-      return valuesToSearch.some((field) =>
-        field?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    })
-    .sort((a, b) => {
-      let aVal, bVal;
-      if (sortField === "priority") {
-        aVal = priorityOrderMap[a.priority] || 0;
-        bVal = priorityOrderMap[b.priority] || 0;
-      } else {
-        aVal = new Date(a[sortField]);
-        bVal = new Date(b[sortField]);
-      }
-      return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+  const clearFilters = () => {
+    setSearchFilters({
+      name: "",
+      description: "",
+      status: "",
     });
-
-  const totalPages = Math.ceil(filteredProjects.length / pageSize);
-  const pagedProjects = filteredProjects.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  };
 
   const handleCardClick = (projectId) => {
     setSelectedProjectId(projectId);
     setModalOpen(true);
   };
 
+  // UI için küçük yardımcı bileşenler (kısmen senin kodundan)
   const InfoItem = ({ icon: Icon, label, value, color = "gray" }) => (
     <Group gap="xs" wrap="wrap">
       <Icon size={16} color={color} />
@@ -193,33 +217,88 @@ const Projects = () => {
 
   return (
     <div className="p-4 sm:p-6">
-      <ProjectFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        sortField={sortField}
-        onSortFieldChange={setSortField}
-        sortOrder={sortOrder}
-        onSortOrderChange={setSortOrder}
-      />
+      {/* Filtreleme alanı */}
+      <Paper
+        shadow="md"
+        padding="lg"
+        mb="md"
+        style={{ backgroundColor: "white" }}
+      >
+        <Group position="apart" mb="sm">
+          <Group spacing="xs">
+            <IconFilter size={20} color="#24809c" />
+            <Text size="md" weight={500} style={{ color: "#24809c" }}>
+              Filtreleme ve Arama
+            </Text>
+          </Group>
+          <ActionIcon
+            variant="light"
+            color="#24809c"
+            onClick={clearFilters}
+            title="Filtreleri Temizle"
+          >
+            <IconX size={16} />
+          </ActionIcon>
+        </Group>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 my-6">
-        <div>
+        <Grid gutter="md">
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <TextInput
+              icon={<IconSearch size={16} />}
+              placeholder="Proje adına göre ara..."
+              value={searchFilters.name}
+              onChange={(e) => handleFilterChange("name", e.target.value)}
+            />
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <TextInput
+              icon={<IconSearch size={16} />}
+              placeholder="Açıklamada ara..."
+              value={searchFilters.description}
+              onChange={(e) => handleFilterChange("description", e.target.value)}
+            />
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Select
+              placeholder="Duruma göre filtrele"
+              data={[
+                { value: "", label: "Tüm Durumlar" },
+                { value: "Active", label: "Planlama" },
+                { value: "Passive", label: "Devam Ediyor" },
+                { value: "Completed", label: "Tamamlandı" },
+                { value: "Cancelled", label: "İptal Edildi" },
+              ]}
+              value={searchFilters.status}
+              onChange={(value) => handleFilterChange("status", value || "")}
+              clearable
+            />
+          </Grid.Col>
+        </Grid>
+      </Paper>
+
+      {/* Başlık ve yeni proje butonu */}
+      <Group position="apart" align="center" mb="md">
+        <Stack spacing={0}>
           <Text size="xl" fw={700} c="dark">
             Projeler
           </Text>
           <Text size="sm" c="dimmed">
             {filteredProjects.length} proje bulundu
           </Text>
-        </div>
-        <button
+        </Stack>
+        <Button
+          leftIcon={<IconPlus size={20} />}
+          variant="gradient"
+          gradient={{ from: "violet", to: "blue" }}
           onClick={() => navigate("/projectCreated")}
-          className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
         >
-          <IconPlus size={20} />
           Yeni Proje Ekle
-        </button>
-      </div>
+        </Button>
+      </Group>
 
+      {/* Proje kartları */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {pagedProjects.length === 0 ? (
           <div className="col-span-full text-center py-12">
@@ -238,6 +317,7 @@ const Projects = () => {
               radius="lg"
               padding="lg"
             >
+              {/* ... senin kart içeriğin aynen buraya */}
               <Card.Section withBorder inheritPadding py="sm">
                 <Group justify="space-between" align="flex-start">
                   <Stack gap="xs" style={{ flex: 1 }}>
@@ -296,18 +376,8 @@ const Projects = () => {
                 </Group>
 
                 <Group grow>
-                  <PowerCard
-                    title="DC Gücü"
-                    value={project.dcValue}
-                    unit="kWp"
-                    icon={IconBolt}
-                  />
-                  <PowerCard
-                    title="AC Gücü"
-                    value={project.acValue}
-                    unit="kWe"
-                    icon={IconBolt}
-                  />
+                  <PowerCard title="DC Gücü" value={project.dcValue} unit="kWp" icon={IconBolt} />
+                  <PowerCard title="AC Gücü" value={project.acValue} unit="kWe" icon={IconBolt} />
                 </Group>
 
                 <Group grow>
@@ -337,12 +407,7 @@ const Projects = () => {
                         value={`${project.additionalPanelCount} / ${project.additionalPanelPower} W`}
                         color="blue"
                       />
-                      <InfoItem
-                        icon={IconCpu}
-                        label="İnverter"
-                        value={`${project.additionalInverterCount} adet`}
-                        color="blue"
-                      />
+                      <InfoItem icon={IconCpu} label="İnverter" value={`${project.additionalInverterCount} adet`} color="blue" />
                     </Group>
                     <InfoItem
                       icon={IconBolt}
@@ -381,25 +446,27 @@ const Projects = () => {
         )}
       </div>
 
-      {/* Sayfalama */}
-      {totalPages > 0 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
         <div className="flex justify-center mt-10">
           <Pagination total={totalPages} page={currentPage} onChange={setCurrentPage} />
         </div>
       )}
-      <Text size="sm" c="dimmed">
+
+      <Text size="sm" c="dimmed" mt="md">
         Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
       </Text>
+
+      {/* Modal'lar */}
       <ProjectCartSelectModal
         opened={modalOpen}
         onClose={() => setModalOpen(false)}
         projectId={selectedProjectId}
         onShowDetails={() => {
-          setModalOpen(false);         // önce ilk modal kapanmalı
-          setDetailsModalOpen(true);   // sonra detay modalı açılır
+          setModalOpen(false);
+          setDetailsModalOpen(true);
         }}
       />
-
       <ProjectDetails
         opened={detailsModalOpen}
         onClose={() => setDetailsModalOpen(false)}
@@ -408,6 +475,5 @@ const Projects = () => {
     </div>
   );
 };
-
 
 export default Projects;

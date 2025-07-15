@@ -179,17 +179,7 @@ const ProcessAdd = () => {
                 error={errors.parentProcessId}
               />
             </div>
-            <div>
-              <label className="text-gray-800 font-semibold block mb-2">
-                Oluşturan Kullanıcı
-              </label>
-              <TextInput
-                value={currentUser?.name || "Yükleniyor..."}
-                readOnly
-                className="opacity-60"
-                disabled
-              />
-            </div>
+            
           </div>
         </div>
         <div className="flex justify-end mt-8 pt-6 border-t">
