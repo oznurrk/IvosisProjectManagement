@@ -15,6 +15,7 @@ import {
   IconArrowBarRight,
   IconLogout,
   IconProgressCheck,
+  IconClipboardPlus,
 } from "@tabler/icons-react";
 import { NavLink, useNavigate } from "react-router-dom";
 
@@ -45,6 +46,11 @@ const Sidebar = () => {
           name: "Süreç Ekle",
           url: "/add-process",
           icon: <IconProgressCheck size={20} />
+        },
+        {
+          name: "Görev Ekle",
+          url: "/add-task",
+          icon: <IconClipboardPlus size={20} />
         }
       ]
     },
