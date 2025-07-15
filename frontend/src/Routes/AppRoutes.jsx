@@ -10,6 +10,7 @@ import Login from "../pages/Login";
 import TaskChat from "../components/TaskChat/TaskChat";
 import Processes from "../pages/Processes";
 import ProcessAdd from "../components/Process/ProcessAdd";
+import TaskAdd from "../components/Tasks/TaskAdd";
 
 
 const AppRoutes = () => {
@@ -28,6 +29,7 @@ const AppRoutes = () => {
                     <Route path="/taskChat" element={<TaskChat />} />
                     <Route path="/processes" element={<Processes />} />
                     <Route path="/add-process" element={<ProcessAdd />} />
+                    <Route path="/add-task" element={<TaskAdd />} />
                 </Route>
             </Routes>
         </BrowserRouter>

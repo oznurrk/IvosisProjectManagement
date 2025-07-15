@@ -44,29 +44,20 @@ const userId = userObj?.id || null;
 
 useEffect(() => {
   const fetchMyTasks = async () => {
-    // Eğer token veya userId yoksa işlem yapma
-    if (!token || !userId) {
-      console.error("Token veya kullanıcı ID bulunamadı. Lütfen giriş yapın.");
+    if (!token) {
+      console.error("Token bulunamadı. Lütfen giriş yapın.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. Kullanıcı bilgilerini al
-      const userRes = await axios.get(
-        `http://localhost:5000/api/users/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setCurrentUser(userRes.data);
-
-      // 2. Kullanıcıya atanmış tüm görevleri al
+      // Kullanıcı bilgisi almaya gerek yok, token üzerinden gelen veri yeterli
       const myTasksRes = await axios.get(
-        `http://localhost:5000/api/projectTasks/user/${userId}`,
+        "http://localhost:5000/api/ProjectTasks/my-tasks",
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // API'den gelen veri dizisi mi kontrol et
       const tasksData = myTasksRes.data?.data || [];
 
       if (!Array.isArray(tasksData)) {
@@ -76,7 +67,7 @@ useEffect(() => {
         return;
       }
 
-      // 3. Her görev için proje, süreç ve görev detaylarını al
+      // Her görev için proje, süreç ve görev detaylarını al
       const tasksWithDetails = await Promise.all(
         tasksData.map(async (projectTask) => {
           let projectName = "";
@@ -125,7 +116,7 @@ useEffect(() => {
         })
       );
 
-      // Görevleri isimlere göre sırala
+      // Görevleri sıralama
       const sortedTasks = tasksWithDetails.sort((a, b) => {
         if (a.projectName !== b.projectName) {
           return a.projectName.localeCompare(b.projectName);
@@ -140,18 +131,11 @@ useEffect(() => {
       setFilteredTasks(sortedTasks);
 
     } catch (error) {
-      if (error.response) {
-        console.error("Sunucu hatası:", error.response.status, error.response.data);
-        if (error.response.status === 401) {
-          console.error("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
-          // Token geçersizse localStorage'ı temizle
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-        }
-      } else if (error.request) {
-        console.error("Sunucuya erişilemedi, istek gönderildi ama cevap yok", error.request);
-      } else {
-        console.error("Hata mesajı:", error.message);
+      console.error("Görevler alınamadı:", error);
+      if (error.response && error.response.status === 401) {
+        alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
       }
     } finally {
       setLoading(false);
@@ -159,7 +143,8 @@ useEffect(() => {
   };
 
   fetchMyTasks();
-}, [userId, token]);
+}, [token]);
+
 
   useEffect(() => {
     applyFilters();
