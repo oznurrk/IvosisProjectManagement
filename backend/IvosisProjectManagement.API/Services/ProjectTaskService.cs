@@ -179,6 +179,7 @@ namespace IvosisProjectManagement.API.Services
             pt.StartDate = dto.StartDate;
             pt.EndDate = dto.EndDate;
             pt.Description = dto.Description;
+            pt.AssignedUserId = dto.AssignedUserId;
             pt.FilePath = dto.FilePath;
             pt.UpdatedAt = DateTime.Now;
             pt.UpdatedByUserId = dto.UpdatedByUserId;
