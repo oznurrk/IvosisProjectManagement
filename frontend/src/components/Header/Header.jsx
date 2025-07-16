@@ -15,23 +15,16 @@ const Header = ({
   return (
     <Card
       shadow="lg"
+      className="mb-8 rounded-none"
       style={{
-        marginBottom: '32px',
         background: backgroundGradient,
         color: titleColor,
-        borderRadius: 0,
         ...style
       }}
     >
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '24px'
-      }}>
+      <div className="flex justify-between items-center flex-wrap gap-6">
         <div>
-          <Text size="xl" weight={700} style={{ color: titleColor, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Text size="xl" weight={700} className="mb-2 flex items-center gap-2" style={{ color: titleColor }}>
             {Icon && <Icon size={20} />}
             {title}
           </Text>
@@ -48,27 +41,26 @@ const Header = ({
         </div>
 
         {stats.length > 0 && (
-          <div style={{ minWidth: '300px', flex: 1, maxWidth: '400px' }}>
+          <div className="min-w-[300px] flex-1 max-w-[400px]">
             <Text size="sm" weight={500} style={{ color: titleColor, marginBottom: '12px' }}>
               🎯 Dağılım
             </Text>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div className="flex justify-between mb-2">
               {stats.map((stat, i) => (
                 <Text key={i} size="xs" style={{ color: statLabelColor }}>
                   {stat.label}: {stat.value} {stat.percentage !== undefined ? `(${stat.percentage}%)` : ""}
                 </Text>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 2 }}>
+            <div className="flex gap-px">
               {stats.map((stat, i) =>
                 stat.percentage > 0 ? (
                   <div
                     key={i}
+                    className="h-2 rounded"
                     style={{
                       flex: stat.percentage,
-                      backgroundColor: stat.barColor || "gray",
-                      height: '8px',
-                      borderRadius: '4px'
+                      backgroundColor: stat.barColor || "gray"
                     }}
                   />
                 ) : null

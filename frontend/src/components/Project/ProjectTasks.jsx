@@ -320,24 +320,13 @@ const ProjectTasks = () => {
 
   if (loading) {
     return (
-      <div style={{
-        padding: '2rem',
-        textAlign: 'center',
-        minHeight: '400px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#effafc'
-      }}>
+      <div className="p-8 text-center min-h-[400px] flex items-center justify-center bg-[#effafc]">
         <Stack align="center" spacing="md">
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid #d6f3f7',
-            borderTop: '3px solid #279ab3',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
+          <div className="w-10 h-10 rounded-full animate-spin"
+            style={{
+              border: '3px solid #d6f3f7',
+              borderTop: '3px solid #279ab3',
+            }} />
           <Text size="lg" color="dimmed">Yükleniyor...</Text>
         </Stack>
       </div>
@@ -347,41 +336,26 @@ const ProjectTasks = () => {
   const projectStats = calculateProjectStats();
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: 'white',
-      padding: 0,             // padding kaldırıldı
-      margin: 0
-    }}>
-      <div style={{ width: '100%' }}>  {/* maxWidth kaldırıldı */}
+    <div className="min-h-screen bg-white p-0 m-0">
+      <div className="w-full">  {/* maxWidth kaldırıldı */}
 
         {/* Header */}
         <Card
           shadow="lg"
-          style={{
-            marginBottom: '32px',
-            background: 'linear-gradient(135deg,  #24809c 0%, #112d3b 100%)',
-            color: 'white',
-            borderRadius: 0
-          }}
+          className="mb-8 text-white rounded-none"
+          style={{ background: 'linear-gradient(135deg,  #24809c 0%, #112d3b 100%)' }}
         >
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '24px'
-          }}>
+          <div className="flex justify-between items-center flex-wrap gap-6">
             <div>
-              <Text size="xl" weight={700} style={{ color: 'white', marginBottom: '8px' }}>
+              <Text size="xl" weight={700} className="text-white mb-2">
                 📊 {projectName}
               </Text>
-              <Text size="sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
+              <Text size="sm" className="text-[rgba(255,255,255,0.8)]">
                 Proje Görev Yönetimi Dashboard
               </Text>
             </div>
-            <div style={{ minWidth: '300px', flex: 1, maxWidth: '400px' }}>
-              <Text size="sm" weight={500} style={{ color: 'white', marginBottom: '12px' }}>
+            <div className="min-w-[300px] flex-1 max-w-[400px]">
+              <Text size="sm" weight={500} className="text-white mb-3">
                 🎯 Genel Proje İlerlemesi
               </Text>
               <StatusBar stats={projectStats} size="lg" />
@@ -390,11 +364,11 @@ const ProjectTasks = () => {
         </Card>
 
         {/* Search and Filter Section */}
-        <Paper shadow="md" padding="lg" style={{ marginBottom: '24px', backgroundColor: 'white', paddingLeft: 12, paddingRight: 12 }}>
-          <Group position="apart" style={{ marginBottom: '16px' }}>
+        <Paper shadow="md" padding="lg" className="mb-6 bg-white pl-3 pr-3">
+          <Group position="apart" className="mb-4">
             <Group spacing="xs">
               <IconFilter size={20} color="#279ab3" />
-              <Text size="md" weight={500} style={{ color: '#279ab3' }}>
+              <Text size="md" weight={500} className="text-[#279ab3]">
                 Filtreleme ve Arama
               </Text>
             </Group>
@@ -474,24 +448,20 @@ const ProjectTasks = () => {
               <Card
                 withBorder
                 padding="md"
+                className="flex flex-col bg-white border transition-all duration-200 ease-linear"
                 style={{
                   height: CARD_HEIGHT,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: 'white',
                   borderColor: '#b3e6ee',
-                  borderWidth: '1px',
-                  transition: 'all 0.2s ease'
                 }}
               >
                 <Stack spacing="sm" style={{ height: '100%' }}>
                   {/* Task Header */}
                   <Group position="apart" align="flex-start">
-                    <Text size="sm" weight={500} style={{
-                      color: '#112d3b',
-                      lineHeight: '1.4',
-                      flex: 1
-                    }}>
+                    <Text size="sm" weight={500} className="flex-1"
+                      style={{
+                        color: '#112d3b',
+                        lineHeight: 1.4,
+                      }}>
                       {task.task?.title}
                     </Text>
                     <Badge
@@ -518,41 +488,35 @@ const ProjectTasks = () => {
                   </Paper>
 
                   {/* Dates */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Text size="xs" color="#279ab3" style={{ marginBottom: '4px' }}>
+                      <Text size="xs" color="#279ab3" className="mb-1">
                         📅 Başlangıç
                       </Text>
                       <input
                         type="date"
                         value={task.startDate?.split("T")[0] || ""}
                         readOnly
+                        className="w-full rounded text-xs py-[6px] px-2"
                         style={{
-                          width: '100%',
-                          padding: '6px 8px',
                           border: '1px solid #b3e6ee',
-                          borderRadius: '4px',
-                          fontSize: '12px',
                           backgroundColor: '#f8f9fa',
-                          color: '#279ab3'
+                          color: '#279ab3',
                         }}
                       />
                     </div>
                     <div>
-                      <Text size="xs" color="#279ab3" style={{ marginBottom: '4px' }}>
+                      <Text size="xs" color="#279ab3" className="mb-1">
                         🎯 Bitiş
                       </Text>
                       <input
                         type="date"
                         value={task.endDate?.split("T")[0] || ""}
                         onChange={(e) => updateTaskInState(task.id, { endDate: e.target.value })}
+                        className="w-full rounded text-xs py-[6px] px-2"
                         style={{
-                          width: '100%',
-                          padding: '6px 8px',
                           border: '1px solid #b3e6ee',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          color: '#279ab3'
+                          color: '#279ab3',
                         }}
                       />
                     </div>
@@ -587,21 +551,17 @@ const ProjectTasks = () => {
                   />
 
                   {/* File Upload */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14px', flexShrink: 0, color: '#279ab3' }}>📎</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm flex-shrink-0"
+                      style={{ color: '#279ab3' }}>📎</span>
                     <input
                       type="file"
                       onChange={(e) => {
                         const files = Array.from(e.target.files);
                         files.forEach((file) => handleFileUpload(task.id, file));
                       }}
-                      style={{
-                        flex: 1,
-                        fontSize: '12px',
-                        padding: '4px',
-                        border: '1px solid #b3e6ee',
-                        borderRadius: '4px'
-                      }}
+                      className="flex-1 text-xs p-1 rounded"
+                      style={{ border: '1px solid #b3e6ee' }}
                     />
                   </div>
 
@@ -609,11 +569,8 @@ const ProjectTasks = () => {
                   <Button
                     size="sm"
                     onClick={() => handleComplete(task)}
-                    style={{
-                      background: 'linear-gradient(135deg,   #2d6a4f 0%, #1b4332 100%)',
-                      border: 'none',
-                      marginTop: 'auto'
-                    }}
+                    className="border-0 mt-auto"
+                    style={{ background: 'linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)' }}
                   >
                     Görevi Güncelle
                   </Button>
@@ -625,7 +582,7 @@ const ProjectTasks = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
+          <div className="flex justify-center mt-8">
             <Pagination
               value={currentPage}
               onChange={setCurrentPage}
@@ -638,7 +595,7 @@ const ProjectTasks = () => {
 
         {/* No Results */}
         {filteredProcesses.length === 0 && (
-          <Paper shadow="md" padding="xl" style={{ textAlign: 'center', marginTop: '32px' }}>
+          <Paper shadow="md" padding="xl" className="text-center mt-8">
             <Text size="lg" color="#279ab3" weight={500}>
               Arama kriterlerinize uygun görev bulunamadı.
             </Text>
@@ -646,7 +603,7 @@ const ProjectTasks = () => {
               variant="light"
               color="#279ab3"
               onClick={clearFilters}
-              style={{ marginTop: '16px' }}
+              className="mt-4"
             >
               Filtreleri Temizle
             </Button>

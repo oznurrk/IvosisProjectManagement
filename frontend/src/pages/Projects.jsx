@@ -1,34 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  Text,
-  Badge,
-  Card,
-  Group,
-  Stack,
-  Divider,
-  LoadingOverlay,
-  ActionIcon,
-  Tooltip,
-  Pagination,
-  TextInput,
-  Select,
-  Button,
-  Paper,
-  Grid,
-} from "@mantine/core";
-import {
-  IconCalendar,
-  IconMapPin,
-  IconBolt,
-  IconSolarPanel,
-  IconCpu,
-  IconPlus,
-  IconInfoCircle,
-  IconSearch,
-  IconFilter,
-  IconX,
-} from "@tabler/icons-react";
+import {  Text,  Badge,  Card,  Group,  Stack,  Divider,  LoadingOverlay,  ActionIcon,  Tooltip,  Pagination,  TextInput,  Select,  Button,  Paper,  Grid,} from "@mantine/core";
+import {  IconCalendar,  IconMapPin,  IconBolt,  IconSolarPanel,  IconCpu,  IconPlus,  IconInfoCircle,  IconSearch,  IconFilter,  IconX,} from "@tabler/icons-react";
 import ProjectDetails from "./ProjectDetails";
 import ProjectCartSelectModal from "../components/Project/ProjectCartSelectModal";
 import { useNavigate } from "react-router-dom";
@@ -222,12 +195,12 @@ const Projects = () => {
         shadow="md"
         padding="lg"
         mb="md"
-        style={{ backgroundColor: "white" }}
+        className="bg-white"
       >
         <Group position="apart" mb="sm">
           <Group spacing="xs">
             <IconFilter size={20} color="#24809c" />
-            <Text size="md" weight={500} style={{ color: "#24809c" }}>
+            <Text size="md" weight={500} className="text-[#24809c]">
               Filtreleme ve Arama
             </Text>
           </Group>
@@ -320,7 +293,7 @@ const Projects = () => {
               {/* ... senin kart içeriğin aynen buraya */}
               <Card.Section withBorder inheritPadding py="sm">
                 <Group justify="space-between" align="flex-start">
-                  <Stack gap="xs" style={{ flex: 1 }}>
+                  <Stack gap="xs" className="flex-1">
                     <Text size="lg" fw={700} c="dark" lineClamp={1}>
                       {project.name}
                     </Text>

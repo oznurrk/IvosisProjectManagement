@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import {  Card,  Text,  Group,  Stack,  Badge,  Button,  TextInput,  Pagination,  Grid,  ActionIcon,  Paper,  Divider} from "@mantine/core";
+import { Card, Text, Group, Stack, Badge, Button, TextInput, Pagination, Grid, ActionIcon, Paper, Divider } from "@mantine/core";
 import { IconSearch, IconFilter, IconX, IconHierarchy, IconCalendar, IconSettings, IconPlus, IconLoader } from '@tabler/icons-react';
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header/Header";
@@ -204,13 +204,8 @@ const Processes = () => {
   const processStats = calculateProcessStats();
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f8f9fa',
-      padding: 0,
-      margin: 0
-    }}>
-      <div style={{ width: '100%' }}>
+    <div className="min-h-screen bg-[#f8f9fa] p-0 m-0">
+      <div className="w-full">
 
         {/* Header */}
         <Header
@@ -232,189 +227,171 @@ const Processes = () => {
             }
           ]}
         />
-              <div style={{
-          paddingLeft: '16px',
-          paddingRight: '16px',
-          paddingTop: '0',
-          paddingBottom: '0'
-        }}>
-        {/* Search and Filter Section */}
-        <Paper shadow="md" padding="lg" style={{ marginBottom: '24px', backgroundColor: 'white', paddingLeft: 12, paddingRight: 12 }}>
-          <Group position="apart" style={{ marginBottom: '16px' }}>
-            <Group spacing="xs">
-              <IconFilter size={20} color="#24809c" />
-              <Text size="md" weight={500} style={{ color: '#24809c' }}>
-                Filtreleme ve Arama
-              </Text>
-            </Group>
-            <ActionIcon
-              variant="light"
-              color="#24809c"
-              onClick={clearFilters}
-              title="Filtreleri Temizle"
-            >
-              <IconX size={16} />
-            </ActionIcon>
-          </Group>
-
-          <Grid gutter="md">
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <TextInput
-                leftSection={<IconSearch size={16} />}
-                placeholder="Süreç adına göre ara..."
-                value={searchFilters.name}
-                onChange={(e) => handleFilterChange('name', e.target.value)}
-                style={{ '& .mantine-TextInput-input': { borderColor: '#ddd6fe' } }}
-              />
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <TextInput
-                leftSection={<IconSearch size={16} />}
-                placeholder="Açıklamada ara..."
-                value={searchFilters.description}
-                onChange={(e) => handleFilterChange('description', e.target.value)}
-                style={{ '& .mantine-TextInput-input': { borderColor: '#ddd6fe' } }}
-              />
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <select
-                value={searchFilters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #ddd6fe',
-                  borderRadius: '4px',
-                  fontSize: '14px'
-                }}
+        <div className="px-4 py-0">
+          {/* Search and Filter Section */}
+          <Paper shadow="md" padding="lg" className="mb-6 bg-white px-3">
+            <Group position="apart" className="mb-4">
+              <Group spacing="xs">
+                <IconFilter size={20} color="#24809c" />
+                <Text size="md" weight={500} className="text-[#24809c]">
+                  Filtreleme ve Arama
+                </Text>
+              </Group>
+              <ActionIcon
+                variant="light"
+                color="#24809c"
+                onClick={clearFilters}
+                title="Filtreleri Temizle"
               >
-                <option value="">Tüm Süreçler</option>
-                <option value="main">Ana Süreçler</option>
-                <option value="sub">Alt Süreçler</option>
-              </select>
-            </Grid.Col>
-          </Grid>
-        </Paper>
-        <div className="flex justify-end mb-5">
-          <button
-            onClick={() => navigate("/add-process")}
-            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
-          >
-            <IconPlus size={20} />
-            Yeni Süreç Ekle
-          </button>
-        </div>
-        {/* Process Cards Grid */}
-        <Grid gutter="lg">
-          {paginatedProcesses.map((process) => {
-            const typeInfo = getProcessTypeInfo(process);
+                <IconX size={16} />
+              </ActionIcon>
+            </Group>
 
-            return (
-              <Grid.Col key={process.id} span={{ base: 12, sm: 6, lg: 4 }}>
-                <Card
-                  className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
-              withBorder
-              shadow="sm"
-              radius="lg"
-              padding="lg"
-                >
-                  <Stack spacing="md" style={{ height: '100%' }}>
-                    {/* Process Header */}
-                    <Group position="apart" align="flex-start">
-                      <div style={{ flex: 1 }}>
-                        <Text size="md" weight={600} style={{
-                          color: '#2d3748',
-                          lineHeight: '1.4',
-                          marginBottom: '8px'
-                        }}>
-                          {process.name}
-                        </Text>
-                        <Badge
-                          style={{
-                            backgroundColor: typeInfo.bgColor,
-                            color: typeInfo.color,
-                            border: `1px solid ${typeInfo.color}`
-                          }}
-                          variant="light"
-                          size="sm"
-                        >
-                          {typeInfo.icon} {typeInfo.label}
-                        </Badge>
-                      </div>
-                    </Group>
-
-                    {/* Parent Process Info */}
-                    {!process.isMainProcess && (
-                      <Paper padding="xs" style={{ backgroundColor: '#f8f9fa', borderLeft: '3px solid #7b1fa2' }}>
-                        <Text size="xs" color="#7b1fa2" weight={500}>
-                          🔗 Bağlı Süreç: {process.parentProcessName}
-                        </Text>
-                      </Paper>
-                    )}
-
-                    {/* Description */}
-                    <div style={{ flex: 1 }}>
-                      <Text size="xs" color="#24809c" weight={500} style={{ marginBottom: '6px' }}>
-                        📝 Açıklama:
-                      </Text>
-                      <Text size="sm" color="#4a5568" style={{
-                        lineHeight: '1.5',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        minHeight: '60px'
-                      }}>
-                        {process.description || 'Açıklama bulunmamaktadır.'}
-                      </Text>
-                    </div>
-
-                    <Divider />
-
-                    {/* Creation Date */}
-                    <Group spacing="xs" style={{ marginTop: 'auto' }}>
-                      <IconCalendar size={16} color="#24809c" />
-                      <Text size="xs" color="#24809c" weight={500}>
-                        Oluşturulma Tarihi:
-                      </Text>
-                      <Text size="xs" color="#4a5568">
-                        {formatDate(process.createdAt)}
-                      </Text>
-                    </Group>
-
-                    {/* Action Buttons */}
-                    <Group spacing="xs" style={{ marginTop: '8px' }}>
-                      <Button
-                        size="xs"
-                        variant="light"
-                        color="#24809c"
-                        leftSection={<IconSettings size={14} />}
-                        style={{ flex: 1 }}
-                      >
-                        Detaylar
-                      </Button>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        color="#24809c"
-                        style={{ flex: 1 }}
-                      >
-                        Düzenle
-                      </Button>
-                    </Group>
-                  </Stack>
-                </Card>
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <TextInput
+                  leftSection={<IconSearch size={16} />}
+                  placeholder="Süreç adına göre ara..."
+                  value={searchFilters.name}
+                  onChange={(e) => handleFilterChange('name', e.target.value)}
+                  style={{ '& .mantine-TextInput-input': { borderColor: '#ddd6fe' } }}
+                />
               </Grid.Col>
-            );
-          })}
-        </Grid>
-</div>
+
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <TextInput
+                  leftSection={<IconSearch size={16} />}
+                  placeholder="Açıklamada ara..."
+                  value={searchFilters.description}
+                  onChange={(e) => handleFilterChange('description', e.target.value)}
+                  style={{ '& .mantine-TextInput-input': { borderColor: '#ddd6fe' } }}
+                />
+              </Grid.Col>
+
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                <select
+                  value={searchFilters.type}
+                  onChange={(e) => handleFilterChange('type', e.target.value)}
+                  className="w-full px-3 py-2 border border-[#ddd6fe] rounded text-sm"
+                >
+                  <option value="">Tüm Süreçler</option>
+                  <option value="main">Ana Süreçler</option>
+                  <option value="sub">Alt Süreçler</option>
+                </select>
+              </Grid.Col>
+            </Grid>
+          </Paper>
+          <div className="flex justify-end mb-5">
+            <button
+              onClick={() => navigate("/add-process")}
+              className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+            >
+              <IconPlus size={20} />
+              Yeni Süreç Ekle
+            </button>
+          </div>
+          {/* Process Cards Grid */}
+          <Grid gutter="lg">
+            {paginatedProcesses.map((process) => {
+              const typeInfo = getProcessTypeInfo(process);
+
+              return (
+                <Grid.Col key={process.id} span={{ base: 12, sm: 6, lg: 4 }}>
+                  <Card
+                    className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
+                    withBorder
+                    shadow="sm"
+                    radius="lg"
+                    padding="lg"
+                  >
+                    <Stack spacing="md" className="h-full">
+                      {/* Process Header */}
+                      <Group position="apart" align="flex-start">
+                        <div className="flex-1">
+                          <Text size="md" weight={600} className="text-[#2d3748] leading-snug mb-2">
+                            {process.name}
+                          </Text>
+                          <Badge
+                            style={{
+                              backgroundColor: typeInfo.bgColor,
+                              color: typeInfo.color,
+                              border: `1px solid ${typeInfo.color}`
+                            }}
+                            variant="light"
+                            size="sm"
+                          >
+                            {typeInfo.icon} {typeInfo.label}
+                          </Badge>
+                        </div>
+                      </Group>
+
+                      {/* Parent Process Info */}
+                      {!process.isMainProcess && (
+                        <Paper padding="xs" className="bg-[#f8f9fa] border-l-4 border-[#7b1fa2]">
+                          <Text size="xs" color="#7b1fa2" weight={500}>
+                            🔗 Bağlı Süreç: {process.parentProcessName}
+                          </Text>
+                        </Paper>
+                      )}
+
+                      {/* Description */}
+                      <div style={{ flex: 1 }}>
+                        <Text size="xs" color="#24809c" weight={500} className="mb-1.5">
+                          📝 Açıklama:
+                        </Text>
+                        <Text size="sm" color="#4a5568" className="leading-[1.5] overflow-hidden text-ellipsis min-h-[60px]"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                          }}>
+                          {process.description || 'Açıklama bulunmamaktadır.'}
+                        </Text>
+                      </div>
+
+                      <Divider />
+
+                      {/* Creation Date */}
+                      <Group spacing="xs" className="mt-auto">
+                        <IconCalendar size={16} color="#24809c" />
+                        <Text size="xs" color="#24809c" weight={500}>
+                          Oluşturulma Tarihi:
+                        </Text>
+                        <Text size="xs" color="#4a5568">
+                          {formatDate(process.createdAt)}
+                        </Text>
+                      </Group>
+
+                      {/* Action Buttons */}
+                      <Group spacing="xs" className="mt-2">
+                        <Button
+                          size="xs"
+                          variant="light"
+                          color="#24809c"
+                          leftSection={<IconSettings size={14} />}
+                          className="flex-1"
+                        >
+                          Detaylar
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          color="#24809c"
+                          className="flex-1"
+                        >
+                          Düzenle
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Card>
+                </Grid.Col>
+              );
+            })}
+          </Grid>
+        </div>
         {/* Pagination */}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
+          <div className="flex justify-center mt-8">
             <Pagination
               value={currentPage}
               onChange={setCurrentPage}
@@ -427,7 +404,7 @@ const Processes = () => {
 
         {/* No Results */}
         {filteredProcesses.length === 0 && !loading && (
-          <Paper shadow="md" padding="xl" style={{ textAlign: 'center', marginTop: '32px' }}>
+          <Paper shadow="md" padding="xl" className="text-center mt-8">
             <Text size="lg" color="#6c5ce7" weight={500}>
               {processes.length === 0
                 ? "Henüz süreç bulunmamaktadır."
@@ -439,7 +416,7 @@ const Processes = () => {
                 variant="light"
                 color="#6c5ce7"
                 onClick={clearFilters}
-                style={{ marginTop: '16px' }}
+                className="mt-4"
               >
                 Filtreleri Temizle
               </Button>

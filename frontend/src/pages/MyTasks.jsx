@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Select, Textarea, Card, Text, Group, Stack, Badge, Button, Progress, TextInput, Pagination, Grid, ActionIcon, Paper } from "@mantine/core";
+import { Select, Textarea, Card, Text, Group, Stack, Badge, Button, Progress, TextInput, Pagination, Grid, ActionIcon, Paper, Modal } from "@mantine/core";
 import { IconSearch, IconFilter, IconX, IconUser, IconCalendar, IconCalendarUser } from '@tabler/icons-react';
 
 const MyTasks = () => {
@@ -11,6 +11,8 @@ const MyTasks = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [users, setUsers] = useState([]);
   const [selectedAssignTaskId, setSelectedAssignTaskId] = useState(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [taskToReassign, setTaskToReassign] = useState(null);
 
   const [searchFilters, setSearchFilters] = useState({
     projectName: "",
@@ -22,7 +24,7 @@ const MyTasks = () => {
   });
 
   const ITEMS_PER_PAGE = 6;
-  const CARD_HEIGHT = 480;
+  const CARD_HEIGHT = 550;
 
   // Login işleminden sonra localStorage'a kaydedilen token ve user bilgilerini al
   const token = localStorage.getItem("token");
@@ -85,11 +87,13 @@ const MyTasks = () => {
               console.error("Görev bilgisi alınamadı:", error);
               taskDetails = { title: "Bilinmeyen Görev", description: "" };
             }
+            const assignedUserId = users.find(u => u.id === projectTask.assignedUserId);
             return {
               ...projectTask,
               projectName,
               processName,
               taskDetails,
+              assignedUserName: assignedUserId?.name || "Bilinmiyor"
             };
           })
         );
@@ -305,13 +309,13 @@ const MyTasks = () => {
     <div style={{ width: '100%' }}>
       {showLabels && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          <Text size="xs" style={{ color: '#6c757d' }}>Başlamadı: {stats.notStarted}%</Text>
-          <Text size="xs" style={{ color: '#fd7e14' }}>Devam: {stats.inProgress}%</Text>
-          <Text size="xs" style={{ color: '#28a745' }}>Tamamlandı: {stats.completed}%</Text>
-          <Text size="xs" style={{ color: '#dc3545' }}>İptal: {stats.cancelled}%</Text>
+          <Text size="xs" className="text-[#6c757d]">Başlamadı: {stats.notStarted}%</Text>
+          <Text size="xs" className="text-[#fd7e14]">Devam: {stats.inProgress}%</Text>
+          <Text size="xs" className="text-[#28a745]">Tamamlandı: {stats.completed}%</Text>
+          <Text size="xs" className="text-[#dc3545]">İptal: {stats.cancelled}%</Text>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 2 }}>
+      <div className="flex gap-0.5">
         {stats.notStarted > 0 && (
           <div style={{ flex: stats.notStarted }}>
             <Progress value={100} color="#6c757d" size={size} />
@@ -367,24 +371,9 @@ const MyTasks = () => {
 
   if (loading) {
     return (
-      <div style={{
-        padding: '2rem',
-        textAlign: 'center',
-        minHeight: '400px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f8f9fa'
-      }}>
+      <div sclassName="p-8 text-center min-h-[400px] flex items-center justify-center bg-[#f8f9fa]">
         <Stack align="center" spacing="md">
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid #e9ecef',
-            borderTop: '3px solid #007bff',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
+          <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
           <Text size="lg" color="dimmed">Görevleriniz yükleniyor...</Text>
         </Stack>
       </div>
@@ -393,46 +382,65 @@ const MyTasks = () => {
 
   const myTasksStats = calculateMyTasksStats();
 
+  // Modal içindeki kullanıcı değiştirme işlemini güncelle:
+  const handleReassign = async (newUserIdStr) => {
+    const newUserId = parseInt(newUserIdStr);
+    try {
+      await axios.put(
+        `http://localhost:5000/api/projectTasks/${taskToReassign.id}`,
+        { assignedUserId: newUserId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const newUserName = users.find(u => u.id === newUserId)?.name || "Bilinmiyor";
+      setMyTasks(prev =>
+        prev.map(t =>
+          t.id === taskToReassign.id
+            ? { ...t, assignedUserId: newUserId, assignedUserName: newUserName }
+            : t
+        )
+      );
+      setFilteredTasks(prev =>
+        prev.map(t =>
+          t.id === taskToReassign.id
+            ? { ...t, assignedUserId: newUserId, assignedUserName: newUserName }
+            : t
+        )
+      );
+      setAssignModalOpen(false);
+      setTaskToReassign(null);
+    } catch (err) {
+      alert("Atama değiştirilemedi");
+      console.error(err);
+    }
+  };
+
+
+
+
+
+
   return (
-    <div style={{
-      height: CARD_HEIGHT,
-      minHeight: '100vh',
-      backgroundColor: '#f8f9fa',
-      padding: 0,
-      margin: 0
-    }}>
-      <div style={{ width: '100%' }}>
+    <div className="min-h-screen bg-[#f8f9fa] p-0 m-0" style={{ height: CARD_HEIGHT }}>
+      <div className="w-full">
         {/* Header */}
         <Card
           shadow="lg"
-          style={{
-            marginBottom: '32px',
-            background: 'linear-gradient(135deg,  #24809c 0%, #112d3b 100%)',
-            color: 'white',
-            borderRadius: 0
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '24px'
-          }}>
+          className="mb-8 text-white rounded-none" style={{ background: 'linear-gradient(135deg,  #24809c 0%, #112d3b 100%)' }}>
+          <div className="flex justify-between items-center flex-wrap gap-6">
             <div>
-              <Text size="xl" weight={700} style={{ color: 'white', marginBottom: '8px' }}>
+              <Text size="xl" weight={700} className="text-white mb-2">
                 <IconCalendarUser size={20} />
                 Görevlerim
               </Text>
-              <Text size="sm" style={{ color: 'rgba(255,255,255,0.8)' }}>
+              <Text size="sm" className="text-white text-opacity-80">
                 {currentUser?.name || userObj?.name || 'Kullanıcı'} - Kişisel Görev Dashboard
               </Text>
-              <Text size="xs" style={{ color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>
+              <Text size="xs" className="text-white text-opacity-70 mt-1">
                 📊 Toplam {filteredTasks.length} görev
               </Text>
             </div>
-            <div style={{ minWidth: '300px', flex: 1, maxWidth: '400px' }}>
-              <Text size="sm" weight={500} style={{ color: 'white', marginBottom: '12px' }}>
+            <div className="min-w-[300px] flex-1 max-w-[400px]">
+              <Text size="sm" weight={500} className="text-white mb-3">
                 🎯 Görev Durumu İstatistikleri
               </Text>
               <StatusBar stats={myTasksStats} size="lg" />
@@ -440,15 +448,12 @@ const MyTasks = () => {
           </div>
         </Card>
         {/* Search and Filter Section */}
-        <div style={{
-          paddingLeft: '16px',
-          paddingRight: '16px',
-        }}>
-          <Paper shadow="md" padding="lg" style={{ marginBottom: '24px', backgroundColor: 'white', paddingLeft: 12, paddingRight: 12 }}>
-            <Group position="apart" style={{ marginBottom: '16px' }}>
+        <div className="px-4">
+          <Paper shadow="md" padding="lg" className="mb-6 bg-white px-3">
+            <Group position="apart" className="mb-4">
               <Group spacing="xs">
                 <IconFilter size={20} color="#23657b" />
-                <Text size="md" weight={500} style={{ color: '#23657b' }}>
+                <Text size="md" weight={500} className="text-[#23657b]">
                   Filtreleme ve Arama
                 </Text>
               </Group>
@@ -533,21 +538,15 @@ const MyTasks = () => {
                 <Card
                   withBorder
                   padding="md"
-                  style={{
-                    height: CARD_HEIGHT
-                  }}
+                  style={{ height: CARD_HEIGHT }}
                   className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
                   shadow="sm"
                   radius="lg"
                 >
-                  <Stack spacing="sm" style={{ height: '100%' }}>
+                  <Stack spacing="sm" className="h-full">
                     {/* Task Header */}
                     <Group position="apart" align="flex-start">
-                      <Text size="sm" weight={500} style={{
-                        color: '#212529',
-                        lineHeight: '1.4',
-                        flex: 1
-                      }}>
+                      <Text size="sm" weight={500} className="text-[#212529] leading-[1.4] flex-1">
                         {task.taskDetails?.title || 'Görev Başlığı'}
                       </Text>
                       <Badge
@@ -567,66 +566,40 @@ const MyTasks = () => {
                       <Button
                         size="xs"
                         variant="outline"
-                        onClick={() => setSelectedAssignTaskId(task.id)}
+                        onClick={() => {
+                          setTaskToReassign(task);
+                          setAssignModalOpen(true);
+                        }}
                       >
                         Atamayı Değiştir
                       </Button>
                     </Group>
-                    {selectedAssignTaskId === task.id && (
-                      <Select
-                        data={users.map(u => ({ value: String(u.id), label: u.name }))}
-                        placeholder="Yeni kullanıcı seçin"
-                        onChange={async (newUserIdStr) => {
-                          const newUserId = parseInt(newUserIdStr); // tekrar number'a çeviriyoruz
-                          try {
-                            await axios.put(
-                              `http://localhost:5000/api/projectTasks/${task.id}`,
-                              { assignedUserId: newUserId },
-                              { headers: { Authorization: `Bearer ${token}` } }
-                            );
-                            setMyTasks(prev => prev.filter(t => t.id !== task.id));
-                            setFilteredTasks(prev => prev.filter(t => t.id !== task.id));
-                            setSelectedAssignTaskId(null);
-                          } catch (err) {
-                            alert("Atama değiştirilemedi");
-                            console.error(err);
-                          }
-                        }}
-                      />
-                    )}
+                    
 
                     {/* Project and Process Info */}
                     <Stack spacing="xs">
-                      <Paper padding="xs" style={{ backgroundColor: '#e3f2fd' }}>
+                      <Paper padding="xs" className="bg-[#e3f2fd]">
                         <Text size="xs" color="#1976d2" weight={500}>
                           🏢 Proje: {task.projectName}
                         </Text>
                       </Paper>
-                      <Paper padding="xs" style={{ backgroundColor: '#f3e5f5' }}>
+                      <Paper padding="xs" className="bg-[#f3e5f5]">
                         <Text size="xs" color="#7b1fa2" weight={500}>
                           ⚙️ Süreç: {task.processName}
                         </Text>
                       </Paper>
                     </Stack>
                     {/* Dates */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Text size="xs" color="#007bff" style={{ marginBottom: '4px' }}>
+                        <Text size="xs" color="#007bff" className="mb-1">
                           📅 Başlangıç
                         </Text>
                         <input
                           type="date"
                           value={task.startDate?.split("T")[0] || ""}
                           readOnly
-                          style={{
-                            width: '100%',
-                            padding: '6px 8px',
-                            border: '1px solid #ced4da',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            backgroundColor: '#f8f9fa',
-                            color: '#007bff'
-                          }}
+                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
                         />
                       </div>
                       <div>
@@ -637,20 +610,14 @@ const MyTasks = () => {
                           type="date"
                           value={task.endDate?.split("T")[0] || ""}
                           onChange={(e) => updateTaskInState(task.id, { endDate: e.target.value })}
-                          style={{
-                            width: '100%',
-                            padding: '6px 8px',
-                            border: '1px solid #ced4da',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            color: '#007bff'
-                          }}
+                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
                         />
                       </div>
                     </div>
                     {/* Status Select */}
                     <Select
                       size="sm"
+                      placeholder="Durum Seçin"
                       value={task.status}
                       onChange={(value) => updateTaskInState(task.id, { status: value })}
                       data={[
@@ -675,32 +642,23 @@ const MyTasks = () => {
                       }}
                     />
                     {/* File Upload */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '14px', flexShrink: 0, color: '#007bff' }}>📎</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm flex-shrink-0 text-[#007bff]">📎</span>
                       <input
                         type="file"
                         onChange={(e) => {
                           const files = Array.from(e.target.files);
                           files.forEach((file) => handleFileUpload(task.id, file));
                         }}
-                        style={{
-                          flex: 1,
-                          fontSize: '12px',
-                          padding: '4px',
-                          border: '1px solid #ced4da',
-                          borderRadius: '4px'
-                        }}
+                        className="flex-1 text-xs p-1 border border-[#ced4da] rounded"
                       />
                     </div>
                     {/* Update Button */}
                     <Button
                       size="sm"
                       onClick={() => handleUpdateTask(task)}
-                      style={{
-                        background: 'linear-gradient(135deg,   #2d6a4f 0%, #1b4332 100%)',
-                        border: 'none',
-                        marginTop: 'auto'
-                      }}
+                      className="border-0 mt-auto"
+                      style={{ background: 'linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)' }}
                     >
                       Görevi Güncelle
                     </Button>
@@ -712,7 +670,7 @@ const MyTasks = () => {
         </div>
         {/* Pagination */}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
+          <div className="flex justify-center mt-8">
             <Pagination
               value={currentPage}
               onChange={setCurrentPage}
@@ -724,7 +682,7 @@ const MyTasks = () => {
         )}
         {/* No Results */}
         {filteredTasks.length === 0 && !loading && (
-          <Paper shadow="md" padding="xl" style={{ textAlign: 'center', marginTop: '32px' }}>
+          <Paper shadow="md" padding="xl" className="text-center mt-8">
             <Text size="lg" color="#007bff" weight={500}>
               {myTasks.length === 0
                 ? "Size atanmış görev bulunmamaktadır."
@@ -736,7 +694,7 @@ const MyTasks = () => {
                 variant="light"
                 color="#007bff"
                 onClick={clearFilters}
-                style={{ marginTop: '16px' }}
+                className="mt-4"
               >
                 Filtreleri Temizle
               </Button>
@@ -744,6 +702,31 @@ const MyTasks = () => {
           </Paper>
         )}
       </div>
+       <Modal
+      opened={assignModalOpen}
+      onClose={() => {
+        setAssignModalOpen(false);
+        setTaskToReassign(null);
+      }}
+      title="Atamayı Değiştir"
+      centered
+      size="sm"
+    >
+      {taskToReassign && (
+        <Stack>
+          <Text size="sm" weight={500}>
+            Görev: {taskToReassign.taskDetails?.title}
+          </Text>
+          <Select
+            label="Yeni Kullanıcı Seçin"
+            placeholder="Kullanıcı seçin"
+            data={users.map(u => ({ value: String(u.id), label: u.name }))}
+            withinPortal={false}
+            onChange={handleReassign}
+          />
+        </Stack>
+      )}
+    </Modal>
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
