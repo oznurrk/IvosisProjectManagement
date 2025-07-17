@@ -382,37 +382,64 @@ const MyTasks = () => {
 
   const myTasksStats = calculateMyTasksStats();
 
-  // Modal içindeki kullanıcı değiştirme işlemini güncelle:
-  const handleReassign = async (newUserIdStr) => {
-    const newUserId = parseInt(newUserIdStr);
-    try {
-      await axios.put(
-        `http://localhost:5000/api/projectTasks/${taskToReassign.id}`,
-        { assignedUserId: newUserId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const newUserName = users.find(u => u.id === newUserId)?.name || "Bilinmiyor";
-      setMyTasks(prev =>
-        prev.map(t =>
-          t.id === taskToReassign.id
-            ? { ...t, assignedUserId: newUserId, assignedUserName: newUserName }
-            : t
-        )
-      );
-      setFilteredTasks(prev =>
-        prev.map(t =>
-          t.id === taskToReassign.id
-            ? { ...t, assignedUserId: newUserId, assignedUserName: newUserName }
-            : t
-        )
-      );
-      setAssignModalOpen(false);
-      setTaskToReassign(null);
-    } catch (err) {
-      alert("Atama değiştirilemedi");
-      console.error(err);
+ const handleReassign = async (newUserIdStr) => {
+  const newUserId = parseInt(newUserIdStr);
+  const updatedByUserId = userObj?.id;
+
+  try {
+    const payload = {
+      status: taskToReassign.status || "NotStarted",
+      startDate: taskToReassign.startDate
+        ? new Date(taskToReassign.startDate).toISOString()
+        : new Date().toISOString(), // fallback olarak bugün
+      assignedUserId: newUserId,
+      endDate: taskToReassign.endDate
+        ? new Date(taskToReassign.endDate).toISOString()
+        : null,
+      description: taskToReassign.description || "",
+      filePath: taskToReassign.filePath || null,
+      updatedByUserId: updatedByUserId || 0,
+    };
+
+    console.log("GÖNDERİLEN VERİ:", payload);
+
+    await axios.put(
+      `http://localhost:5000/api/projectTasks/${taskToReassign.id}`,
+      payload,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const newUserName = users.find(u => u.id === newUserId)?.name || "Bilinmiyor";
+
+    setMyTasks(prev =>
+      prev.map(t =>
+        t.id === taskToReassign.id
+          ? { ...t, assignedUserId: newUserId, assignedUserName: newUserName }
+          : t
+      )
+    );
+    setFilteredTasks(prev =>
+      prev.map(t =>
+        t.id === taskToReassign.id
+          ? { ...t, assignedUserId: newUserId, assignedUserName: newUserName }
+          : t
+      )
+    );
+
+    setAssignModalOpen(false);
+    setTaskToReassign(null);
+  } catch (err) {
+    alert("Atama değiştirilemedi");
+    console.error("API HATASI:", err);
+    if (err.response) {
+      console.error("BACKEND MESAJI:", err.response.data);
     }
-  };
+  }
+};
+
+// ges deneme 4
+// arazi fizibilite
+// pvsyst'dan alınan yıllık üretim verilerine ve alınan birim fiyata göre amortisan süreci kaç yıl çıktı?                       
 
 
 
