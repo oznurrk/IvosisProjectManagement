@@ -126,15 +126,27 @@ const Processes = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Tarih belirtilmemiş";
+    if (
+      !dateString ||
+      dateString === "0001-01-01T00:00:00" ||
+      dateString.startsWith("0001")
+    ) {
+      return "Tarih yok";
+    }
 
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    if (isNaN(date.getTime())) {
+      return "Tarih yok";
+    }
+
+    return date.toLocaleDateString("tr-TR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
     });
   };
+
+
 
   const getProcessTypeInfo = (process) => {
     if (process.isMainProcess) {
@@ -152,20 +164,6 @@ const Processes = () => {
         icon: "🔗"
       };
     }
-  };
-
-  const calculateProcessStats = () => {
-    const total = filteredProcesses.length;
-    const mainProcesses = filteredProcesses.filter(p => p.isMainProcess).length;
-    const subProcesses = filteredProcesses.filter(p => !p.isMainProcess).length;
-
-    return {
-      total,
-      mainProcesses,
-      subProcesses,
-      mainPercentage: total > 0 ? Math.round((mainProcesses / total) * 100) : 0,
-      subPercentage: total > 0 ? Math.round((subProcesses / total) * 100) : 0
-    };
   };
 
   // Pagination
@@ -201,31 +199,17 @@ const Processes = () => {
     );
   }
 
-  const processStats = calculateProcessStats();
-
   return (
     <div className="min-h-screen bg-[#f8f9fa] p-0 m-0">
       <div className="w-full">
 
         {/* Header */}
         <Header
-          title="Süreç Yönetimi"
-          subtitle="İş Süreçleri ve Hiyerarşi Dashboard"
+          title="Süreçler"
+          subtitle="Süreç Yönetimi"
           icon={IconLoader}
-          stats={[
-            {
-              label: "Ana Süreç",
-              value: processStats.mainProcesses,
-              percentage: processStats.mainPercentage,
-              barColor: "#00b894",
-            },
-            {
-              label: "Alt Süreç",
-              value: processStats.mainProcesses,
-              percentage: processStats.mainPercentage,
-              barColor: "#fd79a8"
-            }
-          ]}
+          userName={localStorage.getItem("userName") || undefined}
+          totalCount={processes.length}
         />
         <div className="px-4 py-0">
           {/* Search and Filter Section */}
@@ -351,7 +335,7 @@ const Processes = () => {
 
                       <Divider />
 
-                      {/* Creation Date */}
+                      {/* Oluşturma tarihi */}
                       <Group spacing="xs" className="mt-auto">
                         <IconCalendar size={16} color="#24809c" />
                         <Text size="xs" color="#24809c" weight={500}>
