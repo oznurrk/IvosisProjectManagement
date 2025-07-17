@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using IvosisProjectManagement.API.DTOs.Common;
 using IvosisProjectManagement.API.Middlewares;
+using IvosisProjectManagement.API.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,7 @@ builder.Services.AddScoped<IProjectTypeService, ProjectTypeService>();
 builder.Services.AddScoped<IPanelBrandService, PanelBrandService>();
 builder.Services.AddScoped<IInverterBrandService, InverterBrandService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // ⬇️ JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
