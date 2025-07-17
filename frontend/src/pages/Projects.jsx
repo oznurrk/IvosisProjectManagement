@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {  Text,  Badge,  Card,  Group,  Stack,  Divider,  LoadingOverlay,  ActionIcon,  Tooltip,  Pagination,  TextInput,  Select,  Button,  Paper,  Grid,} from "@mantine/core";
-import {  IconCalendar,  IconMapPin,  IconBolt,  IconSolarPanel,  IconCpu,  IconPlus,  IconInfoCircle,  IconSearch,  IconFilter,  IconX,} from "@tabler/icons-react";
-import ProjectDetails from "./ProjectDetails";
+import { Text, Badge, Card, Group, Stack, Divider, LoadingOverlay, ActionIcon, Tooltip, Pagination, TextInput, Select, Button, Paper, Grid, } from "@mantine/core";
+import { IconCalendar, IconMapPin, IconBolt, IconSolarPanel, IconCpu, IconPlus, IconInfoCircle, IconSearch, IconFilter, IconX, IconSunElectricity, } from "@tabler/icons-react";
 import ProjectCartSelectModal from "../components/Project/ProjectCartSelectModal";
 import { useNavigate } from "react-router-dom";
+import Header from "../components/Header/Header";
+import ProjectProcessSelectModal from "../components/Project/ProjectProcessSelectModal";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -26,7 +27,7 @@ const Projects = () => {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
   const navigate = useNavigate();
-  const pageSize = 8;
+  const pageSize = 4;
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -187,15 +188,36 @@ const Projects = () => {
       </div>
     );
   }
+  const calculateProjectStats = () => {
+    const total = projects.length;
+    const count = (status) => projects.filter((p) => p.status === status).length;
+
+    return {
+      notStarted: total === 0 ? 0 : Math.round((count("Active") / total) * 100),
+      inProgress: total === 0 ? 0 : Math.round((count("Passive") / total) * 100),
+      completed: total === 0 ? 0 : Math.round((count("Completed") / total) * 100),
+      cancelled: total === 0 ? 0 : Math.round((count("Cancelled") / total) * 100),
+    };
+  };
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-0 m-0">
+      <Header
+        title="Projeler"
+        subtitle="Tüm Projeler"
+        icon={IconSunElectricity}
+        userName={localStorage.getItem("userName") || undefined}
+        totalCount={projects.length}
+        stats={calculateProjectStats()}
+        showStats={true}
+      />
+
       {/* Filtreleme alanı */}
       <Paper
         shadow="md"
         padding="lg"
         mb="md"
-        className="bg-white"
+        className="bg-white p-4"
       >
         <Group position="apart" mb="sm">
           <Group spacing="xs">
@@ -251,28 +273,20 @@ const Projects = () => {
         </Grid>
       </Paper>
 
-      {/* Başlık ve yeni proje butonu */}
-      <Group position="apart" align="center" mb="md">
-        <Stack spacing={0}>
-          <Text size="xl" fw={700} c="dark">
-            Projeler
-          </Text>
-          <Text size="sm" c="dimmed">
-            {filteredProjects.length} proje bulundu
-          </Text>
-        </Stack>
+      {/* yeni proje butonu */}
+      <div className="flex justify-end mb-1 px-4">
         <Button
-          leftIcon={<IconPlus size={20} />}
           variant="gradient"
-          gradient={{ from: "violet", to: "blue" }}
+          gradient={{ from: "ivosis.5", to: "ivosis.6" }}
           onClick={() => navigate("/projectCreated")}
         >
+          <IconPlus size={20} />
           Yeni Proje Ekle
         </Button>
-      </Group>
+      </div>
 
       {/* Proje kartları */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
         {pagedProjects.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <Text size="lg" c="dimmed">
@@ -440,7 +454,7 @@ const Projects = () => {
           setDetailsModalOpen(true);
         }}
       />
-      <ProjectDetails
+      <ProjectProcessSelectModal
         opened={detailsModalOpen}
         onClose={() => setDetailsModalOpen(false)}
         projectId={selectedProjectId}

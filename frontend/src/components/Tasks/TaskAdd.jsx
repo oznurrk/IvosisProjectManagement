@@ -297,8 +297,3 @@ const TaskAdd = () => {
 };
 
 export default TaskAdd;
-
-
-
-// süreç ekleme ekranında görev ekle butonu eklenecek.
-// butona tıklandığında var olan sürecin bilgileri görev ekleye aktarılacak.

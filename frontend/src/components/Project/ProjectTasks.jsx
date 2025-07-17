@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Divider,
   Select,
   Textarea,
   Card,
@@ -17,7 +16,8 @@ import {
   ActionIcon,
   Paper
 } from "@mantine/core";
-import { IconSearch, IconFilter, IconX } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconX, IconCalendar } from '@tabler/icons-react';
+import Header from "../Header/Header";
 
 const ProjectTasks = () => {
   const [projectName, setProjectName] = useState("");
@@ -340,28 +340,13 @@ const ProjectTasks = () => {
       <div className="w-full">  {/* maxWidth kaldırıldı */}
 
         {/* Header */}
-        <Card
-          shadow="lg"
-          className="mb-8 text-white rounded-none"
-          style={{ background: 'linear-gradient(135deg,  #24809c 0%, #112d3b 100%)' }}
-        >
-          <div className="flex justify-between items-center flex-wrap gap-6">
-            <div>
-              <Text size="xl" weight={700} className="text-white mb-2">
-                📊 {projectName}
-              </Text>
-              <Text size="sm" className="text-[rgba(255,255,255,0.8)]">
-                Proje Görev Yönetimi Dashboard
-              </Text>
-            </div>
-            <div className="min-w-[300px] flex-1 max-w-[400px]">
-              <Text size="sm" weight={500} className="text-white mb-3">
-                🎯 Genel Proje İlerlemesi
-              </Text>
-              <StatusBar stats={projectStats} size="lg" />
-            </div>
-          </div>
-        </Card>
+        <Header
+          title="Görevler"
+          subtitle={`${projectName} Projesine Ait Tüm Görevler`}
+          icon={IconCalendar}
+          stats={projectStats}
+          showStats={true}
+        />
 
         {/* Search and Filter Section */}
         <Paper shadow="md" padding="lg" className="mb-6 bg-white pl-3 pr-3">
@@ -622,3 +607,4 @@ const ProjectTasks = () => {
 };
 
 export default ProjectTasks;
+

@@ -3,7 +3,6 @@ import AdminDashboard from "../Layout/AdminDashboard";
 import Projects from "../pages/Projects";
 import Random from "../components/Header/Random";
 import ProjectCreated from "../pages/ProjectCreated";
-import ProjectDetails from "../pages/ProjectDetails";
 import ProjectTasks from "../components/Project/ProjectTasks";
 import MyTasks from "../pages/MyTasks";
 import Login from "../pages/Login";
@@ -23,7 +22,6 @@ const AppRoutes = () => {
                     <Route path="/documents" element={<Random />} />
                     <Route path="/settings" element={<Random />} />
                     <Route path="/projectCreated" element={<ProjectCreated />} />
-                    <Route path="/projectDetails/:id" element={<ProjectDetails />} />
                     <Route path="/projectTasks" element={<ProjectTasks />} />
                     <Route path="//my-tasks" element={<MyTasks />} />
                     <Route path="/taskChat" element={<TaskChat />} />
