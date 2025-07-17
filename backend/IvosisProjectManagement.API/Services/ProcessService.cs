@@ -72,7 +72,7 @@ namespace IvosisProjectManagement.API.Services
 
             process.Name = dto.Name;
             process.Description = dto.Description ?? string.Empty;
-            process.UpdatedAt = DateTime.Now;
+            process.UpdatedAt = DateTime.Now; 
             process.UpdatedByUserId = dto.UpdatedByUserId;
 
             _context.Processes.Update(process);
