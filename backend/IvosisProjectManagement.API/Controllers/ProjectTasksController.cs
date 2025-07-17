@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Text.Json;
 using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.DTOs.Common;
@@ -99,7 +98,7 @@ namespace IvosisProjectManagement.API.Controllers
         {
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();
-            return Ok(await _service.GetByIdAsync(id));
+            return Ok(await _service.UpdateAsync(id,dto));
         }
 
         [HttpDelete("{id}")]
