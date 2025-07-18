@@ -6,6 +6,7 @@ import ProjectCartSelectModal from "../components/Project/ProjectCartSelectModal
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header/Header";
 import ProjectProcessSelectModal from "../components/Project/ProjectProcessSelectModal";
+import FilterAndSearch from "../Layout/FilterAndSearch";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -18,7 +19,7 @@ const Projects = () => {
   const [searchFilters, setSearchFilters] = useState({
     name: "",
     description: "",
-    status: "", // Active, Passive, Completed, Cancelled veya boş
+    status: "", // NotStarted, InProgress, Completed, Cancelled veya boş
   });
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -118,8 +119,8 @@ const Projects = () => {
   };
 
   const statusConfig = {
-    Active: { color: "blue", label: "Planlama" },
-    Passive: { color: "yellow", label: "Devam Ediyor" },
+    NotStarted: { color: "blue", label: "Başlamadı" },
+    InProgress: { color: "yellow", label: "Devam Ediyor" },
     Completed: { color: "green", label: "Tamamlandı" },
     Cancelled: { color: "red", label: "İptal Edildi" },
   };
@@ -193,15 +194,15 @@ const Projects = () => {
     const count = (status) => projects.filter((p) => p.status === status).length;
 
     return {
-      notStarted: total === 0 ? 0 : Math.round((count("Active") / total) * 100),
-      inProgress: total === 0 ? 0 : Math.round((count("Passive") / total) * 100),
+      notStarted: total === 0 ? 0 : Math.round((count("NotStarted") / total) * 100),
+      inProgress: total === 0 ? 0 : Math.round((count("InProgress") / total) * 100),
       completed: total === 0 ? 0 : Math.round((count("Completed") / total) * 100),
       cancelled: total === 0 ? 0 : Math.round((count("Cancelled") / total) * 100),
     };
   };
 
   return (
-    <div className="p-0 m-0">
+    <div className=" bg-[#f8f9fa] p-0 m-0">
       <Header
         title="Projeler"
         subtitle="Tüm Projeler"
@@ -213,76 +214,41 @@ const Projects = () => {
       />
 
       {/* Filtreleme alanı */}
-      <Paper
-        shadow="md"
-        padding="lg"
-        mb="md"
-        className="bg-white p-4"
-      >
-        <Group position="apart" mb="sm">
-          <Group spacing="xs">
-            <IconFilter size={20} color="#24809c" />
-            <Text size="md" weight={500} className="text-[#24809c]">
-              Filtreleme ve Arama
-            </Text>
-          </Group>
-          <ActionIcon
-            variant="light"
-            color="#24809c"
-            onClick={clearFilters}
-            title="Filtreleri Temizle"
-          >
-            <IconX size={16} />
-          </ActionIcon>
-        </Group>
-
-        <Grid gutter="md">
-          <Grid.Col span={{ base: 12, sm: 4 }}>
-            <TextInput
-              icon={<IconSearch size={16} />}
-              placeholder="Proje adına göre ara..."
-              value={searchFilters.name}
-              onChange={(e) => handleFilterChange("name", e.target.value)}
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 4 }}>
-            <TextInput
-              icon={<IconSearch size={16} />}
-              placeholder="Açıklamada ara..."
-              value={searchFilters.description}
-              onChange={(e) => handleFilterChange("description", e.target.value)}
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, sm: 4 }}>
-            <Select
-              placeholder="Duruma göre filtrele"
-              data={[
-                { value: "", label: "Tüm Durumlar" },
-                { value: "Active", label: "Planlama" },
-                { value: "Passive", label: "Devam Ediyor" },
+      <div className="px-4">
+        <FilterAndSearch
+          searchFilters={searchFilters}
+          handleFilterChange={handleFilterChange}
+          clearFilters={clearFilters}
+          filtersConfig={[
+            { key: "name", type: "text", placeholder: "Proje adına göre ara..." },
+            { key: "description", type: "text", placeholder: "Açıklamaya göre ara..."},
+            {
+              key: "status",
+              type: "select",
+              placeholder: "Durum seçin...",
+              options: [
+                { value: "", label: "Tümü" },
+                { value: "NotStarted", label: "Başlamadı" },
+                { value: "InProgress", label: "Devam Ediyor" },
                 { value: "Completed", label: "Tamamlandı" },
                 { value: "Cancelled", label: "İptal Edildi" },
-              ]}
-              value={searchFilters.status}
-              onChange={(value) => handleFilterChange("status", value || "")}
-              clearable
-            />
-          </Grid.Col>
-        </Grid>
-      </Paper>
+              ],
+            },
+            { key: "startDate", type: "date" },
+            { key: "endDate", type: "date" },
+          ]}
+        />
+      </div>
 
       {/* yeni proje butonu */}
-      <div className="flex justify-end mb-1 px-4">
-        <Button
-          variant="gradient"
-          gradient={{ from: "ivosis.5", to: "ivosis.6" }}
-          onClick={() => navigate("/projectCreated")}
+      <div className="flex justify-end mb-5 px-4">
+        <button
+         onClick={() => navigate("/projectCreated")}
+                     className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
         >
           <IconPlus size={20} />
-          Yeni Proje Ekle
-        </Button>
+          Ekle
+        </button>
       </div>
 
       {/* Proje kartları */}

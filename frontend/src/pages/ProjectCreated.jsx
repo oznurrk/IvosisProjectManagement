@@ -102,10 +102,57 @@ const ProjectCreated = () => {
   const submitProject = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/projects", formData, {
+
+      // ✅ Güncel dcValue hesapla ve formData'ya ekle
+      const panelCount = parseFloat(formData.panelCount) || 0;
+      const panelPower = parseFloat(formData.panelPower) || 0;
+      const dcValue = (panelCount * panelPower) / 1000;
+
+      const updatedFormData = {
+        ...formData,
+        dcValue: parseFloat(dcValue.toFixed(2)),
+      };
+
+      await axios.post("http://localhost:5000/api/projects", updatedFormData, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       setShowSuccess(true);
+
+      // ✅ Formu sıfırla
+      setFormData({
+        name: "",
+        description: "",
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString(),
+        priority: "Low",
+        status: "isPlanned",
+        panelCount: 0,
+        panelPower: 0,
+        panelBrandId: null,
+        inverterCount: 0,
+        inverterPower: 0,
+        inverterBrandId: null,
+        hasAdditionalStructure: false,
+        additionalPanelCount: 0,
+        additionalPanelPower: 0,
+        additionalInverterCount: 0,
+        acValue: 0,
+        dcValue: 0,
+        createdByUserId: 1,
+        projectTypeId: null,
+        address: {
+          cityId: null,
+          districtId: null,
+          neighborhoodId: null,
+          ada: "",
+          parsel: ""
+        }
+      });
+
+      setHasEkYapi(false);
+      setDistricts([]);
+      setNeighborhood([]);
     } catch (err) {
       console.error("Proje kaydı başarısız:", err);
       setShowError(true);
@@ -114,9 +161,12 @@ const ProjectCreated = () => {
     }
   };
 
+
+
   const handleClickSave = () => {
     setShowConfirm(true);
   };
+  
   return (
     <div className="py-6 px-6">
       <h2 className="text-2xl font-bold  mb-6 text-ivosis-700">Proje Ekle</h2>
@@ -197,7 +247,7 @@ const ProjectCreated = () => {
                     { value: "Done", label: "Tamamlandı" },
                     { value: "Canceled", label: "İptal" }
                   ]}
-                  value={formData.status}
+                  value={formData.status ? formData.status.toString() : null}
                   onChange={(e) => setFormData({ ...formData, status: e })}
                 />
               </div>
@@ -217,7 +267,7 @@ const ProjectCreated = () => {
                     { value: "High", label: "Yüksek" },
                     { value: "Critical", label: "Kritik" }
                   ]}
-                  value={formData.priority}
+                  value={formData.priority ? formData.priority.toString() : null}
                   onChange={(e) => setFormData({ ...formData, priority: e })}
                 />
               </div>
@@ -232,7 +282,7 @@ const ProjectCreated = () => {
                   clearable
                   className="w-full"
                   data={projectTypes}
-                  value={formData.projectTypeId.toString()}
+                  value={formData.projectTypeId ? formData.projectTypeId.toString() : null}
                   onChange={(e) => setFormData({ ...formData, projectTypeId: Number(e) })}
                 />
               </div>
@@ -252,7 +302,7 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={cities}
-              value={formData.address.cityId.toString()}
+              value={formData.address?.cityId ? formData.address.cityId.toString() : null}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -271,7 +321,7 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={districts}
-              value={formData.address.districtId.toString()}
+              value={formData.address?.districtId ? formData.address.districtId.toString() : null}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -290,7 +340,7 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={neighborhood}
-              value={formData.address.neighborhoodId.toString()}
+              value={formData.address?.neighborhoodId ? formData.address.neighborhoodId.toString() : null}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -372,7 +422,7 @@ const ProjectCreated = () => {
                 clearable
                 className="w-full"
                 data={panelBrand}
-                value={formData.panelBrandId.toString()}
+                value={formData.panelBrandId ? formData.panelBrandId.toString() : null}
                 onChange={(e) =>
                   setFormData({ ...formData, panelBrandId: Number(e) })
                 }
@@ -422,7 +472,7 @@ const ProjectCreated = () => {
                 clearable
                 className="w-full"
                 data={inverterBrand}
-                value={formData.inverterBrandId.toString()}
+                value={formData.inverterBrandId ? formData.inverterBrandId.toString() : null}
                 onChange={(e) =>
                   setFormData({ ...formData, inverterBrandId: Number(e) })
                 }

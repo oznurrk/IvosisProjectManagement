@@ -10,6 +10,7 @@ import TaskChat from "../components/TaskChat/TaskChat";
 import Processes from "../pages/Processes";
 import ProcessAdd from "../components/Process/ProcessAdd";
 import TaskAdd from "../components/Tasks/TaskAdd";
+import ProjectProcessTaskSelectModal from "../components/Project/ProjectProcessTaskSelectModal";
 
 
 const AppRoutes = () => {
@@ -28,6 +29,7 @@ const AppRoutes = () => {
                     <Route path="/processes" element={<Processes />} />
                     <Route path="/add-process" element={<ProcessAdd />} />
                     <Route path="/add-task" element={<TaskAdd />} />
+                    <Route path="/project-process/:processId" element={<ProjectProcessTaskSelectModal />} />
                 </Route>
             </Routes>
         </BrowserRouter>
