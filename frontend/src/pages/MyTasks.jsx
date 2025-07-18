@@ -3,6 +3,7 @@ import axios from "axios";
 import { Select, Textarea, Text, Group, Stack, Badge, Button, TextInput, Pagination, Grid, ActionIcon, Paper, Modal, Card } from "@mantine/core";
 import { IconSearch, IconFilter, IconX, IconUser, IconCalendar, IconCalendarUser } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
+import FilterAndSearch from "../Layout/FilterAndSearch";
 
 
 const MyTasks = () => {
@@ -53,7 +54,7 @@ const MyTasks = () => {
           setFilteredTasks([]);
           return;
         }
-        
+
         const tasksWithDetails = await Promise.all(
           tasksData.map(async (projectTask) => {
             let projectName = "";
@@ -391,7 +392,7 @@ const MyTasks = () => {
     <div className="bg-[#f8f9fa] p-0 m-0">
       <div className="w-full">
         {/* PageHeader bileşenini kullan */}
-        <Header 
+        <Header
           title="Görevlerim"
           subtitle="Kişisel Görev Dashboard"
           icon={IconCalendarUser}
@@ -404,88 +405,30 @@ const MyTasks = () => {
 
         {/* Search and Filter Section */}
         <div className="px-4">
-          <Paper shadow="md" padding="lg" className="mb-6 bg-white px-3">
-            <Group position="apart" className="mb-4">
-              <Group spacing="xs">
-                <IconFilter size={20} color="#23657b" />
-                <Text size="md" weight={500} className="text-[#23657b]">
-                  Filtreleme ve Arama
-                </Text>
-              </Group>
-              <ActionIcon
-                variant="light"
-                color="#23657b"
-                onClick={clearFilters}
-                title="Filtreleri Temizle"
-              >
-                <IconX size={16} />
-              </ActionIcon>
-            </Group>
-            <Grid gutter="md">
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <TextInput
-                  leftSection={<IconSearch size={16} />}
-                  placeholder="Proje adına göre ara..."
-                  value={searchFilters.projectName}
-                  onChange={(e) => handleFilterChange('projectName', e.target.value)}
-                  style={{ '& .mantine-TextInput-input': { borderColor: '#ced4da' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <TextInput
-                  leftSection={<IconSearch size={16} />}
-                  placeholder="Süreç adına göre ara..."
-                  value={searchFilters.processName}
-                  onChange={(e) => handleFilterChange('processName', e.target.value)}
-                  style={{ '& .mantine-TextInput-input': { borderColor: '#ced4da' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <TextInput
-                  leftSection={<IconSearch size={16} />}
-                  placeholder="Görev adına göre ara..."
-                  value={searchFilters.taskName}
-                  onChange={(e) => handleFilterChange('taskName', e.target.value)}
-                  style={{ '& .mantine-TextInput-input': { borderColor: '#ced4da' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <Select
-                  placeholder="Durum seçin..."
-                  value={searchFilters.status}
-                  onChange={(value) => handleFilterChange('status', value)}
-                  data={[
-                    { value: "", label: "Tümü" },
-                    { value: "NotStarted", label: "Başlamadı" },
-                    { value: "InProgress", label: "Devam Ediyor" },
-                    { value: "Completed", label: "Tamamlandı" },
-                    { value: "Cancelled", label: "İptal Edildi" },
-                  ]}
-                  style={{ '& .mantine-Select-input': { borderColor: '#ced4da' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <TextInput
-                  leftSection={<IconCalendar size={16} />}
-                  type="date"
-                  placeholder="Başlangıç tarihi..."
-                  value={searchFilters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                  style={{ '& .mantine-TextInput-input': { borderColor: '#ced4da' } }}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <TextInput
-                  leftSection={<IconCalendar size={16} />}
-                  type="date"
-                  placeholder="Bitiş tarihi..."
-                  value={searchFilters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                  style={{ '& .mantine-TextInput-input': { borderColor: '#ced4da' } }}
-                />
-              </Grid.Col>
-            </Grid>
-          </Paper>
+          <FilterAndSearch
+            searchFilters={searchFilters}
+            handleFilterChange={handleFilterChange}
+            clearFilters={clearFilters}
+            filtersConfig={[
+              { key: "projectName", type: "text", placeholder: "Proje adına göre ara..." },
+              { key: "processName", type: "text", placeholder: "Süreç adına göre ara..." },
+              { key: "taskName", type: "text", placeholder: "Görev adına göre ara..." },
+              {
+                key: "status",
+                type: "select",
+                placeholder: "Durum seçin...",
+                options: [
+                  { value: "", label: "Tümü" },
+                  { value: "NotStarted", label: "Başlamadı" },
+                  { value: "InProgress", label: "Devam Ediyor" },
+                  { value: "Completed", label: "Tamamlandı" },
+                  { value: "Cancelled", label: "İptal Edildi" },
+                ],
+              },
+              { key: "startDate", type: "date" },
+              { key: "endDate", type: "date" }
+            ]}
+          />
 
           {/* Task Cards Grid - Burada kalan kodları da ekle */}
           <Grid gutter="lg">
@@ -656,46 +599,46 @@ const MyTasks = () => {
           </Paper>
         )}
       </div>
-       <Modal
-  opened={assignModalOpen}
-  onClose={() => {
-    setAssignModalOpen(false);
-    setTaskToReassign(null);
-    setSelectedUserId(null);
-  }}
-  title="Atamayı Değiştir"
-  centered
-  size="sm"
->
-  {taskToReassign && (
-    <Stack spacing="sm">
-      <Text size="sm" weight={500}>
-        Görev: {taskToReassign.taskDetails?.title}
-      </Text>
-      <Select
-        label="Yeni Kullanıcı Seçin"
-        placeholder="Kullanıcı seçin"
-        data={users.map(u => ({ value: String(u.id), label: u.name }))}
-        value={selectedUserId}
-        onChange={setSelectedUserId}
-        withinPortal={false}
-      />
-      <Button
-        onClick={() => {
-          if (selectedUserId) {
-            handleReassign(selectedUserId);
-            setSelectedUserId(null);
-          }
+      <Modal
+        opened={assignModalOpen}
+        onClose={() => {
+          setAssignModalOpen(false);
+          setTaskToReassign(null);
+          setSelectedUserId(null);
         }}
-        disabled={!selectedUserId}
-        fullWidth
-        color="blue"
+        title="Yeni Görevli Atama"
+        centered
+        size="sm"
       >
-        Atamayı Kaydet
-      </Button>
-    </Stack>
-  )}
-</Modal>
+        {taskToReassign && (
+          <Stack spacing="sm">
+            <Text size="sm" weight={500}>
+              <span className="font-bold"> Görev: </span> {taskToReassign.taskDetails?.title}
+            </Text>
+            <Select
+              label="Atamayı Değiştir"
+              placeholder="Kullanıcı seçin"
+              data={users.map(u => ({ value: String(u.id), label: u.name }))}
+              value={selectedUserId}
+              onChange={setSelectedUserId}
+              withinPortal={false}
+            />
+            <Button
+              onClick={() => {
+                if (selectedUserId) {
+                  handleReassign(selectedUserId);
+                  setSelectedUserId(null);
+                }
+              }}
+              disabled={!selectedUserId}
+              fullWidth
+              color="ivosis.6"
+            >
+              Atamayı Kaydet
+            </Button>
+          </Stack>
+        )}
+      </Modal>
 
       <style jsx>{`
         @keyframes spin {

@@ -1,9 +1,12 @@
-1- Header ve Filtreleme tek tip ayrı component olacak
+1- Header ve Filtreleme tek tip ayrı component olacak (tamamlandı)
 2- Scrool kartlar üzerinde olacak header ve filtreleme sabit kalacak
 3-Proje Ekle -> Adres Ekleme çoklu olacak.
 4-TÜM PROJE -> Zorunlu ibaresi textin solunda olacak.
 5- TÜM PROJE -> Açıklama alanları max karakter sayısı, yazdıkça kaç karakter olduğunu gösterecek şekilde.
-6- PROJE EKLE -> Kaydet Butonu kaydet yazacak
-7- TÜM PROJE -> EKLE(mavi + iconu olacak), DÜZENLE, GÖRÜNTÜLE, SİL, KAYDET 
-8- TÜM PROJE -> Butonlar tek tip olacak.
+6- PROJE EKLE -> Kaydet Butonu kaydet yazacak (tamamlandı)
+7- TÜM PROJE -> EKLE(mavi + iconu olacak), DÜZENLE, GÖRÜNTÜLE, SİL, KAYDET (tamamlandı)
+8- TÜM PROJE -> Butonlar tek tip olacak.(tamamlandı)
 
+
+
+ProjectCreated sayfasında dc gücü hesaplanmada kaydediliyor.
