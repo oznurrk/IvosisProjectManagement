@@ -4,6 +4,7 @@ import { Card, Text, Group, Stack, Badge, Button, TextInput, Pagination, Grid, A
 import { IconSearch, IconFilter, IconX, IconHierarchy, IconCalendar, IconSettings, IconPlus, IconLoader } from '@tabler/icons-react';
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header/Header";
+import FilterAndSearch from "../Layout/FilterAndSearch";
 
 const Processes = () => {
   const [processes, setProcesses] = useState([]);
@@ -212,66 +213,23 @@ const Processes = () => {
           totalCount={processes.length}
         />
         <div className="px-4 py-0">
-          {/* Search and Filter Section */}
-          <Paper shadow="md" padding="lg" className="mb-6 bg-white px-3">
-            <Group position="apart" className="mb-4">
-              <Group spacing="xs">
-                <IconFilter size={20} color="#24809c" />
-                <Text size="md" weight={500} className="text-[#24809c]">
-                  Filtreleme ve Arama
-                </Text>
-              </Group>
-              <ActionIcon
-                variant="light"
-                color="#24809c"
-                onClick={clearFilters}
-                title="Filtreleri Temizle"
-              >
-                <IconX size={16} />
-              </ActionIcon>
-            </Group>
-
-            <Grid gutter="md">
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <TextInput
-                  leftSection={<IconSearch size={16} />}
-                  placeholder="Süreç adına göre ara..."
-                  value={searchFilters.name}
-                  onChange={(e) => handleFilterChange('name', e.target.value)}
-                  style={{ '& .mantine-TextInput-input': { borderColor: '#ddd6fe' } }}
-                />
-              </Grid.Col>
-
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <TextInput
-                  leftSection={<IconSearch size={16} />}
-                  placeholder="Açıklamada ara..."
-                  value={searchFilters.description}
-                  onChange={(e) => handleFilterChange('description', e.target.value)}
-                  style={{ '& .mantine-TextInput-input': { borderColor: '#ddd6fe' } }}
-                />
-              </Grid.Col>
-
-              <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                <select
-                  value={searchFilters.type}
-                  onChange={(e) => handleFilterChange('type', e.target.value)}
-                  className="w-full px-3 py-2 border border-[#ddd6fe] rounded text-sm"
-                >
-                  <option value="">Tüm Süreçler</option>
-                  <option value="main">Ana Süreçler</option>
-                  <option value="sub">Alt Süreçler</option>
-                </select>
-              </Grid.Col>
-            </Grid>
-          </Paper>
+          {/* Search and Filter Section*/}
+          <FilterAndSearch
+            searchFilters={searchFilters}
+            handleFilterChange={handleFilterChange}
+            clearFilters={clearFilters}
+            filtersConfig={[
+              {key: "name", type: "text", placeholder: "Süreç adına göre ara..." },
+              {key: "description", type:"text",placeholder: "Açıklamaya göre ara..."}
+            ]}
+          />
           <div className="flex justify-end mb-5">
             <button
               onClick={() => navigate("/add-process")}
               className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
             >
               <IconPlus size={20} />
-              Yeni Süreç Ekle
+              Ekle
             </button>
           </div>
           {/* Process Cards Grid */}
