@@ -14,10 +14,13 @@ import {
   Pagination,
   Grid,
   ActionIcon,
-  Paper
+  Paper,
+  Title,
+  Divider
 } from "@mantine/core";
-import { IconSearch, IconFilter, IconX, IconCalendar } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconX, IconCalendar, IconArrowLeft, IconUsers,  IconClock } from '@tabler/icons-react';
 import Header from "../Header/Header";
+import FilterAndSearch from "../../Layout/FilterAndSearch";
 
 const ProjectTasks = () => {
   const [projectName, setProjectName] = useState("");
@@ -25,6 +28,7 @@ const ProjectTasks = () => {
   const [filteredProcesses, setFilteredProcesses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProcess, setSelectedProcess] = useState(null);
   const [searchFilters, setSearchFilters] = useState({
     processName: "",
     taskName: "",
@@ -67,6 +71,7 @@ const ProjectTasks = () => {
           Object.entries(grouped).map(async ([processId, tasks]) => {
             let processName = "";
             let assignedUser = "";
+            let processCreatedDate = "";
 
             try {
               const processRes = await axios.get(
@@ -74,6 +79,7 @@ const ProjectTasks = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               processName = processRes.data.name;
+              processCreatedDate = processRes.data.createdAt;
             } catch { }
 
             try {
@@ -110,6 +116,7 @@ const ProjectTasks = () => {
               processId,
               processName,
               assignedUser,
+              processCreatedDate,
               tasks: sortedTasks,
             };
           })
@@ -163,9 +170,16 @@ const ProjectTasks = () => {
     setFilteredProcesses(filtered);
 
     // Sayfa numarası geçerli değilse 1'e çek
-    const totalFilteredItems = filtered.flatMap(p => p.tasks).length;
-    const totalPages = Math.ceil(totalFilteredItems / ITEMS_PER_PAGE);
-    setCurrentPage((prev) => Math.min(prev, totalPages || 1));
+    if (selectedProcess) {
+      const currentProcess = filtered.find(p => p.processId === selectedProcess.processId);
+      if (currentProcess) {
+        const totalFilteredItems = currentProcess.tasks.length;
+        const totalPages = Math.ceil(totalFilteredItems / ITEMS_PER_PAGE);
+        setCurrentPage((prev) => Math.min(prev, totalPages || 1));
+      }
+    } else {
+      setCurrentPage(1);
+    }
   };
 
   const clearFilters = () => {
@@ -252,9 +266,9 @@ const ProjectTasks = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "NotStarted": return "#7ed2e2";
-      case "InProgress": return "#7ed2e2";
-      case "Completed": return "#7ed2e2";
-      case "Cancelled": return "#7ed2e2";
+      case "InProgress": return "#ffd43b";
+      case "Completed": return "#51cf66";
+      case "Cancelled": return "#ff6b6b";
       default: return "#7ed2e2";
     }
   };
@@ -288,9 +302,9 @@ const ProjectTasks = () => {
       {showLabels && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
           <Text size="xs" style={{ color: '#7ed2e2' }}>Başlamadı: {stats.notStarted}%</Text>
-          <Text size="xs" style={{ color: '#7ed2e2' }}>Devam: {stats.inProgress}%</Text>
-          <Text size="xs" style={{ color: '#7ed2e2' }}>Tamamlandı: {stats.completed}%</Text>
-          <Text size="xs" style={{ color: '#7ed2e2' }}>İptal: {stats.cancelled}%</Text>
+          <Text size="xs" style={{ color: '#ffd43b' }}>Devam: {stats.inProgress}%</Text>
+          <Text size="xs" style={{ color: '#51cf66' }}>Tamamlandı: {stats.completed}%</Text>
+          <Text size="xs" style={{ color: '#ff6b6b' }}>İptal: {stats.cancelled}%</Text>
         </div>
       )}
       <div style={{ display: 'flex', gap: 4 }}>
@@ -310,13 +324,20 @@ const ProjectTasks = () => {
     </div>
   );
 
-  // Pagination
-  const allTasks = filteredProcesses.flatMap(process =>
-    process.tasks.map(task => ({ ...task, processName: process.processName, assignedUser: process.assignedUser }))
-  );
+  const handleProcessClick = (process) => {
+    setSelectedProcess(process);
+    setCurrentPage(1);
+  };
 
-  const totalPages = Math.ceil(allTasks.length / ITEMS_PER_PAGE);
-  const paginatedTasks = allTasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const handleBackToProcesses = () => {
+    setSelectedProcess(null);
+    setCurrentPage(1);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Belirtilmemiş";
+    return new Date(dateString).toLocaleDateString('tr-TR');
+  };
 
   if (loading) {
     return (
@@ -335,97 +356,160 @@ const ProjectTasks = () => {
 
   const projectStats = calculateProjectStats();
 
+  // Process Cards View
+  if (!selectedProcess) {
+    return (
+      <div className="min-h-screen bg-white p-0 m-0">
+        <div className="w-full">
+          {/* Header */}
+          <Header
+            title="Süreçler"
+            subtitle={`${projectName} Projesine Ait Süreçler`}
+            icon={IconCalendar}
+            stats={projectStats}
+            showStats={true}
+          />
+
+          {/* Search and Filter Section */}
+          <div className="px-4">
+            <FilterAndSearch
+              searchFilters={searchFilters}
+              handleFilterChange={handleFilterChange}
+              clearFilters={clearFilters}
+              filtersConfig={[
+                {key:"proccesName", type:"text",placeholder: "Süreç adına göre ara..."},
+                {key:"startDate", type:"date"},
+                {key:"endDate",type:"date"}
+              ]}
+            />
+          {/* Process Cards Grid */}
+          <Grid gutter="lg">
+            {filteredProcesses.map((process) => {
+              const processStats = calculateStatusStats(process.tasks);
+              return (
+                <Grid.Col key={process.processId} span={{ base: 12, sm: 6, lg: 4 }}>
+                  <Card
+                    withBorder
+                    padding="lg"
+                    className="cursor-pointer transition-all duration-200 ease-linear hover:shadow-lg"
+                    style={{
+                      height: 280,
+                    }}
+                    onClick={() => handleProcessClick(process)}
+                  >
+                    <Stack spacing="md" style={{ height: '100%' }}>
+                      {/* Process Header */}
+                      <div>
+                        <Title order={4} className="text-[#112d3b] mb-2">
+                          {process.processName}
+                        </Title>
+                        <Text size="sm" color="#7ed2e2">
+                          📅 Oluşturulma: {formatDate(process.processCreatedDate)}
+                        </Text>
+                      </div>
+
+                      <Divider />
+
+                      {/* Process Info */}
+                      <Stack spacing="xs">
+                        <Group spacing="xs">
+                          <IconUsers size={16} color="#279ab3" />
+                          <Text size="sm" color="#279ab3">
+                            Atanan: {process.assignedUser || "Atanmamış"}
+                          </Text>
+                        </Group>
+                        
+                        <Group spacing="xs">
+                          <Text size="sm" color="#279ab3">
+                            Toplam Görev: {process.tasks.length}
+                          </Text>
+                        </Group>
+
+                        <Group spacing="xs">
+                          <IconClock size={16} color="#51cf66" />
+                          <Text size="sm" color="#51cf66">
+                            Tamamlanan: {process.tasks.filter(t => t.status === 'Completed').length}
+                          </Text>
+                        </Group>
+                      </Stack>
+
+                      {/* Progress Bar */}
+                      <div className="mt-auto">
+                        <Text size="sm" weight={500} color="#279ab3" className="mb-2">
+                          İlerleme Durumu
+                        </Text>
+                        <StatusBar stats={processStats} size="sm" showLabels={false} />
+                      </div>
+                    </Stack>
+                  </Card>
+                </Grid.Col>
+              );
+            })}
+          </Grid>
+
+          {/* No Results */}
+          {filteredProcesses.length === 0 && (
+            <Paper shadow="md" padding="xl" className="text-center mt-8">
+              <Text size="lg" color="#279ab3" weight={500}>
+                Arama kriterlerinize uygun süreç bulunamadı.
+              </Text>
+              <Button
+                variant="light"
+                color="#279ab3"
+                onClick={clearFilters}
+                className="mt-4"
+              >
+                Filtreleri Temizle
+              </Button>
+            </Paper>
+          )}
+        </div>
+      </div>
+      </div>
+    );
+  }
+
+  // Task Details View
+  const currentProcess = filteredProcesses.find(p => p.processId === selectedProcess.processId);
+  if (!currentProcess) return null;
+
+  const processStats = calculateStatusStats(currentProcess.tasks);
+  const totalPages = Math.ceil(currentProcess.tasks.length / ITEMS_PER_PAGE);
+  const paginatedTasks = currentProcess.tasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   return (
     <div className="min-h-screen bg-white p-0 m-0">
-      <div className="w-full">  {/* maxWidth kaldırıldı */}
-
-        {/* Header */}
+      <div className="w-full">
+        {/* Header with Back Button */}
         <Header
-          title="Görevler"
-          subtitle={`${projectName} Projesine Ait Tüm Görevler`}
-          icon={IconCalendar}
-          stats={projectStats}
+          title={`${currentProcess.processName}`}
+          subtitle={`${projectName} Görevleri`}
+          stats={processStats}
           showStats={true}
         />
 
         {/* Search and Filter Section */}
-        <Paper shadow="md" padding="lg" className="mb-6 bg-white pl-3 pr-3">
-          <Group position="apart" className="mb-4">
-            <Group spacing="xs">
-              <IconFilter size={20} color="#279ab3" />
-              <Text size="md" weight={500} className="text-[#279ab3]">
-                Filtreleme ve Arama
-              </Text>
-            </Group>
-            <ActionIcon
-              variant="light"
-              color="#279ab3"
-              onClick={clearFilters}
-              title="Filtreleri Temizle"
-            >
-              <IconX size={16} />
-            </ActionIcon>
-          </Group>
-
-          <Grid gutter="md">
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <TextInput
-                leftSection={<IconSearch size={16} />}
-                placeholder="Süreç adına göre ara..."
-                value={searchFilters.processName}
-                onChange={(e) => handleFilterChange('processName', e.target.value)}
-                style={{ '& .mantine-TextInput-input': { borderColor: '#b3e6ee' } }}
-              />
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <TextInput
-                leftSection={<IconSearch size={16} />}
-                placeholder="Görev adına göre ara..."
-                value={searchFilters.taskName}
-                onChange={(e) => handleFilterChange('taskName', e.target.value)}
-                style={{ '& .mantine-TextInput-input': { borderColor: '#b3e6ee' } }}
-              />
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-              <Select
-                placeholder="Durum seçin..."
-                value={searchFilters.status}
-                onChange={(value) => handleFilterChange('status', value)}
-                data={[
-                  { value: "", label: "Tümü" },
-                  { value: "NotStarted", label: "Başlamadı" },
-                  { value: "InProgress", label: "Devam Ediyor" },
-                  { value: "Completed", label: "Tamamlandı" },
-                  { value: "Cancelled", label: "İptal Edildi" },
-                ]}
-                style={{ '& .mantine-Select-input': { borderColor: '#b3e6ee' } }}
-              />
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, sm: 6, md: 6 }}>
-              <TextInput
-                type="date"
-                placeholder="Başlangıç tarihi..."
-                value={searchFilters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                style={{ '& .mantine-TextInput-input': { borderColor: '#b3e6ee' } }}
-              />
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 12, sm: 6, md: 6 }}>
-              <TextInput
-                type="date"
-                placeholder="Bitiş tarihi..."
-                value={searchFilters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                style={{ '& .mantine-TextInput-input': { borderColor: '#b3e6ee' } }}
-              />
-            </Grid.Col>
-          </Grid>
-        </Paper>
-
+        <div className="px-4">
+          <FilterAndSearch
+            searchFilters={searchFilters}
+            handleFilterChange={handleFilterChange}
+            clearFilters={clearFilters}
+            filtersConfig={[
+              {key: "taskName", type: "text", placeholder:"Görev adına göre ara..."},
+              { key: "startDate", type: "date" },
+              { key: "endDate", type: "date" },
+            ]}
+          />
+        
+        <div className="flex justify-start mb-5">
+          <button
+            onClick={handleBackToProcesses}
+            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+          >
+            <IconArrowLeft size={20} />
+            Süreçler
+          </button>
+        </div>
         {/* Task Cards Grid */}
         <Grid gutter="lg">
           {paginatedTasks.map((task) => (
@@ -464,10 +548,7 @@ const ProjectTasks = () => {
                   <Paper padding="xs" style={{ backgroundColor: '#effafc' }}>
                     <Group spacing="xs">
                       <Text size="xs" color="#279ab3" weight={500}>
-                        📋 {task.processName}
-                      </Text>
-                      <Text size="xs" color="#7ed2e2">
-                        👤 {task.assignedUser}
+                        👤 {currentProcess.assignedUser}
                       </Text>
                     </Group>
                   </Paper>
@@ -579,21 +660,22 @@ const ProjectTasks = () => {
         )}
 
         {/* No Results */}
-        {filteredProcesses.length === 0 && (
+        {currentProcess.tasks.length === 0 && (
           <Paper shadow="md" padding="xl" className="text-center mt-8">
             <Text size="lg" color="#279ab3" weight={500}>
-              Arama kriterlerinize uygun görev bulunamadı.
+              Bu süreçte görev bulunamadı.
             </Text>
             <Button
               variant="light"
               color="#279ab3"
-              onClick={clearFilters}
+              onClick={handleBackToProcesses}
               className="mt-4"
             >
-              Filtreleri Temizle
+              Süreçlere Dön
             </Button>
           </Paper>
         )}
+        </div>
       </div>
 
       <style jsx>{`
@@ -607,4 +689,3 @@ const ProjectTasks = () => {
 };
 
 export default ProjectTasks;
-
