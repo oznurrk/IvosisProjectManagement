@@ -10,3 +10,7 @@
 
 
 ProjectCreated sayfasında dc gücü hesaplanmada kaydediliyor.
+
+biten süreçler belirli süre sonra uyarı verecek.
+süreç görevleri güncellenecek.
+tüm görevler tamamlandı olunca süreç tamamlandı olarak güncellenecek.

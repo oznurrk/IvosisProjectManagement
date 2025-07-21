@@ -1,23 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
-import { Select, Textarea, Text, Group, Stack, Badge, Button, TextInput, Pagination, Grid, ActionIcon, Paper, Modal, Card } from "@mantine/core";
-import { IconSearch, IconFilter, IconX, IconUser, IconCalendar, IconCalendarUser } from '@tabler/icons-react';
+import { Select, Textarea, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Modal, Card } from "@mantine/core";
+import { IconUser, IconCalendarUser } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 
-
 const MyTasks = () => {
-  const [currentUser, setCurrentUser] = useState(null);
   const [myTasks, setMyTasks] = useState([]);
-  const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [users, setUsers] = useState([]);
-  const [selectedAssignTaskId, setSelectedAssignTaskId] = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
-
+  
   const [searchFilters, setSearchFilters] = useState({
     projectName: "",
     processName: "",
@@ -30,77 +26,57 @@ const MyTasks = () => {
   const ITEMS_PER_PAGE = 6;
   const CARD_HEIGHT = 500;
 
-  // Login işleminden sonra localStorage'a kaydedilen token ve user bilgilerini al
+  // Auth bilgileri
   const token = localStorage.getItem("token");
-  const userObj = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
-  const userId = userObj?.id || null;
+  const userObj = useMemo(() => {
+    const user = localStorage.getItem("user");
+    return user ? JSON.parse(user) : null;
+  }, []);
+  const currentUserId = userObj?.id || 1;
 
+  // API call optimizasyonu
+  const fetchTaskDetails = useCallback(async (projectTask) => {
+    const [projectRes, processRes, taskRes] = await Promise.allSettled([
+      axios.get(`http://localhost:5000/api/projects/${projectTask.projectId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      axios.get(`http://localhost:5000/api/processes/${projectTask.processId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      axios.get(`http://localhost:5000/api/tasks/${projectTask.taskId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ]);
+
+    return {
+      ...projectTask,
+      projectName: projectRes.status === 'fulfilled' ? projectRes.value.data.name : "Bilinmeyen Proje",
+      processName: processRes.status === 'fulfilled' ? processRes.value.data.name : "Bilinmeyen Süreç",
+      taskDetails: taskRes.status === 'fulfilled' ? taskRes.value.data : { title: "Bilinmeyen Görev", description: "" },
+      assignedUserName: users.find(u => u.id === projectTask.assignedUserId)?.name || "Bilinmiyor"
+    };
+  }, [token, users]);
+
+  // Görevleri getir
   useEffect(() => {
     const fetchMyTasks = async () => {
-      if (!token) {
-        console.error("Token bulunamadı. Lütfen giriş yapın.");
-        return;
-      }
+      if (!token) return;
+      
       setLoading(true);
       try {
         const myTasksRes = await axios.get(
           "http://localhost:5000/api/ProjectTasks/my-tasks",
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        
         const tasksData = myTasksRes.data?.data || [];
         if (!Array.isArray(tasksData)) {
-          console.error("Beklenen dizi değil:", tasksData);
           setMyTasks([]);
-          setFilteredTasks([]);
           return;
         }
 
-        const tasksWithDetails = await Promise.all(
-          tasksData.map(async (projectTask) => {
-            let projectName = "";
-            let processName = "";
-            let taskDetails = {};
-            try {
-              const projectRes = await axios.get(
-                `http://localhost:5000/api/projects/${projectTask.projectId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              projectName = projectRes.data.name;
-            } catch (error) {
-              console.error("Proje bilgisi alınamadı:", error);
-              projectName = "Bilinmeyen Proje";
-            }
-            try {
-              const processRes = await axios.get(
-                `http://localhost:5000/api/processes/${projectTask.processId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              processName = processRes.data.name;
-            } catch (error) {
-              console.error("Süreç bilgisi alınamadı:", error);
-              processName = "Bilinmeyen Süreç";
-            }
-            try {
-              const taskRes = await axios.get(
-                `http://localhost:5000/api/tasks/${projectTask.taskId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              taskDetails = taskRes.data;
-            } catch (error) {
-              console.error("Görev bilgisi alınamadı:", error);
-              taskDetails = { title: "Bilinmeyen Görev", description: "" };
-            }
-            const assignedUserId = users.find(u => u.id === projectTask.assignedUserId);
-            return {
-              ...projectTask,
-              projectName,
-              processName,
-              taskDetails,
-              assignedUserName: assignedUserId?.name || "Bilinmiyor"
-            };
-          })
-        );
-
+        const tasksWithDetails = await Promise.all(tasksData.map(fetchTaskDetails));
+        
         const sortedTasks = tasksWithDetails.sort((a, b) => {
           if (a.projectName !== b.projectName) {
             return a.projectName.localeCompare(b.projectName);
@@ -110,11 +86,11 @@ const MyTasks = () => {
           }
           return (a.taskDetails.order || 0) - (b.taskDetails.order || 0);
         });
+        
         setMyTasks(sortedTasks);
-        setFilteredTasks(sortedTasks);
       } catch (error) {
         console.error("Görevler alınamadı:", error);
-        if (error.response && error.response.status === 401) {
+        if (error.response?.status === 401) {
           alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
           localStorage.removeItem("token");
           localStorage.removeItem("user");
@@ -123,11 +99,15 @@ const MyTasks = () => {
         setLoading(false);
       }
     };
-    fetchMyTasks();
-  }, [token]);
 
+    fetchMyTasks();
+  }, [token, fetchTaskDetails]);
+
+  // Kullanıcıları getir
   useEffect(() => {
     const fetchUsers = async () => {
+      if (!token) return;
+      
       try {
         const res = await axios.get("http://localhost:5000/api/users", {
           headers: { Authorization: `Bearer ${token}` },
@@ -137,154 +117,32 @@ const MyTasks = () => {
         console.error("Kullanıcılar alınamadı:", error);
       }
     };
-    if (token) {
-      fetchUsers();
-    }
+
+    fetchUsers();
   }, [token]);
 
-  useEffect(() => {
-    applyFilters();
-  }, [searchFilters, myTasks]);
-
-  const applyFilters = () => {
-    let filtered = myTasks;
-    if (searchFilters.projectName) {
-      filtered = filtered.filter(task =>
-        task.projectName.toLowerCase().includes(searchFilters.projectName.toLowerCase())
-      );
-    }
-    if (searchFilters.processName) {
-      filtered = filtered.filter(task =>
-        task.processName.toLowerCase().includes(searchFilters.processName.toLowerCase())
-      );
-    }
-    if (searchFilters.taskName) {
-      filtered = filtered.filter(task =>
-        task.taskDetails.title.toLowerCase().includes(searchFilters.taskName.toLowerCase())
-      );
-    }
-    if (searchFilters.status) {
-      filtered = filtered.filter(task => task.status === searchFilters.status);
-    }
-    if (searchFilters.startDate) {
-      filtered = filtered.filter(task =>
-        task.startDate && task.startDate.split('T')[0] >= searchFilters.startDate
-      );
-    }
-    if (searchFilters.endDate) {
-      filtered = filtered.filter(task =>
-        task.endDate && task.endDate.split('T')[0] <= searchFilters.endDate
-      );
-    }
-    setFilteredTasks(filtered);
-    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    setCurrentPage((prev) => Math.min(prev, totalPages || 1));
-  };
-
-  const clearFilters = () => {
-    setSearchFilters({
-      projectName: "",
-      processName: "",
-      taskName: "",
-      status: "",
-      startDate: "",
-      endDate: ""
+  // Filtrelenmiş görevler
+  const filteredTasks = useMemo(() => {
+    return myTasks.filter(task => {
+      if (searchFilters.projectName && !task.projectName.toLowerCase().includes(searchFilters.projectName.toLowerCase())) return false;
+      if (searchFilters.processName && !task.processName.toLowerCase().includes(searchFilters.processName.toLowerCase())) return false;
+      if (searchFilters.taskName && !task.taskDetails.title.toLowerCase().includes(searchFilters.taskName.toLowerCase())) return false;
+      if (searchFilters.status && task.status !== searchFilters.status) return false;
+      if (searchFilters.startDate && task.startDate && task.startDate.split('T')[0] < searchFilters.startDate) return false;
+      if (searchFilters.endDate && task.endDate && task.endDate.split('T')[0] > searchFilters.endDate) return false;
+      return true;
     });
-  };
+  }, [myTasks, searchFilters]);
 
-  const handleFilterChange = (key, value) => {
-    setSearchFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
+  // Sayfalama
+  const { totalPages, paginatedTasks } = useMemo(() => {
+    const total = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
+    const paginated = filteredTasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    return { totalPages: total, paginatedTasks: paginated };
+  }, [filteredTasks, currentPage]);
 
-  const handleUpdateTask = async (task) => {
-    if (!token) {
-      alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
-      return;
-    }
-    try {
-      await axios.put(
-        `http://localhost:5000/api/projectTasks/${task.id}`,
-        {
-          status: task.status,
-          description: task.description,
-          endDate: task.endDate,
-          filePath: task.filePath || null,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Görev başarıyla güncellendi");
-    } catch (error) {
-      console.error("Güncelleme hatası:", error);
-      if (error.response && error.response.status === 401) {
-        alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
-      } else {
-        alert("Görev güncellenirken bir hata oluştu");
-      }
-    }
-  };
-
-  const handleFileUpload = async (taskId, file) => {
-    if (!token) {
-      alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
-      return;
-    }
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await axios.post(
-        `http://localhost:5000/api/projectTasks/upload/${taskId}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      setMyTasks(prev =>
-        prev.map(task => task.id === taskId ? { ...task, filePath: response.data.filePath } : task)
-      );
-      alert("Dosya başarıyla yüklendi");
-    } catch (error) {
-      console.error("Dosya yükleme hatası:", error);
-      if (error.response && error.response.status === 401) {
-        alert("Yetkilendirme hatası. Lütfen tekrar giriş yapın.");
-      } else {
-        alert("Dosya yüklenirken bir hata oluştu");
-      }
-    }
-  };
-
-  const updateTaskInState = (taskId, updates) => {
-    setMyTasks(prev =>
-      prev.map(task => task.id === taskId ? { ...task, ...updates } : task)
-    );
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "NotStarted": return "Başlamadı";
-      case "InProgress": return "Devam Ediyor";
-      case "Completed": return "Tamamlandı";
-      case "Cancelled": return "İptal Edildi";
-      default: return status;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "NotStarted": return "#6c757d";
-      case "InProgress": return "#fd7e14";
-      case "Completed": return "#28a745";
-      case "Cancelled": return "#dc3545";
-      default: return "#6c757d";
-    }
-  };
-
-  const calculateMyTasksStats = () => {
+  // İstatistikler
+  const myTasksStats = useMemo(() => {
     const total = filteredTasks.length;
     if (total === 0) return { notStarted: 0, inProgress: 0, completed: 0, cancelled: 0 };
 
@@ -301,75 +159,111 @@ const MyTasks = () => {
       completed: Math.round((stats.completed / total) * 100),
       cancelled: Math.round((stats.cancelled / total) * 100),
     };
-  };
+  }, [filteredTasks]);
 
-  const handleReassign = async (newUserIdStr) => {
+  // Event handlers
+  const handleFilterChange = useCallback((key, value) => {
+    setSearchFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1); // Filtre değiştiğinde ilk sayfaya dön
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchFilters({
+      projectName: "",
+      processName: "",
+      taskName: "",
+      status: "",
+      startDate: "",
+      endDate: ""
+    });
+    setCurrentPage(1);
+  }, []);
+
+  const updateTaskInState = useCallback((taskId, updates) => {
+    setMyTasks(prev => prev.map(task => task.id === taskId ? { ...task, ...updates } : task));
+  }, []);
+
+  const handleUpdateTask = useCallback(async (task) => {
+    try {
+      const dto = {
+        status: task.status,
+        startDate: task.startDate,
+        assignedUserId: task.assignedUserId,
+        endDate: task.endDate || null,
+        description: task.description,
+        filePath: task.filePath || null,
+        updatedByUserId: currentUserId
+      };
+
+      await axios.put(`http://localhost:5000/api/projectTasks/${task.id}`, dto, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      alert("Görev başarıyla güncellendi");
+    } catch (err) {
+      console.error("Güncelleme Hatası: ", err.response?.data || err.message);
+    }
+  }, [token, currentUserId]);
+
+  
+  const handleReassign = useCallback(async (newUserIdStr) => {
     const newUserId = parseInt(newUserIdStr);
-    const updatedByUserId = userObj?.id;
-
     if (!taskToReassign) return;
 
     try {
       const payload = {
         status: taskToReassign.status || "NotStarted",
-        startDate: taskToReassign.startDate
-          ? new Date(taskToReassign.startDate).toISOString()
-          : new Date().toISOString(),
+        startDate: taskToReassign.startDate ? new Date(taskToReassign.startDate).toISOString() : new Date().toISOString(),
         assignedUserId: newUserId,
-        endDate: taskToReassign.endDate
-          ? new Date(taskToReassign.endDate).toISOString()
-          : null,
+        endDate: taskToReassign.endDate ? new Date(taskToReassign.endDate).toISOString() : null,
         description: taskToReassign.description || "",
         filePath: taskToReassign.filePath || null,
-        updatedByUserId: updatedByUserId || 0,
+        updatedByUserId: userObj?.id || 0,
       };
 
-      console.log("GÖNDERİLEN VERİ:", payload);
-
-      await axios.put(
-        `http://localhost:5000/api/projectTasks/${taskToReassign.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put(`http://localhost:5000/api/projectTasks/${taskToReassign.id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       setMyTasks(prev => prev.filter(t => t.id !== taskToReassign.id));
-      setFilteredTasks(prev => prev.filter(t => t.id !== taskToReassign.id));
-
       setAssignModalOpen(false);
       setTaskToReassign(null);
+      setSelectedUserId(null);
     } catch (err) {
       alert("Atama değiştirilemedi");
       console.error("API HATASI:", err);
-      if (err.response) {
-        console.error("BACKEND MESAJI:", err.response.data);
-      }
     }
+  }, [taskToReassign, token, userObj]);
+
+  // Utility functions
+  const getStatusLabel = (status) => {
+    const labels = {
+      "NotStarted": "Başlamadı",
+      "InProgress": "Devam Ediyor",
+      "Completed": "Tamamlandı",
+      "Cancelled": "İptal Edildi"
+    };
+    return labels[status] || status;
   };
 
-  // Pagination
-  const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
-  const paginatedTasks = filteredTasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const getStatusColor = (status) => {
+    const colors = {
+      "NotStarted": "#6c757d",
+      "InProgress": "#fd7e14",
+      "Completed": "#28a745",
+      "Cancelled": "#dc3545"
+    };
+    return colors[status] || "#6c757d";
+  };
 
-  // Eğer token veya userId yoksa login mesajı göster
-  if (!token || !userId) {
+  // Early returns
+  if (!token || !userObj?.id) {
     return (
-      <div style={{
-        padding: '2rem',
-        textAlign: 'center',
-        minHeight: '400px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f8f9fa'
-      }}>
+      <div className="p-8 text-center min-h-[400px] flex items-center justify-center bg-[#f8f9fa]">
         <Stack align="center" spacing="md">
           <IconUser size={64} color="#007bff" />
-          <Text size="xl" color="#007bff" weight={500}>
-            Lütfen Giriş Yapın
-          </Text>
-          <Text size="md" color="dimmed">
-            Görevlerinizi görüntülemek için sisteme giriş yapmanız gerekmektedir.
-          </Text>
+          <Text size="xl" color="#007bff" weight={500}>Lütfen Giriş Yapın</Text>
+          <Text size="md" color="dimmed">Görevlerinizi görüntülemek için sisteme giriş yapmanız gerekmektedir.</Text>
         </Stack>
       </div>
     );
@@ -386,24 +280,20 @@ const MyTasks = () => {
     );
   }
 
-  const myTasksStats = calculateMyTasksStats();
-
   return (
     <div className="bg-[#f8f9fa] p-0 m-0">
       <div className="w-full">
-        {/* PageHeader bileşenini kullan */}
         <Header
           title="Görevlerim"
           subtitle="Kişisel Görev Dashboard"
           icon={IconCalendarUser}
-          userName={currentUser?.name || userObj?.name || 'Kullanıcı'}
+          userName={userObj?.name || 'Kullanıcı'}
           totalCount={filteredTasks.length}
           stats={myTasksStats}
           showStats={true}
           statsTitle="Görev Durumu İstatistikleri"
         />
 
-        {/* Search and Filter Section */}
         <div className="px-4">
           <FilterAndSearch
             searchFilters={searchFilters}
@@ -430,7 +320,6 @@ const MyTasks = () => {
             ]}
           />
 
-          {/* Task Cards Grid - Burada kalan kodları da ekle */}
           <Grid gutter="lg">
             {paginatedTasks.map((task) => (
               <Grid.Col key={task.id} span={{ base: 12, sm: 6, lg: 4 }}>
@@ -447,20 +336,13 @@ const MyTasks = () => {
                       <Text size="sm" weight={500} className="text-[#212529] leading-[1.4] flex-1">
                         {task.taskDetails?.title || 'Görev Başlığı'}
                       </Text>
-                      <Badge
-                        style={{
-                          backgroundColor: getStatusColor(task.status),
-                          color: 'white'
-                        }}
-                        size="sm"
-                      >
+                      <Badge style={{ backgroundColor: getStatusColor(task.status), color: 'white' }} size="sm">
                         {getStatusLabel(task.status)}
                       </Badge>
                     </Group>
+                    
                     <Group position="apart">
-                      <Text size="xs" color="dimmed">
-                        👤 Atanan: {task.assignedUserName || "Bilinmiyor"}
-                      </Text>
+                      <Text size="xs" color="dimmed">👤 Atanan: {task.assignedUserName}</Text>
                       <Button
                         size="xs"
                         variant="outline"
@@ -475,22 +357,16 @@ const MyTasks = () => {
 
                     <Stack spacing="xs">
                       <Paper padding="xs" className="bg-[#e3f2fd]">
-                        <Text size="xs" color="#1976d2" weight={500}>
-                          🏢 Proje: {task.projectName}
-                        </Text>
+                        <Text size="xs" color="#1976d2" weight={500}>🏢 Proje: {task.projectName}</Text>
                       </Paper>
                       <Paper padding="xs" className="bg-[#f3e5f5]">
-                        <Text size="xs" color="#7b1fa2" weight={500}>
-                          ⚙️ Süreç: {task.processName}
-                        </Text>
+                        <Text size="xs" color="#7b1fa2" weight={500}>⚙️ Süreç: {task.processName}</Text>
                       </Paper>
                     </Stack>
 
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Text size="xs" color="#007bff" className="mb-1">
-                          📅 Başlangıç
-                        </Text>
+                        <Text size="xs" color="#007bff" className="mb-1">📅 Başlangıç</Text>
                         <input
                           type="date"
                           value={task.startDate?.split("T")[0] || ""}
@@ -499,9 +375,7 @@ const MyTasks = () => {
                         />
                       </div>
                       <div>
-                        <Text size="xs" color="#007bff" style={{ marginBottom: '4px' }}>
-                          🎯 Bitiş
-                        </Text>
+                        <Text size="xs" color="#007bff" className="mb-1">🎯 Bitiş</Text>
                         <input
                           type="date"
                           value={task.endDate?.split("T")[0] || ""}
@@ -522,7 +396,6 @@ const MyTasks = () => {
                         { value: "Completed", label: "Tamamlandı" },
                         { value: "Cancelled", label: "İptal Edildi" },
                       ]}
-                      style={{ '& .mantine-Select-input': { borderColor: '#ced4da' } }}
                     />
 
                     <Textarea
@@ -532,20 +405,14 @@ const MyTasks = () => {
                       onChange={(e) => updateTaskInState(task.id, { description: e.target.value })}
                       minRows={2}
                       maxRows={3}
-                      style={{
-                        flex: 1,
-                        '& .mantine-Textarea-input': { borderColor: '#ced4da' }
-                      }}
+                      style={{ flex: 1 }}
                     />
 
                     <div className="flex items-center gap-2">
                       <span className="text-sm flex-shrink-0 text-[#007bff]">📎</span>
                       <input
                         type="file"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files);
-                          files.forEach((file) => handleFileUpload(task.id, file));
-                        }}
+                        onChange={(e) => updateTaskInState(task.id, {description: e.target.value})}
                         className="flex-1 text-xs p-1 border border-[#ced4da] rounded"
                       />
                     </div>
@@ -554,9 +421,9 @@ const MyTasks = () => {
                       size="sm"
                       onClick={() => handleUpdateTask(task)}
                       className="border-0 mt-auto"
-                      style={{ background: 'linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)' }}
+                      style={{ background: 'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)' }}
                     >
-                      Görevi Güncelle
+                      Güncelle
                     </Button>
                   </Stack>
                 </Card>
@@ -565,40 +432,26 @@ const MyTasks = () => {
           </Grid>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center mt-8">
-            <Pagination
-              value={currentPage}
-              onChange={setCurrentPage}
-              total={totalPages}
-              size="md"
-              color="#007bff"
-            />
+            <Pagination value={currentPage} onChange={setCurrentPage} total={totalPages} size="md" color="#007bff" />
           </div>
         )}
-        {/* No Results */}
+
         {filteredTasks.length === 0 && !loading && (
           <Paper shadow="md" padding="xl" className="text-center mt-8">
             <Text size="lg" color="#007bff" weight={500}>
-              {myTasks.length === 0
-                ? "Size atanmış görev bulunmamaktadır."
-                : "Arama kriterlerinize uygun görev bulunamadı."
-              }
+              {myTasks.length === 0 ? "Size atanmış görev bulunmamaktadır." : "Arama kriterlerinize uygun görev bulunamadı."}
             </Text>
             {myTasks.length > 0 && (
-              <Button
-                variant="light"
-                color="#007bff"
-                onClick={clearFilters}
-                className="mt-4"
-              >
+              <Button variant="light" color="#007bff" onClick={clearFilters} className="mt-4">
                 Filtreleri Temizle
               </Button>
             )}
           </Paper>
         )}
       </div>
+
       <Modal
         opened={assignModalOpen}
         onClose={() => {
@@ -613,7 +466,7 @@ const MyTasks = () => {
         {taskToReassign && (
           <Stack spacing="sm">
             <Text size="sm" weight={500}>
-              <span className="font-bold"> Görev: </span> {taskToReassign.taskDetails?.title}
+              <span className="font-bold">Görev: </span> {taskToReassign.taskDetails?.title}
             </Text>
             <Select
               label="Atamayı Değiştir"
@@ -624,12 +477,7 @@ const MyTasks = () => {
               withinPortal={false}
             />
             <Button
-              onClick={() => {
-                if (selectedUserId) {
-                  handleReassign(selectedUserId);
-                  setSelectedUserId(null);
-                }
-              }}
+              onClick={() => selectedUserId && handleReassign(selectedUserId)}
               disabled={!selectedUserId}
               fullWidth
               color="ivosis.6"
@@ -639,19 +487,8 @@ const MyTasks = () => {
           </Stack>
         )}
       </Modal>
-
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .task-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
-        }
-      `}</style>
     </div>
   );
 };
+
 export default MyTasks;

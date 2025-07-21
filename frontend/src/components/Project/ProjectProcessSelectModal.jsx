@@ -92,7 +92,7 @@ const ProjectProcessSelectModal = ({ opened, onClose, projectId }) => {
           processId: parseInt(processId),
           taskId: parseInt(task.id),
           assignedUserId: parseInt(userId),
-          status: "ToDo",
+          status: "NotStarted",
           startDate: new Date().toISOString(),
           endDate: null,
           description: task.description || "",
