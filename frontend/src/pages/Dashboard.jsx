@@ -131,7 +131,7 @@ const Dashboard = () => {
             value={summary?.completedTasks || 0}
             icon={<CheckCircle className="h-6 w-6" />}
             gradient="from-green-500 to-green-600"
-            change="+15%"
+            change="+187978%"
             changeType="positive"
           />
           <KPICard
