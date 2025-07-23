@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Text, Badge, Card, Group, Stack, Divider, LoadingOverlay, ActionIcon, Tooltip, Pagination, TextInput, Select, Button, Paper, Grid, } from "@mantine/core";
-import { IconCalendar, IconMapPin, IconBolt, IconSolarPanel, IconCpu, IconPlus, IconInfoCircle, IconSearch, IconFilter, IconX, IconSunElectricity, } from "@tabler/icons-react";
+import { Text, Badge, Card, Group, Stack, Divider, LoadingOverlay, ActionIcon, Tooltip, Pagination,  } from "@mantine/core";
+import { IconCalendar, IconMapPin, IconBolt, IconSolarPanel, IconCpu, IconPlus, IconInfoCircle, IconSunElectricity, } from "@tabler/icons-react";
 import ProjectCartSelectModal from "../components/Project/ProjectCartSelectModal";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header/Header";
@@ -119,7 +119,7 @@ const Projects = () => {
   };
 
   const statusConfig = {
-    NotStarted: { color: "blue", label: "Başlamadı" },
+    isPlanned: { color: "blue", label: "Başlamadı" },
     InProgress: { color: "yellow", label: "Devam Ediyor" },
     Completed: { color: "green", label: "Tamamlandı" },
     Cancelled: { color: "red", label: "İptal Edildi" },

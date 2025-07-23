@@ -6,8 +6,8 @@ import axios from 'axios';
 const ProjectCreated = () => {
   const [hasEkYapi, setHasEkYapi] = useState(false);
   const [cities, setCities] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [neighborhood, setNeighborhood] = useState([]);
+  const [districts, setDistricts] = useState({});
+  const [neighborhood, setNeighborhood] = useState({});
   const [projectTypes, setProjectTypes] = useState([]);
   const [panelBrand, setPanelBrand] = useState([]);
   const [inverterBrand, setInverterBrand] = useState([]);
@@ -37,13 +37,13 @@ const ProjectCreated = () => {
     dcValue: 0,
     createdByUserId: 1,
     projectTypeId: 1,
-    address: {
+    addresses: [{
       cityId: 0,
       districtId: 0,
       neighborhoodId: 0,
       ada: "",
       parsel: ""
-    }
+    }]
   });
 
   useEffect(() => {
@@ -72,25 +72,57 @@ const ProjectCreated = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (!formData.address.cityId) return;
+  // İlçeleri getirme fonksiyonu
+  const fetchDistricts = async (cityId, addressIndex) => {
+    if (!cityId) return;
     const token = localStorage.getItem("token");
-    axios.get(`http://localhost:5000/api/cities/by-districts/${formData.address.cityId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(res => {
-      setDistricts(res.data.map(i => ({ value: i.id.toString(), label: i.name })));
-    }).catch(console.error);
-  }, [formData.address.cityId]);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/cities/by-districts/${cityId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDistricts(prev => ({
+        ...prev,
+        [addressIndex]: res.data.map(i => ({ value: i.id.toString(), label: i.name }))
+      }));
+    } catch (err) {
+      console.error("İlçeler alınamadı:", err);
+    }
+  };
 
-  useEffect(() => {
-    if (!formData.address.districtId) return;
+  // Mahalleleri getirme fonksiyonu
+  const fetchNeighborhoods = async (districtId, addressIndex) => {
+    if (!districtId) return;
     const token = localStorage.getItem("token");
-    axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${formData.address.districtId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(res => {
-      setNeighborhood(res.data.map(i => ({ value: i.id.toString(), label: i.name })));
-    }).catch(console.error);
-  }, [formData.address.districtId]);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${districtId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNeighborhood(prev => ({
+        ...prev,
+        [addressIndex]: res.data.map(i => ({ value: i.id.toString(), label: i.name }))
+      }));
+    } catch (err) {
+      console.error("Mahalleler alınamadı:", err);
+    }
+  };
+
+  // Şehir değiştiğinde ilçeleri getir
+  useEffect(() => {
+    formData.addresses.forEach((address, index) => {
+      if (address.cityId) {
+        fetchDistricts(address.cityId, index);
+      }
+    });
+  }, [formData.addresses.map(addr => addr.cityId).join(',')]);
+
+  // İlçe değiştiğinde mahalleleri getir
+  useEffect(() => {
+    formData.addresses.forEach((address, index) => {
+      if (address.districtId) {
+        fetchNeighborhoods(address.districtId, index);
+      }
+    });
+  }, [formData.addresses.map(addr => addr.districtId).join(',')]);
 
   useEffect(() => {
     const count = parseFloat(formData.panelCount) || 0;
@@ -98,6 +130,71 @@ const ProjectCreated = () => {
     const dc = (count * power) / 1000;
     setFormData((prev) => ({ ...prev, dcValue: dc.toFixed(2) }));
   }, [formData.panelCount, formData.panelPower]);
+
+  // Yeni adres ekleme fonksiyonu
+  const addNewAddress = () => {
+    setFormData(prev => ({
+      ...prev,
+      addresses: [
+        ...prev.addresses,
+        {
+          cityId: 0,
+          districtId: 0,
+          neighborhoodId: 0,
+          ada: "",
+          parsel: ""
+        }
+      ]
+    }));
+  };
+
+  // Adres silme fonksiyonu
+  const removeAddress = (index) => {
+    if (formData.addresses.length === 1) return; // En az bir adres olmalı
+    
+    setFormData(prev => ({
+      ...prev,
+      addresses: prev.addresses.filter((_, i) => i !== index)
+    }));
+
+    // İlgili districts ve neighborhoods verilerini temizle
+    setDistricts(prev => {
+      const newDistricts = { ...prev };
+      delete newDistricts[index];
+      return newDistricts;
+    });
+
+    setNeighborhood(prev => {
+      const newNeighborhood = { ...prev };
+      delete newNeighborhood[index];
+      return newNeighborhood;
+    });
+  };
+
+  // Adres güncelleme fonksiyonu
+  const updateAddress = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      addresses: prev.addresses.map((address, i) => {
+        if (i === index) {
+          const updatedAddress = { ...address, [field]: value };
+          
+          // Şehir değişirse ilçe ve mahalle sıfırlansın
+          if (field === 'cityId') {
+            updatedAddress.districtId = 0;
+            updatedAddress.neighborhoodId = 0;
+          }
+          // İlçe değişirse mahalle sıfırlansın
+          if (field === 'districtId') {
+            updatedAddress.neighborhoodId = 0;
+          }
+          
+          return updatedAddress;
+        }
+        return address;
+      })
+    }));
+  };
 
   const submitProject = async () => {
     try {
@@ -141,18 +238,18 @@ const ProjectCreated = () => {
         dcValue: 0,
         createdByUserId: 1,
         projectTypeId: null,
-        address: {
-          cityId: null,
-          districtId: null,
-          neighborhoodId: null,
+        addresses: [{
+          cityId: 0,
+          districtId: 0,
+          neighborhoodId: 0,
           ada: "",
           parsel: ""
-        }
+        }]
       });
 
       setHasEkYapi(false);
-      setDistricts([]);
-      setNeighborhood([]);
+      setDistricts({});
+      setNeighborhood({});
     } catch (err) {
       console.error("Proje kaydı başarısız:", err);
       setShowError(true);
@@ -161,12 +258,10 @@ const ProjectCreated = () => {
     }
   };
 
-
-
   const handleClickSave = () => {
     setShowConfirm(true);
   };
-  
+
   return (
     <div className="py-6 px-6">
       <h2 className="text-2xl font-bold  mb-6 text-ivosis-700">Proje Ekle</h2>
@@ -290,96 +385,108 @@ const ProjectCreated = () => {
           </div>
         </div>
         <Divider />
-        <h6 className="text-lg font-bold text-ivosis-700 mb-4">Konum Bilgileri</h6>
-        <div className="grid grid-cols-5 gap-6 mb-6">
-          {/* Şehir */}
-          <div>
-            <label className="text-natural-800 font-semibold block mb-1">
-              Şehir <span className="text-red-500">*</span>
-            </label>
-            <Select
-              placeholder="Şehir Seçin"
-              searchable
-              clearable
-              data={cities}
-              value={formData.address?.cityId ? formData.address.cityId.toString() : null}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  address: { ...formData.address, cityId: Number(e), districtId: 0, neighborhoodId: 0 },
-                })
-              }
-            />
+        
+        {/* KONUM BİLGİLERİ */}
+        <div className="relative">
+          <div className="flex justify-between items-center mb-4">
+            <h6 className="text-lg font-bold text-ivosis-700">Konum Bilgileri</h6>
+            <Button 
+              size="sm"
+              variant="outline"
+              onClick={addNewAddress}
+              className="text-green-600 border-green-600 hover:bg-green-50"
+            >
+              + Adres Ekle
+            </Button>
           </div>
-          {/* İlçe */}
-          <div>
-            <label className="text-natural-800 font-semibold block mb-1">
-              İlçe <span className="text-red-500">*</span>
-            </label>
-            <Select
-              placeholder="İlçe Seçin"
-              searchable
-              clearable
-              data={districts}
-              value={formData.address?.districtId ? formData.address.districtId.toString() : null}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  address: { ...formData.address, districtId: Number(e), neighborhoodId: 0 },
-                })
-              }
-            />
-          </div>
-          {/* Mahalle */}
-          <div>
-            <label className="text-natural-800 font-semibold block mb-1">
-              Mahalle <span className="text-red-500">*</span>
-            </label>
-            <Select
-              placeholder="Mahalle Seçin"
-              searchable
-              clearable
-              data={neighborhood}
-              value={formData.address?.neighborhoodId ? formData.address.neighborhoodId.toString() : null}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  address: { ...formData.address, neighborhoodId: Number(e) },
-                })
-              }
-            />
-          </div>
-          {/* Ada */}
-          <div>
-            <label className="text-natural-800 font-semibold block mb-1">
-              Ada <span className="text-red-500">*</span>
-            </label>
-            <TextInput
-              value={formData.address.ada}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  address: { ...formData.address, ada: e.currentTarget.value },
-                })
-              }
-            />
-          </div>
-          {/* Parsel */}
-          <div>
-            <label className="text-natural-800 font-semibold block mb-1">
-              Parsel <span className="text-red-500">*</span>
-            </label>
-            <TextInput
-              value={formData.address.parsel}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  address: { ...formData.address, parsel: e.currentTarget.value },
-                })
-              }
-            />
-          </div>
+          
+          {formData.addresses.map((address, addressIndex) => (
+            <div key={addressIndex} className="mb-6 p-4 border border-gray-200 rounded-lg relative">
+              {/* Adres silme butonu (birden fazla adres varsa) */}
+              {formData.addresses.length > 1 && (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  color="red"
+                  className="absolute top-2 right-2 text-red-600"
+                  onClick={() => removeAddress(addressIndex)}
+                >
+                  ✕
+                </Button>
+              )}
+              
+              <div className="grid grid-cols-5 gap-6">
+                {/* Şehir */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1">
+                    Şehir <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    placeholder="Şehir Seçin"
+                    searchable
+                    clearable
+                    data={cities}
+                    value={address.cityId ? address.cityId.toString() : null}
+                    onChange={(e) => updateAddress(addressIndex, 'cityId', Number(e))}
+                  />
+                </div>
+                
+                {/* İlçe */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1">
+                    İlçe <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    placeholder="İlçe Seçin"
+                    searchable
+                    clearable
+                    data={districts[addressIndex] || []}
+                    value={address.districtId ? address.districtId.toString() : null}
+                    onChange={(e) => updateAddress(addressIndex, 'districtId', Number(e))}
+                  />
+                </div>
+                
+                {/* Mahalle */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1">
+                    Mahalle <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    placeholder="Mahalle Seçin"
+                    searchable
+                    clearable
+                    data={neighborhood[addressIndex] || []}
+                    value={address.neighborhoodId ? address.neighborhoodId.toString() : null}
+                    onChange={(e) => updateAddress(addressIndex, 'neighborhoodId', Number(e))}
+                  />
+                </div>
+                
+                {/* Ada */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1">
+                    Ada <span className="text-red-500">*</span>
+                  </label>
+                  <TextInput
+                    value={address.ada}
+                    onChange={(e) => updateAddress(addressIndex, 'ada', e.currentTarget.value)}
+                  />
+                </div>
+                
+                {/* Parsel */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1">
+                    Parsel <span className="text-red-500">*</span>
+                  </label>
+                  <TextInput
+                    value={address.parsel}
+                    onChange={(e) => updateAddress(addressIndex, 'parsel', e.currentTarget.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
+        
         <Divider />
         {/* TEKNİK BİLGİLER */}
         <div className="w-full space-y-6">
@@ -588,8 +695,7 @@ const ProjectCreated = () => {
           <Button color="red" onClick={() => setShowError(false)}>Tamam</Button>
         </div>
       </Modal>
-    </div> //ana div
+    </div>
   );
 };
-
 export default ProjectCreated;
