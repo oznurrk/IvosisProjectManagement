@@ -6,8 +6,8 @@ import axios from 'axios';
 const ProjectCreated = () => {
   const [hasEkYapi, setHasEkYapi] = useState(false);
   const [cities, setCities] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [neighborhood, setNeighborhood] = useState([]);
+  const [districts, setDistricts] = useState({});
+  const [neighborhood, setNeighborhood] = useState({});
   const [projectTypes, setProjectTypes] = useState([]);
   const [panelBrand, setPanelBrand] = useState([]);
   const [inverterBrand, setInverterBrand] = useState([]);
@@ -37,13 +37,13 @@ const ProjectCreated = () => {
     dcValue: 0,
     createdByUserId: 1,
     projectTypeId: 1,
-    address: {
+    addresses: [{
       cityId: 0,
       districtId: 0,
       neighborhoodId: 0,
       ada: "",
       parsel: ""
-    }
+    }]
   });
 
   useEffect(() => {
@@ -72,25 +72,57 @@ const ProjectCreated = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (!formData.address.cityId) return;
+  // İlçeleri getirme fonksiyonu
+  const fetchDistricts = async (cityId, addressIndex) => {
+    if (!cityId) return;
     const token = localStorage.getItem("token");
-    axios.get(`http://localhost:5000/api/cities/by-districts/${formData.address.cityId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(res => {
-      setDistricts(res.data.map(i => ({ value: i.id.toString(), label: i.name })));
-    }).catch(console.error);
-  }, [formData.address.cityId]);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/cities/by-districts/${cityId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDistricts(prev => ({
+        ...prev,
+        [addressIndex]: res.data.map(i => ({ value: i.id.toString(), label: i.name }))
+      }));
+    } catch (err) {
+      console.error("İlçeler alınamadı:", err);
+    }
+  };
 
-  useEffect(() => {
-    if (!formData.address.districtId) return;
+  // Mahalleleri getirme fonksiyonu
+  const fetchNeighborhoods = async (districtId, addressIndex) => {
+    if (!districtId) return;
     const token = localStorage.getItem("token");
-    axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${formData.address.districtId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then(res => {
-      setNeighborhood(res.data.map(i => ({ value: i.id.toString(), label: i.name })));
-    }).catch(console.error);
-  }, [formData.address.districtId]);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/districts/by-neighborhoods/${districtId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNeighborhood(prev => ({
+        ...prev,
+        [addressIndex]: res.data.map(i => ({ value: i.id.toString(), label: i.name }))
+      }));
+    } catch (err) {
+      console.error("Mahalleler alınamadı:", err);
+    }
+  };
+
+  // Şehir değiştiğinde ilçeleri getir
+  useEffect(() => {
+    formData.addresses.forEach((address, index) => {
+      if (address.cityId) {
+        fetchDistricts(address.cityId, index);
+      }
+    });
+  }, [formData.addresses.map(addr => addr.cityId).join(',')]);
+
+  // İlçe değiştiğinde mahalleleri getir
+  useEffect(() => {
+    formData.addresses.forEach((address, index) => {
+      if (address.districtId) {
+        fetchNeighborhoods(address.districtId, index);
+      }
+    });
+  }, [formData.addresses.map(addr => addr.districtId).join(',')]);
 
   useEffect(() => {
     const count = parseFloat(formData.panelCount) || 0;
@@ -99,7 +131,7 @@ const ProjectCreated = () => {
     setFormData((prev) => ({ ...prev, dcValue: dc.toFixed(2) }));
   }, [formData.panelCount, formData.panelPower]);
 
-  const submitProject = async () => {
+  const handleSubmit = async () => {
     try {
       const token = localStorage.getItem("token");
 
@@ -116,43 +148,7 @@ const ProjectCreated = () => {
       await axios.post("http://localhost:5000/api/projects", updatedFormData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      setShowSuccess(true);
-
-      // ✅ Formu sıfırla
-      setFormData({
-        name: "",
-        description: "",
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
-        priority: "Low",
-        status: "isPlanned",
-        panelCount: 0,
-        panelPower: 0,
-        panelBrandId: null,
-        inverterCount: 0,
-        inverterPower: 0,
-        inverterBrandId: null,
-        hasAdditionalStructure: false,
-        additionalPanelCount: 0,
-        additionalPanelPower: 0,
-        additionalInverterCount: 0,
-        acValue: 0,
-        dcValue: 0,
-        createdByUserId: 1,
-        projectTypeId: null,
-        address: {
-          cityId: null,
-          districtId: null,
-          neighborhoodId: null,
-          ada: "",
-          parsel: ""
-        }
-      });
-
-      setHasEkYapi(false);
-      setDistricts([]);
-      setNeighborhood([]);
+      alert("Proje başarıyla kaydedildi");
     } catch (err) {
       console.error("Proje kaydı başarısız:", err);
       setShowError(true);
@@ -163,10 +159,6 @@ const ProjectCreated = () => {
 
 
 
-  const handleClickSave = () => {
-    setShowConfirm(true);
-  };
-  
   return (
     <div className="py-6 px-6">
       <h2 className="text-2xl font-bold  mb-6 text-ivosis-700">Proje Ekle</h2>
@@ -302,7 +294,7 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={cities}
-              value={formData.address?.cityId ? formData.address.cityId.toString() : null}
+              value={formData.address.cityId.toString()}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -311,6 +303,7 @@ const ProjectCreated = () => {
               }
             />
           </div>
+
           {/* İlçe */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -321,7 +314,7 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={districts}
-              value={formData.address?.districtId ? formData.address.districtId.toString() : null}
+              value={formData.address.districtId.toString()}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -330,6 +323,7 @@ const ProjectCreated = () => {
               }
             />
           </div>
+
           {/* Mahalle */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -340,7 +334,7 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={neighborhood}
-              value={formData.address?.neighborhoodId ? formData.address.neighborhoodId.toString() : null}
+              value={formData.address.neighborhoodId.toString()}
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -349,6 +343,7 @@ const ProjectCreated = () => {
               }
             />
           </div>
+
           {/* Ada */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -364,6 +359,7 @@ const ProjectCreated = () => {
               }
             />
           </div>
+
           {/* Parsel */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -380,6 +376,9 @@ const ProjectCreated = () => {
             />
           </div>
         </div>
+
+
+
         <Divider />
         {/* TEKNİK BİLGİLER */}
         <div className="w-full space-y-6">
@@ -551,45 +550,9 @@ const ProjectCreated = () => {
           </Button>
         </div>
       </div>
-      {/* Onay Modalı */}
-      <Modal
-        opened={showConfirm}
-        onClose={() => setShowConfirm(false)}
-        title="Proje Kaydetme Onayı"
-        centered
-      >
-        <p>Projeyi kaydetmek istiyor musunuz?</p>
-        <div className="flex justify-end gap-4 mt-4">
-          <Button variant="default" onClick={() => setShowConfirm(false)}>Hayır</Button>
-          <Button color="green" onClick={submitProject}>Evet</Button>
-        </div>
-      </Modal>
-      {/* Başarı Modalı */}
-      <Modal
-        opened={showSuccess}
-        onClose={() => setShowSuccess(false)}
-        title="Başarılı"
-        centered
-      >
-        <p>Proje başarıyla kaydedildi.</p>
-        <div className="flex justify-end mt-4">
-          <Button onClick={() => setShowSuccess(false)}>Tamam</Button>
-        </div>
-      </Modal>
-      {/* Hata Modalı */}
-      <Modal
-        opened={showError}
-        onClose={() => setShowError(false)}
-        title="Hata"
-        centered
-      >
-        <p>Proje kaydı sırasında bir hata oluştu.</p>
-        <div className="flex justify-end mt-4">
-          <Button color="red" onClick={() => setShowError(false)}>Tamam</Button>
-        </div>
-      </Modal>
+
     </div> //ana div
   );
 };
 
-export default ProjectCreated;
+export default ProjectCreate;

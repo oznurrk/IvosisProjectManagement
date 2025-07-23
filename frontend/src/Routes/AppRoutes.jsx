@@ -26,6 +26,7 @@ const AppRoutes = () => {
                     <Route path="/projectCreated" element={<ProjectCreated />} />
                     <Route path="/projectTasks" element={<ProjectTasks />} />
                     <Route path="//my-tasks" element={<MyTasks />} />
+                    <Route path="//my-tasks" element={<MyTasks />} />
                     <Route path="/taskChat" element={<TaskChat />} />
                     <Route path="/processes" element={<Processes />} />
                     <Route path="/add-process" element={<ProcessAdd />} />

@@ -39,8 +39,6 @@ builder.Services.AddScoped<IProjectTypeService, ProjectTypeService>();
 builder.Services.AddScoped<IPanelBrandService, PanelBrandService>();
 builder.Services.AddScoped<IInverterBrandService, InverterBrandService>();
 builder.Services.AddScoped<IChatService, ChatService>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
-
 
 // ⬇️ JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

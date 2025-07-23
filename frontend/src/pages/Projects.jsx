@@ -7,6 +7,10 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header/Header";
 import ProjectProcessSelectModal from "../components/Project/ProjectProcessSelectModal";
 import FilterAndSearch from "../Layout/FilterAndSearch";
+import { useNavigate } from "react-router-dom";
+import Header from "../components/Header/Header";
+import ProjectProcessSelectModal from "../components/Project/ProjectProcessSelectModal";
+import FilterAndSearch from "../Layout/FilterAndSearch";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -23,11 +27,25 @@ const Projects = () => {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  // Yeni filtreleme state (Processes tarzı)
+  const [searchFilters, setSearchFilters] = useState({
+    name: "",
+    description: "",
+    status: "", // NotStarted, InProgress, Completed, Cancelled veya boş
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+
   const navigate = useNavigate();
+  const pageSize = 4;
+  const token = localStorage.getItem("token");
   const pageSize = 4;
   const token = localStorage.getItem("token");
 
@@ -63,7 +81,45 @@ const Projects = () => {
 
     fetchAll();
   }, [token]);
+  }, [token]);
 
+  // Filtreleri uygula (Processes tarzı)
+  const filteredProjects = projects
+    .filter((project) => {
+      // İsim filtre
+      if (
+        searchFilters.name &&
+        !project.name.toLowerCase().includes(searchFilters.name.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Açıklama filtre
+      if (
+        searchFilters.description &&
+        !(project.description || "")
+          .toLowerCase()
+          .includes(searchFilters.description.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Durum filtre (status)
+      if (searchFilters.status && project.status !== searchFilters.status) {
+        return false;
+      }
+
+      return true;
+    });
+
+  // Pagination için
+  const totalPages = Math.ceil(filteredProjects.length / pageSize);
+  const pagedProjects = filteredProjects.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Yardımcı fonksiyonlar
   // Filtreleri uygula (Processes tarzı)
   const filteredProjects = projects
     .filter((project) => {
@@ -110,6 +166,8 @@ const Projects = () => {
   const getDistrictName = (id) => districts.find((d) => d.id === id)?.name || `İlçe ID: ${id}`;
   const getProjectTypeName = (id) =>
     projectTypes.find((p) => p.id === id)?.name || `Tür ID: ${id}`;
+  const getProjectTypeName = (id) =>
+    projectTypes.find((p) => p.id === id)?.name || `Tür ID: ${id}`;
 
   const priorityConfig = {
     Low: { color: "blue", label: "Düşük" },
@@ -140,12 +198,28 @@ const Projects = () => {
       status: "",
     });
   };
+  const handleFilterChange = (key, value) => {
+    setSearchFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+    setCurrentPage(1); // filtre değişince sayfa 1'e dönsün
+  };
+
+  const clearFilters = () => {
+    setSearchFilters({
+      name: "",
+      description: "",
+      status: "",
+    });
+  };
 
   const handleCardClick = (projectId) => {
     setSelectedProjectId(projectId);
     setModalOpen(true);
   };
 
+  // UI için küçük yardımcı bileşenler (kısmen senin kodundan)
   // UI için küçük yardımcı bileşenler (kısmen senin kodundan)
   const InfoItem = ({ icon: Icon, label, value, color = "gray" }) => (
     <Group gap="xs" wrap="wrap">
@@ -200,8 +274,59 @@ const Projects = () => {
       cancelled: total === 0 ? 0 : Math.round((count("Cancelled") / total) * 100),
     };
   };
+  const calculateProjectStats = () => {
+    const total = projects.length;
+    const count = (status) => projects.filter((p) => p.status === status).length;
+
+    return {
+      notStarted: total === 0 ? 0 : Math.round((count("NotStarted") / total) * 100),
+      inProgress: total === 0 ? 0 : Math.round((count("InProgress") / total) * 100),
+      completed: total === 0 ? 0 : Math.round((count("Completed") / total) * 100),
+      cancelled: total === 0 ? 0 : Math.round((count("Cancelled") / total) * 100),
+    };
+  };
 
   return (
+    <div className=" bg-[#f8f9fa] p-0 m-0">
+      <Header
+        title="Projeler"
+        subtitle="Tüm Projeler"
+        icon={IconSunElectricity}
+        userName={localStorage.getItem("userName") || undefined}
+        totalCount={projects.length}
+        stats={calculateProjectStats()}
+        showStats={true}
+      />
+
+      {/* Filtreleme alanı */}
+      <div className="px-4">
+        <FilterAndSearch
+          searchFilters={searchFilters}
+          handleFilterChange={handleFilterChange}
+          clearFilters={clearFilters}
+          filtersConfig={[
+            { key: "name", type: "text", placeholder: "Proje adına göre ara..." },
+            { key: "description", type: "text", placeholder: "Açıklamaya göre ara..."},
+            {
+              key: "status",
+              type: "select",
+              placeholder: "Durum seçin...",
+              options: [
+                { value: "", label: "Tümü" },
+                { value: "NotStarted", label: "Başlamadı" },
+                { value: "InProgress", label: "Devam Ediyor" },
+                { value: "Completed", label: "Tamamlandı" },
+                { value: "Cancelled", label: "İptal Edildi" },
+              ],
+            },
+            { key: "startDate", type: "date" },
+            { key: "endDate", type: "date" },
+          ]}
+        />
+      </div>
+
+      {/* yeni proje butonu */}
+      <div className="flex justify-end mb-5 px-4">
     <div className=" bg-[#f8f9fa] p-0 m-0">
       <Header
         title="Projeler"
@@ -245,12 +370,17 @@ const Projects = () => {
         <button
          onClick={() => navigate("/projectCreated")}
          className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+         onClick={() => navigate("/projectCreated")}
+         className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
         >
           <IconPlus size={20} />
+          Ekle
           Ekle
         </button>
       </div>
 
+      {/* Proje kartları */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
       {/* Proje kartları */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
         {pagedProjects.length === 0 ? (
@@ -262,6 +392,38 @@ const Projects = () => {
         ) : (
           pagedProjects.map((project) => (
             <Card
+              key={project.id}
+              onClick={() => handleCardClick(project.id)}
+              className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
+              withBorder
+              shadow="sm"
+              radius="lg"
+              padding="lg"
+            >
+              {/* ... senin kart içeriğin aynen buraya */}
+              <Card.Section withBorder inheritPadding py="sm">
+                <Group justify="space-between" align="flex-start">
+                  <Stack gap="xs" className="flex-1">
+                    <Text size="lg" fw={700} c="dark" lineClamp={1}>
+                      {project.name}
+                    </Text>
+                    <Text size="sm" c="dimmed" lineClamp={2}>
+                      {project.description || "Açıklama yok"}
+                    </Text>
+                    <InfoItem
+                      icon={IconInfoCircle}
+                      label="Proje Türü"
+                      value={getProjectTypeName(project.projectTypeId)}
+                      color="indigo"
+                    />
+                  </Stack>
+                  <Tooltip label="Detayları görüntüle">
+                    <ActionIcon variant="light" color="blue" size="sm">
+                      <IconInfoCircle size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              </Card.Section>
               key={project.id}
               onClick={() => handleCardClick(project.id)}
               className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
@@ -312,7 +474,38 @@ const Projects = () => {
                     {priorityConfig[project.priority]?.label || project.priority || "-"}
                   </Badge>
                 </Group>
+              <Stack gap="md" mt="md">
+                <Group justify="space-between">
+                  <Badge
+                    color={statusConfig[project.status]?.color || "gray"}
+                    variant="light"
+                    size="sm"
+                  >
+                    {statusConfig[project.status]?.label || project.status || "Belirsiz"}
+                  </Badge>
+                  <Badge
+                    color={priorityConfig[project.priority]?.color || "gray"}
+                    variant="filled"
+                    size="sm"
+                  >
+                    {priorityConfig[project.priority]?.label || project.priority || "-"}
+                  </Badge>
+                </Group>
 
+                <Group grow>
+                  <InfoItem
+                    icon={IconCalendar}
+                    label="Başlama"
+                    value={formatDate(project.startDate)}
+                    color="green"
+                  />
+                  <InfoItem
+                    icon={IconCalendar}
+                    label="Bitiş"
+                    value={formatDate(project.endDate)}
+                    color="red"
+                  />
+                </Group>
                 <Group grow>
                   <InfoItem
                     icon={IconCalendar}
@@ -332,7 +525,25 @@ const Projects = () => {
                   <PowerCard title="DC Gücü" value={project.dcValue} unit="kWp" icon={IconBolt} />
                   <PowerCard title="AC Gücü" value={project.acValue} unit="kWe" icon={IconBolt} />
                 </Group>
+                <Group grow>
+                  <PowerCard title="DC Gücü" value={project.dcValue} unit="kWp" icon={IconBolt} />
+                  <PowerCard title="AC Gücü" value={project.acValue} unit="kWe" icon={IconBolt} />
+                </Group>
 
+                <Group grow>
+                  <InfoItem
+                    icon={IconSolarPanel}
+                    label="Panel"
+                    value={`${project.panelCount} adet / ${project.panelPower} W`}
+                    color="orange"
+                  />
+                  <InfoItem
+                    icon={IconCpu}
+                    label="İnverter"
+                    value={`${project.inverterCount} adet / ${project.inverterPower} kW`}
+                    color="purple"
+                  />
+                </Group>
                 <Group grow>
                   <InfoItem
                     icon={IconSolarPanel}
@@ -370,9 +581,48 @@ const Projects = () => {
                     />
                   </Card>
                 )}
+                {project.hasAdditionalStructure && (
+                  <Card withBorder padding="sm" radius="md" bg="blue.0">
+                    <Text size="xs" fw={600} c="blue" mb="xs">
+                      EK YAPI BİLGİLERİ
+                    </Text>
+                    <Group grow>
+                      <InfoItem
+                        icon={IconSolarPanel}
+                        label="Panel"
+                        value={`${project.additionalPanelCount} / ${project.additionalPanelPower} W`}
+                        color="blue"
+                      />
+                      <InfoItem icon={IconCpu} label="İnverter" value={`${project.additionalInverterCount} adet`} color="blue" />
+                    </Group>
+                    <InfoItem
+                      icon={IconBolt}
+                      label="DC Gücü"
+                      value={`${project.additionalDcValue || "-"} kW`}
+                      color="blue"
+                    />
+                  </Card>
+                )}
 
                 <Divider />
+                <Divider />
 
+                <Stack gap="xs">
+                  <InfoItem
+                    icon={IconMapPin}
+                    label="Lokasyon"
+                    value={`${getCityName(project.address?.cityId)} / ${getDistrictName(project.address?.districtId)}`}
+                    color="teal"
+                  />
+                  <Group grow>
+                    <InfoItem
+                      icon={IconMapPin}
+                      label="Ada / Parsel"
+                      value={`${project.address?.ada || "-"} / ${project.address?.parsel || "-"}`}
+                      color="gray"
+                    />
+                  </Group>
+                </Stack>
                 <Stack gap="xs">
                   <InfoItem
                     icon={IconMapPin}
@@ -395,16 +645,43 @@ const Projects = () => {
                 </Text>
               </Stack>
             </Card>
+                <Text size="xs" c="dimmed" ta="right" fs="italic">
+                  Eklendi: {formatDate(project.createdAt)}
+                </Text>
+              </Stack>
+            </Card>
           ))
         )}
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
         <div className="flex justify-center mt-10">
           <Pagination total={totalPages} page={currentPage} onChange={setCurrentPage} />
         </div>
       )}
+
+      <Text size="sm" c="dimmed" mt="md">
+        Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
+      </Text>
+
+      {/* Modal'lar */}
+      <ProjectCartSelectModal
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        projectId={selectedProjectId}
+        onShowDetails={() => {
+          setModalOpen(false);
+          setDetailsModalOpen(true);
+        }}
+      />
+      <ProjectProcessSelectModal
+        opened={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+        projectId={selectedProjectId}
+      />
 
       <Text size="sm" c="dimmed" mt="md">
         Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
