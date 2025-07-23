@@ -21,17 +21,18 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<ProjectAddress> ProjectAddresses { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
 
-    
-        
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             // Buraya ilişki tanımlamaları yapılır
             modelBuilder.Entity<Project>()
-                .HasOne(p => p.Address)
+                .HasMany(p => p.Address)
                 .WithOne(a => a.Project)
-                .HasForeignKey<ProjectAddress>(a => a.ProjectId);
+                .HasForeignKey(a => a.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
     }

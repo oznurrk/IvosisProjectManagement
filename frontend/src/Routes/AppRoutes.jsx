@@ -11,6 +11,7 @@ import Processes from "../pages/Processes";
 import ProcessAdd from "../components/Process/ProcessAdd";
 import TaskAdd from "../components/Tasks/TaskAdd";
 import Dashboard from "../pages/Dashboard";
+import UserListPage from "../pages/UserListPage";
 
 
 const AppRoutes = () => {
@@ -30,6 +31,7 @@ const AppRoutes = () => {
                     <Route path="/add-process" element={<ProcessAdd />} />
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/users" element={<UserListPage  />} />
                 </Route>
             </Routes>
         </BrowserRouter>

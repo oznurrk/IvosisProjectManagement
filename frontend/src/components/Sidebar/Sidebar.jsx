@@ -9,6 +9,7 @@ const Sidebar = () => {
 
   const links = [
     { name: "Dashboard", url: "/dashboard", icon: <IconLayoutGrid size={20} /> },
+    { name: "Kullanıcılar", url: "/users", icon: <IconLayoutGrid size={20} /> },
     {
       name: "Projeler",
       url: "/projects",
