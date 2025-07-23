@@ -99,7 +99,11 @@ const ProjectCreated = () => {
     setFormData((prev) => ({ ...prev, dcValue: dc.toFixed(2) }));
   }, [formData.panelCount, formData.panelPower]);
 
+<<<<<<< HEAD
   const submitProject = async () => {
+=======
+  const handleSubmit = async () => {
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
     try {
       const token = localStorage.getItem("token");
 
@@ -116,6 +120,7 @@ const ProjectCreated = () => {
       await axios.post("http://localhost:5000/api/projects", updatedFormData, {
         headers: { Authorization: `Bearer ${token}` },
       });
+<<<<<<< HEAD
 
       setShowSuccess(true);
 
@@ -153,6 +158,9 @@ const ProjectCreated = () => {
       setHasEkYapi(false);
       setDistricts([]);
       setNeighborhood([]);
+=======
+      alert("Proje başarıyla kaydedildi");
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
     } catch (err) {
       console.error("Proje kaydı başarısız:", err);
       setShowError(true);
@@ -163,10 +171,13 @@ const ProjectCreated = () => {
 
 
 
+<<<<<<< HEAD
   const handleClickSave = () => {
     setShowConfirm(true);
   };
   
+=======
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
   return (
     <div className="py-6 px-6">
       <h2 className="text-2xl font-bold  mb-6 text-ivosis-700">Proje Ekle</h2>
@@ -302,7 +313,11 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={cities}
+<<<<<<< HEAD
               value={formData.address?.cityId ? formData.address.cityId.toString() : null}
+=======
+              value={formData.address.cityId.toString()}
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -311,6 +326,10 @@ const ProjectCreated = () => {
               }
             />
           </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
           {/* İlçe */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -321,7 +340,11 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={districts}
+<<<<<<< HEAD
               value={formData.address?.districtId ? formData.address.districtId.toString() : null}
+=======
+              value={formData.address.districtId.toString()}
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -330,6 +353,10 @@ const ProjectCreated = () => {
               }
             />
           </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
           {/* Mahalle */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -340,7 +367,11 @@ const ProjectCreated = () => {
               searchable
               clearable
               data={neighborhood}
+<<<<<<< HEAD
               value={formData.address?.neighborhoodId ? formData.address.neighborhoodId.toString() : null}
+=======
+              value={formData.address.neighborhoodId.toString()}
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -349,6 +380,10 @@ const ProjectCreated = () => {
               }
             />
           </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
           {/* Ada */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -364,6 +399,10 @@ const ProjectCreated = () => {
               }
             />
           </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
           {/* Parsel */}
           <div>
             <label className="text-natural-800 font-semibold block mb-1">
@@ -380,6 +419,12 @@ const ProjectCreated = () => {
             />
           </div>
         </div>
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
         <Divider />
         {/* TEKNİK BİLGİLER */}
         <div className="w-full space-y-6">
@@ -551,6 +596,7 @@ const ProjectCreated = () => {
           </Button>
         </div>
       </div>
+<<<<<<< HEAD
       {/* Onay Modalı */}
       <Modal
         opened={showConfirm}
@@ -588,7 +634,11 @@ const ProjectCreated = () => {
           <Button color="red" onClick={() => setShowError(false)}>Tamam</Button>
         </div>
       </Modal>
+=======
+
+>>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
     </div> //ana div
   );
 };
-export default ProjectCreated;
+
+export default ProjectCreate;

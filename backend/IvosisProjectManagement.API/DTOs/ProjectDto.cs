@@ -27,6 +27,6 @@ namespace IvosisProjectManagement.API.DTOs
         public decimal? DCValue { get; set; }
         public int? ProjectTypeId { get; set; }
         public string ProjectTypeName { get; set; }
-        public ProjectAddressDto Address { get; set; }
+         public List<ProjectAddressDto> Address { get; set; } = new(); // Çoklu adres
     }
 }

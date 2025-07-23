@@ -39,7 +39,6 @@ builder.Services.AddScoped<IProjectTypeService, ProjectTypeService>();
 builder.Services.AddScoped<IPanelBrandService, PanelBrandService>();
 builder.Services.AddScoped<IInverterBrandService, InverterBrandService>();
 builder.Services.AddScoped<IChatService, ChatService>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // ⬇️ JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -101,6 +100,7 @@ app.UseCors("CorsPolicy");           // Routing'ten hemen sonra
 app.UseMiddleware<ExceptionMiddleware>(); // Exception handler
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 // ⬇️ Controller ve Hub Routing
 app.MapControllers();

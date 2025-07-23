@@ -10,6 +10,7 @@ import TaskChat from "../components/TaskChat/TaskChat";
 import Processes from "../pages/Processes";
 import TaskAdd from "../components/Tasks/TaskAdd";
 import Dashboard from "../pages/Dashboard";
+import UserListPage from "../pages/UserListPage";
 
 
 const AppRoutes = () => {
@@ -24,10 +25,12 @@ const AppRoutes = () => {
                     <Route path="/projectCreated" element={<ProjectCreated />} />
                     <Route path="/projectTasks" element={<ProjectTasks />} />
                     <Route path="//my-tasks" element={<MyTasks />} />
+                    <Route path="//my-tasks" element={<MyTasks />} />
                     <Route path="/taskChat" element={<TaskChat />} />
                     <Route path="/processes" element={<Processes />} />
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/users" element={<UserListPage  />} />
                 </Route>
             </Routes>
         </BrowserRouter>
