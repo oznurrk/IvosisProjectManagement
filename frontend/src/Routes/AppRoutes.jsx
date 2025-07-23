@@ -8,7 +8,6 @@ import MyTasks from "../pages/MyTasks";
 import Login from "../pages/Login";
 import TaskChat from "../components/TaskChat/TaskChat";
 import Processes from "../pages/Processes";
-import ProcessAdd from "../components/Process/ProcessAdd";
 import TaskAdd from "../components/Tasks/TaskAdd";
 import Dashboard from "../pages/Dashboard";
 
@@ -27,7 +26,6 @@ const AppRoutes = () => {
                     <Route path="//my-tasks" element={<MyTasks />} />
                     <Route path="/taskChat" element={<TaskChat />} />
                     <Route path="/processes" element={<Processes />} />
-                    <Route path="/add-process" element={<ProcessAdd />} />
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                 </Route>

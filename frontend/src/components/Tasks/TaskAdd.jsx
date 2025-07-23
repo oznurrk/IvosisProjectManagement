@@ -1,5 +1,6 @@
-import { Button, Modal, Select, Textarea, TextInput } from "@mantine/core";
+
 import { useEffect, useState } from "react";
+import Header from "../Header/Header";
 
 const TaskAdd = () => {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -135,165 +136,19 @@ const TaskAdd = () => {
   };
 
   return (
-    <div className="py-6 px-6 bg-gray-50 min-h-screen">
-      <h2 className="text-2xl font-bold mb-6 text-ivosis-800">Görev Ekle</h2>
-      <div className="border rounded-lg p-6 bg-white shadow-sm">
-        <h6 className="text-lg font-bold text-ivosis-800 mb-6 border-b pb-2">Görev Bilgileri</h6>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <div>
-              <label className="text-gray-800 font-semibold block mb-2">
-                <span className="text-red-500">*</span> Süreç
-              </label>
-              <Select
-                placeholder="Süreç seçin"
-                searchable
-                clearable
-                data={processOptions}
-                value={formData.processId?.toString() || null}
-                onChange={(value) => {
-                  setFormData({
-                    ...formData,
-                    processId: value ? parseInt(value) : null,
-                  });
-                  if (errors.processId) setErrors({ ...errors, processId: null });
-                }}
-                error={errors.processId}
-              />
-            </div>
-            
-            <div>
-              <label className="text-gray-800 font-semibold block mb-2">
-                <span className="text-red-500">*</span> Görev Başlığı
-              </label>
-              <TextInput
-                placeholder="Görev başlığını girin"
-                value={formData.title}
-                onChange={(e) => {
-                  setFormData({ ...formData, title: e.currentTarget.value });
-                  if (errors.title) setErrors({ ...errors, title: null });
-                }}
-                error={errors.title}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="text-gray-800 font-semibold block mb-2">
-                Açıklama
-              </label>
-              <Textarea
-                placeholder="Görev açıklamasını yazın"
-                rows={4}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.currentTarget.value })
-                }
-              />
-            </div>
-            
-            <div>
-              <label className="text-gray-800 font-semibold block mb-2">
-                <span className="text-red-500">*</span> Oluşturan Kullanıcı
-              </label>
-              <TextInput
-                value={currentUser?.name || "Yükleniyor..."}
-                readOnly
-                className="opacity-60"
-                disabled
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-8 pt-6 border-t">
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setFormData({
-                  processId: null,
-                  title: "",
-                  description: ""
-                });
-                setErrors({});
-              }}
-            >
-              Temizle
-            </Button>
-            <Button
-              className="bg-green-500 hover:!bg-green-600"
-              onClick={handleConfirm}
-            >
-              Görevi Kaydet
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <Header title="Görev Yönetimi" />
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Üst Kısım -Form */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8">
+          <div className="bg-gradient-to-r from-ivosis-600 to-ivosis-700 px-6 py-4">
+            <h2 className="text-xl font-bold text-white">Görev Ekle</h2>
+            <p className="text-blue-100 text-sm mt-1">Görev bilgilerini doldurun ve kaydedin</p>
           </div>
         </div>
       </div>
-
-      {/* Onay Modali */}
-      <Modal
-        opened={showConfirm}
-        onClose={() => setShowConfirm(false)}
-        title="Görev Kaydetme Onayı"
-        centered
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700">Aşağıdaki bilgilerle görevi kaydetmek istiyor musunuz?</p>
-          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-            <p><strong>Süreç:</strong> {
-              processOptions.find(p => p.value === formData.processId?.toString())?.label
-            }</p>
-            <p><strong>Görev Başlığı:</strong> {formData.title}</p>
-            <p><strong>Açıklama:</strong> {formData.description || "Belirtilmemiş"}</p>
-            <p><strong>Oluşturan:</strong> {currentUser?.name}</p>
-          </div>
-          <div className="flex justify-end gap-4 mt-6">
-            <Button variant="outline" onClick={() => setShowConfirm(false)}>
-              İptal
-            </Button>
-            <Button color="green" onClick={submitTask}>
-              Kaydet
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Başarı Modali */}
-      <Modal
-        opened={showSuccess}
-        onClose={() => setShowSuccess(false)}
-        title="Kayıt Başarılı"
-        centered
-      >
-        <div className="text-center">
-          <div className="text-green-600 text-5xl mb-4">✓</div>
-          <p className="text-gray-700 mb-4">Görev başarıyla kaydedildi.</p>
-          <Button onClick={() => setShowSuccess(false)} className="bg-green-500">
-            Tamam
-          </Button>
-        </div>
-      </Modal>
-
-      {/* Hata Modali */}
-      <Modal
-        opened={showError}
-        onClose={() => setShowError(false)}
-        title="Hata"
-        centered
-      >
-        <div className="text-center">
-          <div className="text-red-600 text-5xl mb-4">✗</div>
-          <p className="text-gray-700 mb-4">Görev kaydı sırasında bir hata oluştu.</p>
-          <Button color="red" onClick={() => setShowError(false)}>
-            Tamam
-          </Button>
-        </div>
-      </Modal>
     </div>
-  );
+  )
 };
 
 export default TaskAdd;

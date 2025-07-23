@@ -611,7 +611,7 @@ const ProjectTasks = () => {
             <Stack spacing="lg">
               <div>
                 <Text size="sm" weight={500} className="mb-2">
-                  <span className="font-bold text-blue-600">Süreç: </span> 
+                  <span className="font-bold text-blue-400">Süreç: </span> 
                   {processToReassign.processName}
                 </Text>
                 <Text size="xs" color="dimmed">
@@ -632,8 +632,8 @@ const ProjectTasks = () => {
               
               <Group position="right" spacing="sm">
                 <Button
-                  variant="light"
-                  color="gray"
+                  variant="outline"
+                  color="red"
                   onClick={() => {
                     setProcessAssignModalOpen(false);
                     setProcessToReassign(null);
@@ -647,7 +647,7 @@ const ProjectTasks = () => {
                   onClick={() => selectedUserId && handleProcessReassign(selectedUserId)}
                   disabled={!selectedUserId}
                   variant="gradient"
-                  gradient={{ from: '#3b82f6', to: '#1d4ed8' }}
+                  gradient={{ from: '#279ab3', to: '#24809c' }}
                   radius="md"
                 >
                   Atamayı Kaydet

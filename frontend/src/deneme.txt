@@ -23,3 +23,69 @@ PAGES
   -Processes: Süreçler Sayfası
   -ProjectCreated: Proje Ekleme Sayfası
   -Projects: Projelerin görüntülendiği sayfa
+
+
+
+// props olarak modal'da mı çalışıyoruz kontrolü
+const ProcessAdd = ({ isModal = false, closeModal }) => {
+  ...
+  return (
+    <div className={isModal ? "" : "min-h-screen bg-gradient-to-br from-gray-50 to-blue-50"}>
+      {!isModal && <Header title="Süreç Yönetimi" />}
+      ...
+      {/* Kaydet butonu */}
+      <Button
+        onClick={handleConfirm}
+        loading={isLoading}
+        className="bg-gradient-to-r from-ivosis-600 to-ivosis-700 ..."
+        size="md"
+      >
+        Kaydet
+      </Button>
+      ...
+      {/* Başarı Modal - Eğer modaldaysa otomatik kapat */}
+      <Modal
+        opened={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          if (isModal && closeModal) closeModal(); // modalı kapat
+        }}
+        ...
+      >
+        ...
+      </Modal>
+      ...
+    </div>
+  );
+};
+
+
+
+import { useState } from "react";
+import { Modal, Button } from "@mantine/core";
+import ProcessAdd from "./ProcessAdd";
+
+const Processes = () => {
+  const [openAddModal, setOpenAddModal] = useState(false);
+
+  return (
+    <>
+      <Button onClick={() => setOpenAddModal(true)}>Ekle</Button>
+
+      <Modal
+        opened={openAddModal}
+        onClose={() => setOpenAddModal(false)}
+        centered
+        title="Yeni Süreç Ekle"
+        size="auto"
+        styles={{
+          content: { width: "900px", maxWidth: "95vw" },
+        }}
+      >
+        <ProcessAdd isModal closeModal={() => setOpenAddModal(false)} />
+      </Modal>
+    </>
+  );
+};
+
+export default Processes;

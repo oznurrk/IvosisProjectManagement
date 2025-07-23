@@ -24,19 +24,7 @@ const Sidebar = () => {
     { 
       name: "Süreçler", 
       url: "/processes", 
-      icon: <IconLoader size={20} />,
-      children: [
-        {
-          name: "Süreç Ekle",
-          url: "/add-process",
-          icon: <IconProgressCheck size={20} />
-        },
-        {
-          name: "Görev Ekle",
-          url: "/add-task",
-          icon: <IconClipboardPlus size={20} />
-        }
-      ]
+      icon: <IconLoader size={20} />
     },
     { name: "Belgeler", url: "/documents", icon: <IconClipboardText size={20} /> },
     { name: "Ayarlar", url: "/settings", icon: <IconSettings size={20} /> },

@@ -1,77 +1,77 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, Text, Group, Stack, Badge, Button, TextInput, Pagination, Grid, ActionIcon, Paper, Divider } from "@mantine/core";
-import { IconSearch, IconFilter, IconX, IconHierarchy, IconCalendar, IconSettings, IconPlus, IconLoader } from '@tabler/icons-react';
-import { useNavigate } from "react-router-dom";
+import { Card, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Divider } from "@mantine/core";
+import {  IconCalendar, IconSettings, IconPlus, IconLoader } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
+import ProcessAddModal from "../components/Process/ProcessAddModal";
 
 const Processes = () => {
   const [processes, setProcesses] = useState([]);
   const [filteredProcesses, setFilteredProcesses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [modalOpened, setModalOpened] = useState(false); // Modal state'i
   const [searchFilters, setSearchFilters] = useState({
     name: "",
     description: "",
     type: "" // "main" for ana süreç, "sub" for alt süreç, "" for all
   });
-  const navigate = useNavigate();
+
 
   const ITEMS_PER_PAGE = 9;
-  const CARD_HEIGHT = 280;
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    const fetchProcesses = async () => {
-      setLoading(true);
-      try {
-        // Tüm süreçleri getir
-        const processesRes = await axios.get(
-          `http://localhost:5000/api/processes`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        // Her süreç için parent process bilgisini ekle
-        const processesWithParentInfo = await Promise.all(
-          processesRes.data.map(async (process) => {
-            let parentProcessName = null;
+  const fetchProcesses = async () => {
+    setLoading(true);
+    try {
+      // Tüm süreçleri getir
+      const processesRes = await axios.get(
+        `http://localhost:5000/api/processes`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Her süreç için parent process bilgisini ekle
+      const processesWithParentInfo = await Promise.all(
+        processesRes.data.map(async (process) => {
+          let parentProcessName = null;
 
-            if (process.ParentProcessId) {
-              try {
-                const parentRes = await axios.get(
-                  `http://localhost:5000/api/processes/${process.ParentProcessId}`,
-                  { headers: { Authorization: `Bearer ${token}` } }
-                );
-                parentProcessName = parentRes.data.name;
-              } catch (error) {
-                console.error(`Parent process bulunamadı: ${process.ParentProcessId}`, error);
-                parentProcessName = "Bilinmeyen Süreç";
-              }
+          if (process.ParentProcessId) {
+            try {
+              const parentRes = await axios.get(
+                `http://localhost:5000/api/processes/${process.ParentProcessId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              parentProcessName = parentRes.data.name;
+            } catch (error) {
+              console.error(`Parent process bulunamadı: ${process.ParentProcessId}`, error);
+              parentProcessName = "Bilinmeyen Süreç";
             }
-            return {
-              ...process,
-              parentProcessName,
-              isMainProcess: !process.ParentProcessId
-            };
-          })
-        );
+          }
+          return {
+            ...process,
+            parentProcessName,
+            isMainProcess: !process.ParentProcessId
+          };
+        })
+      );
 
-        // Ana süreçler önce gelecek şekilde sırala
-        const sortedProcesses = processesWithParentInfo.sort((a, b) => {
-          if (a.isMainProcess && !b.isMainProcess) return -1;
-          if (!a.isMainProcess && b.isMainProcess) return 1;
-          return a.name.localeCompare(b.name);
-        });
+      // Ana süreçler önce gelecek şekilde sırala
+      const sortedProcesses = processesWithParentInfo.sort((a, b) => {
+        if (a.isMainProcess && !b.isMainProcess) return -1;
+        if (!a.isMainProcess && b.isMainProcess) return 1;
+        return a.name.localeCompare(b.name);
+      });
 
-        setProcesses(sortedProcesses);
-        setFilteredProcesses(sortedProcesses);
-      } catch (error) {
-        console.error("Süreçler alınamadı:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setProcesses(sortedProcesses);
+      setFilteredProcesses(sortedProcesses);
+    } catch (error) {
+      console.error("Süreçler alınamadı:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (token) {
       fetchProcesses();
     }
@@ -126,6 +126,12 @@ const Processes = () => {
     }));
   };
 
+  // Modal'dan yeni süreç eklendiğinde çalışacak fonksiyon
+  const handleProcessAdded = (newProcess) => {
+    // Süreçleri yeniden yükle
+    fetchProcesses();
+  };
+
   const formatDate = (dateString) => {
     if (
       !dateString ||
@@ -146,8 +152,6 @@ const Processes = () => {
       day: "numeric"
     });
   };
-
-
 
   const getProcessTypeInfo = (process) => {
     if (process.isMainProcess) {
@@ -225,7 +229,7 @@ const Processes = () => {
           />
           <div className="flex justify-end mb-5">
             <button
-              onClick={() => navigate("/add-process")}
+              onClick={() => setModalOpened(true)} // Modal'ı aç
               className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
             >
               <IconPlus size={20} />
@@ -250,7 +254,7 @@ const Processes = () => {
                       {/* Process Header */}
                       <Group position="apart" align="flex-start">
                         <div className="flex-1">
-                          <Text size="md" weight={600} className="text-[#2d3748] leading-snug mb-2">
+                          <Text size="md" weight={600} className="text-[#2d3748] leading-snug mb-2 font-bold">
                             {process.name}
                           </Text>
                           <Badge
@@ -293,17 +297,6 @@ const Processes = () => {
 
                       <Divider />
 
-                      {/* Oluşturma tarihi */}
-                      <Group spacing="xs" className="mt-auto">
-                        <IconCalendar size={16} color="#24809c" />
-                        <Text size="xs" color="#24809c" weight={500}>
-                          Oluşturulma Tarihi:
-                        </Text>
-                        <Text size="xs" color="#4a5568">
-                          {formatDate(process.createdAt)}
-                        </Text>
-                      </Group>
-
                       {/* Action Buttons */}
                       <Group spacing="xs" className="mt-2">
                         <Button
@@ -339,7 +332,7 @@ const Processes = () => {
               onChange={setCurrentPage}
               total={totalPages}
               size="md"
-              color="#6c5ce7"
+              color="ivosis.6"
             />
           </div>
         )}
@@ -366,6 +359,14 @@ const Processes = () => {
           </Paper>
         )}
       </div>
+
+      {/* Add Process Modal */}
+      <ProcessAddModal
+        opened={modalOpened}
+        onClose={() => setModalOpened(false)}
+        onProcessAdded={handleProcessAdded}
+        processes={processes}
+      />
 
       <style jsx>{`
         @keyframes spin {
