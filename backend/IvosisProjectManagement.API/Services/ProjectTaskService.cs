@@ -28,8 +28,9 @@ namespace IvosisProjectManagement.API.Services
                     StartDate = pt.StartDate,
                     EndDate = pt.EndDate,
                     Description = pt.Description,
-                    FilePath = pt.FilePath
+                    FilePath = pt.FilePath.ToList()
                 }).ToListAsync();
+
         }
 
         public async Task<ProjectTaskDto?> GetByIdAsync(int id)
@@ -48,7 +49,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = pt.StartDate,
                 EndDate = pt.EndDate,
                 Description = pt.Description,
-                FilePath = pt.FilePath
+                FilePath = pt.FilePath.ToList()
             };
         }
 
@@ -67,7 +68,7 @@ namespace IvosisProjectManagement.API.Services
                     StartDate = pt.StartDate,
                     EndDate = pt.EndDate,
                     Description = pt.Description,
-                    FilePath = pt.FilePath,
+                    FilePath = pt.FilePath.ToList(),
                     CreatedAt = pt.CreatedAt,
                     CreatedByUserId = pt.CreatedByUserId,
                     UpdatedAt = pt.UpdatedAt,
@@ -98,7 +99,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = pt.StartDate,
                 EndDate = pt.EndDate,
                 Description = pt.Description,
-                FilePath = pt.FilePath,
+                FilePath = pt.FilePath.ToList(),
                 CreatedAt = pt.CreatedAt,
                 CreatedByUserId = pt.CreatedByUserId,
                 UpdatedAt = pt.UpdatedAt,
@@ -123,7 +124,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 Description = dto.Description,
-                FilePath = dto.FilePath,
+                FilePath = dto.FilePath.ToList(),
                 CreatedAt = DateTime.Now,
                 CreatedByUserId = dto.CreatedByUserId
             };
@@ -145,7 +146,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 Description = dto.Description,
-                FilePath = dto.FilePath,
+                FilePath = dto.FilePath.ToList(),
                 CreatedAt = DateTime.Now,
                 CreatedByUserId = dto.CreatedByUserId
             }).ToList();
@@ -164,7 +165,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,
                 Description = entity.Description,
-                FilePath = entity.FilePath,
+                FilePath = entity.FilePath.ToList(),
                 CreatedAt = entity.CreatedAt,
                 CreatedByUserId = entity.CreatedByUserId
             }).ToList();
@@ -180,7 +181,7 @@ namespace IvosisProjectManagement.API.Services
             pt.EndDate = dto.EndDate;
             pt.Description = dto.Description;
             pt.AssignedUserId = dto.AssignedUserId;
-            pt.FilePath = dto.FilePath;
+            pt.FilePath = dto.FilePath.ToList();
             pt.UpdatedAt = DateTime.Now;
             pt.UpdatedByUserId = dto.UpdatedByUserId;
 

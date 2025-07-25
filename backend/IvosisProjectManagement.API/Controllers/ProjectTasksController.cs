@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Text.Json;
+using IvosisProjectManagement.API.Attributes;
 using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.DTOs.Common;
+using IvosisProjectManagement.API.Enums;
 using IvosisProjectManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,9 +23,11 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpGet]
+        [LogActivity(ActivityType.View, "ProjectTask")]
         public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
         [HttpGet("{id}")]
+        [LogActivity(ActivityType.View, "ProjectTask/id")]
         public async Task<IActionResult> Get(int id)
         {
             var item = await _service.GetByIdAsync(id);
@@ -31,6 +35,7 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpGet("by-project/{ProjectId}")]
+        [LogActivity(ActivityType.View, "ProjectTask/ProjectId")]
         public async Task<IActionResult> GetProject(int ProjectId)
         {
             var item = await _service.GetTasksByProjectIdAsync(ProjectId);
@@ -38,6 +43,7 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpGet("user/{userId}")]
+        [LogActivity(ActivityType.View, "ProjectTask/userId")]
         public async Task<IActionResult> GetProjectTasksByUserId(int userId)
         {
             var result = await _service.GetTasksByUserIdAsync(userId);
@@ -45,7 +51,7 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpGet("my-tasks")]
-        [Authorize]
+        [LogActivity(ActivityType.View, "ProjectTask/my-tasks")]
         public async Task<IActionResult> GetMyTasks()
         {
             var userIdClaim = User.FindFirst("userId")?.Value;
@@ -58,6 +64,7 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpPost]
+        [LogActivity(ActivityType.Create, "ProjectTask")]
         public async Task<IActionResult> Create([FromBody] object input)
         {
             int userId = GetCurrentUserId();
@@ -89,19 +96,22 @@ namespace IvosisProjectManagement.API.Controllers
             }
 
             var result = await _service.CreateManyAsync(dtos);
-            return Created("api/ProjectTasks", result); 
+            return Created("api/ProjectTasks", result);
 
         }
 
         [HttpPut("{id}")]
+        [LogActivity(ActivityType.Update, "ProjectTask")]
         public async Task<IActionResult> Update(int id, ProjectTaskUpdateDto dto)
         {
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();
-            return Ok(await _service.UpdateAsync(id,dto));
+            //var updatedItem = await _service.GetByIdAsync(id); 
+            return Ok(await _service.UpdateAsync(id, dto));
         }
 
         [HttpDelete("{id}")]
+        [LogActivity(ActivityType.Delete, "ProjectTask")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _service.DeleteAsync(id);

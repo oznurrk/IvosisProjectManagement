@@ -7,7 +7,7 @@ namespace IvosisProjectManagement.API.DTOs
         public int AssignedUserId { get; set; }
         public DateTime? EndDate { get; set; }
         public string Description { get; set; } = string.Empty;
-        public string? FilePath { get; set; }
+        public List<string> FilePath { get; set; }
         public int UpdatedByUserId { get; set; }
     }
 }

@@ -1,4 +1,6 @@
+using IvosisProjectManagement.API.Attributes;
 using IvosisProjectManagement.API.DTOs.Common;
+using IvosisProjectManagement.API.Enums;
 using IvosisProjectManagement.API.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +20,7 @@ namespace IvosisProjectManagement.API.Controllers
 
         [HttpGet]
         [Authorize]
+        [LogActivity(ActivityType.View, "Dashboard")]
         public async Task<IActionResult> GetDashboardData()
         {
             var result = await _dashboardService.GetDashboardDataAsync();
@@ -26,6 +29,7 @@ namespace IvosisProjectManagement.API.Controllers
 
         [HttpGet("details")]
         [Authorize]
+        [LogActivity(ActivityType.View, "Dashboard")]
         public async Task<IActionResult> GetDashboardDetails()
         {
             var data = await _dashboardService.GetDashboardDetailsAsync();

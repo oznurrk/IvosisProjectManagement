@@ -1,3 +1,5 @@
+using IvosisProjectManagement.API.Attributes;
+using IvosisProjectManagement.API.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -12,6 +14,7 @@ public class CitiesController : ControllerBase
     }
 
     [HttpGet]
+    [LogActivity(ActivityType.View, "Cities")]
     public async Task<IActionResult> GetAll()
     {
         var list = await _service.GetAllAsync();
@@ -19,6 +22,7 @@ public class CitiesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [LogActivity(ActivityType.View, "Cities/id")]
     public async Task<IActionResult> GetById(int id)
     {
         var city = await _service.GetByIdAsync(id);
@@ -27,6 +31,7 @@ public class CitiesController : ControllerBase
     }
 
     [HttpGet("by-districts/{id}")]
+    [LogActivity(ActivityType.View, "Cities/by-districts")]
     public async Task<IActionResult> GetDistrictsByCityIdAsync(int id)
     {
         var items = await _service.GetDistrictsByCityIdAsync(id);
@@ -35,6 +40,7 @@ public class CitiesController : ControllerBase
     }
 
     [HttpPost]
+    [LogActivity(ActivityType.Create, "Cities")]
     public async Task<IActionResult> Create([FromBody] CityDto dto)
     {
         var created = await _service.CreateAsync(dto);
@@ -42,6 +48,7 @@ public class CitiesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [LogActivity(ActivityType.Update, "Cities")]
     public async Task<IActionResult> Update(int id, [FromBody] CityDto dto)
     {
         if (id != dto.Id) return BadRequest();
@@ -53,6 +60,7 @@ public class CitiesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [LogActivity(ActivityType.Delete, "Cities")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _service.DeleteAsync(id);

@@ -7,6 +7,8 @@ using System.Security.Claims;
 using System.Text;
 using IvosisProjectManagement.API.Data;
 using Microsoft.EntityFrameworkCore;
+using IvosisProjectManagement.API.Attributes;
+using IvosisProjectManagement.API.Enums;
 
 namespace IvosisProjectManagement.API.Controllers
 {
@@ -24,6 +26,7 @@ namespace IvosisProjectManagement.API.Controllers
         }
 
         [HttpPost("login")]
+        [LogActivity(ActivityType.Login, "Auth")]
         public async Task<IActionResult> Login(UserLoginDto loginDto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
@@ -33,8 +36,8 @@ namespace IvosisProjectManagement.API.Controllers
             // Şifre karşılaştırması
             bool passwordMatches = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password);
             Console.WriteLine(BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password));
-            
-            
+
+
             if (!passwordMatches)
                 return Unauthorized("Geçersiz şifre.");
 

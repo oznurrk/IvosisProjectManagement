@@ -1,3 +1,5 @@
+using IvosisProjectManagement.API.Attributes;
+using IvosisProjectManagement.API.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -12,6 +14,7 @@ public class ChatController : ControllerBase
     }
 
     [HttpGet("GetTaskChat/{taskId}")]
+    [LogActivity(ActivityType.View, "Chat")]
     public async Task<IActionResult> GetTaskChat(int taskId)
     {
         var messages = await _chatService.GetTaskMessagesAsync(taskId);

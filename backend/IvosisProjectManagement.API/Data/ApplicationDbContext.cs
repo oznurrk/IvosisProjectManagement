@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using IvosisProjectManagement.API.Models;
+using System.Text.Json;
 
 namespace IvosisProjectManagement.API.Data
 {
@@ -20,8 +21,7 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<InverterBrand> InverterBrands { get; set; }
         public DbSet<ProjectAddress> ProjectAddresses { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
-
-
+        public DbSet<UserActivityLog> UserActivityLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +33,35 @@ namespace IvosisProjectManagement.API.Data
                 .WithOne(a => a.Project)
                 .HasForeignKey(a => a.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProjectAddress>()
+                .HasOne(p => p.Project)
+                .WithMany(p => p.Address)
+                .HasForeignKey(p => p.ProjectId);
+
+            modelBuilder.Entity<ProjectAddress>()
+                .HasOne(p => p.City)
+                .WithMany()
+                .HasForeignKey(p => p.CityId);
+
+            modelBuilder.Entity<ProjectAddress>()
+                .HasOne(p => p.District)
+                .WithMany()
+                .HasForeignKey(p => p.DistrictId);
+
+            modelBuilder.Entity<ProjectAddress>()
+                .HasOne(p => p.Neighborhood)
+                .WithMany()
+                .HasForeignKey(p => p.NeighborhoodId)
+                .OnDelete(DeleteBehavior.SetNull); // Nullable olduğu için
+            
+            modelBuilder.Entity<ProjectTask>()
+                .Property(pa => pa.FilePath)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
+        );
+
         }
 
     }
