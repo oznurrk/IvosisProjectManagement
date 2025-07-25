@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using IvosisProjectManagement.API.DTOs.Common;
 using IvosisProjectManagement.API.Middlewares;
 using IvosisProjectManagement.API.Services.Interfaces;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,10 @@ builder.Services.AddScoped<IProjectTypeService, ProjectTypeService>();
 builder.Services.AddScoped<IPanelBrandService, PanelBrandService>();
 builder.Services.AddScoped<IInverterBrandService, InverterBrandService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IUserActivityService, UserActivityService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IProjectAddressService, ProjectAddressService>();
+builder.Services.AddHttpContextAccessor();
 
 // ⬇️ JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -76,11 +81,20 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .Select(e => e.ErrorMessage)
             .ToList();
 
-        var result = Result<List<string>>.Failure("Gönderilen veriler geçerli değil.", errors);
+        var result = Result<List<string>>.Failure("Gönderilen veriler geçerli değil."
+        , errors);
 
         return new BadRequestObjectResult(result);
     };
 });
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("Logs/system-log.txt", rollingInterval: RollingInterval.Day)
+    .Enrich.FromLogContext()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // ⬇️ SignalR
 builder.Services.AddSignalR();
@@ -94,10 +108,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 // ⬇️ Middleware Sıralaması
 app.UseRouting();
 app.UseCors("CorsPolicy");           // Routing'ten hemen sonra
 app.UseMiddleware<ExceptionMiddleware>(); // Exception handler
+app.UseMiddleware<IvosisProjectManagement.API.Middleware.ActivityLoggingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

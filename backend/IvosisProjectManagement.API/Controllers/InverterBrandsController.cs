@@ -1,3 +1,5 @@
+using IvosisProjectManagement.API.Attributes;
+using IvosisProjectManagement.API.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 [Route("api/[controller]")]
@@ -12,6 +14,7 @@ public class InverterBrandsController : ControllerBase
     }
 
     [HttpGet]
+    [LogActivity(ActivityType.View, "InverterBrands")]
     public async Task<IActionResult> GetAll()
     {
         var items = await _service.GetAllAsync();

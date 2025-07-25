@@ -1,4 +1,6 @@
+using IvosisProjectManagement.API.Attributes;
 using IvosisProjectManagement.API.Controllers;
+using IvosisProjectManagement.API.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -13,6 +15,7 @@ public class NeighborhoodsController : BaseController
     }
 
     [HttpGet]
+    [LogActivity(ActivityType.View, "Neighborhoods")]
     public async Task<IActionResult> GetAll()
     {
         var list = await _service.GetAllAsync();
@@ -20,6 +23,7 @@ public class NeighborhoodsController : BaseController
     }
 
     [HttpGet("{id}")]
+    [LogActivity(ActivityType.View, "Neighborhoods/id")]
     public async Task<IActionResult> GetById(int id)
     {
         var item = await _service.GetByIdAsync(id);
@@ -28,6 +32,7 @@ public class NeighborhoodsController : BaseController
     }
 
     [HttpGet("by-districts/{id}")]
+    [LogActivity(ActivityType.View, "Neighborhoods/by-districts")]
     public async Task<IActionResult> GetByDistrictsId(int id)
     {
         var item = await _service.GetByIdAsync(id);
@@ -36,6 +41,7 @@ public class NeighborhoodsController : BaseController
     }
 
     [HttpPost]
+    [LogActivity(ActivityType.Create, "Neighborhoods")]
     public async Task<IActionResult> Create([FromBody] NeighborhoodDto dto)
     {
         var created = await _service.CreateAsync(dto);
@@ -43,6 +49,7 @@ public class NeighborhoodsController : BaseController
     }
 
     [HttpPut("{id}")]
+    [LogActivity(ActivityType.Update, "Neighborhoods")]
     public async Task<IActionResult> Update(int id, [FromBody] NeighborhoodDto dto)
     {
         if (id != dto.Id) return BadRequest();
@@ -54,6 +61,7 @@ public class NeighborhoodsController : BaseController
     }
 
     [HttpDelete("{id}")]
+    [LogActivity(ActivityType.Delete, "Neighborhoods")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _service.DeleteAsync(id);

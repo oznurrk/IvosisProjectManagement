@@ -112,7 +112,7 @@ namespace IvosisProjectManagement.API.Services
                 CreatedByUserId = dto.CreatedByUserId,
                 CreatedAt = DateTime.UtcNow,
                 ACValue = dto.ACValue,
-                DCValue = dto.ACValue,
+                DCValue = dto.DCValue,
                 ProjectTypeId = dto.ProjectTypeId,
                 PanelCount = dto.PanelCount,
                 PanelPower = dto.PanelPower,
@@ -186,6 +186,8 @@ namespace IvosisProjectManagement.API.Services
             project.EndDate = dto.EndDate;
             project.Priority = dto.Priority;
             project.Status = dto.Status;
+            project.ACValue = dto.ACValue;
+            project.DCValue = dto.DCValue;
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedByUserId = dto.UpdatedByUserId;
             project.PanelCount = dto.PanelCount;
