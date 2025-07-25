@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Divider } from "@mantine/core";
-import {  IconCalendar, IconSettings, IconPlus, IconLoader } from '@tabler/icons-react';
+import {  IconCalendar, IconSettings, IconPlus, IconLoader, IconEdit } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 import ProcessAddModal from "../components/Process/ProcessAddModal";
+import TaskListModal from "../components/Tasks/TaskListModal";
 
 const Processes = () => {
   const [processes, setProcesses] = useState([]);
   const [filteredProcesses, setFilteredProcesses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [modalOpened, setModalOpened] = useState(false); // Modal state'i
+  const [modalOpened, setModalOpened] = useState(false);
+  const [taskModalOpened, setTaskModalOpened] = useState(false);
+  const [selectedProcess, setSelectedProcess] = useState(null);
   const [searchFilters, setSearchFilters] = useState({
     name: "",
     description: "",
     type: "" // "main" for ana süreç, "sub" for alt süreç, "" for all
   });
-
 
   const ITEMS_PER_PAGE = 9;
   const token = localStorage.getItem("token");
@@ -130,6 +132,12 @@ const Processes = () => {
   const handleProcessAdded = (newProcess) => {
     // Süreçleri yeniden yükle
     fetchProcesses();
+  };
+
+  // Düzenle butonu için handler
+  const handleEditProcess = (process) => {
+    setSelectedProcess(process);
+    setTaskModalOpened(true);
   };
 
   const formatDate = (dateString) => {
@@ -305,6 +313,7 @@ const Processes = () => {
                           color="#24809c"
                           leftSection={<IconSettings size={14} />}
                           className="flex-1"
+                          onClick={() => handleEditProcess(process)}
                         >
                           Detaylar
                         </Button>
@@ -313,6 +322,8 @@ const Processes = () => {
                           variant="outline"
                           color="#24809c"
                           className="flex-1"
+                          leftSection={<IconEdit size={14} />}
+                          
                         >
                           Düzenle
                         </Button>
@@ -366,6 +377,13 @@ const Processes = () => {
         onClose={() => setModalOpened(false)}
         onProcessAdded={handleProcessAdded}
         processes={processes}
+      />
+
+      {/* Task List Modal */}
+      <TaskListModal
+        opened={taskModalOpened}
+        onClose={() => setTaskModalOpened(false)}
+        process={selectedProcess}
       />
 
       <style jsx>{`

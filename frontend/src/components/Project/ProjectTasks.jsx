@@ -1,17 +1,61 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
-import ProjectTasksCreated from "./ProjectTasksCreated";
-import { Divider, Select, Textarea, TextInput } from "@mantine/core";
+import { 
+  Select, Textarea, Card, Text, Group, Stack, Badge, Button, 
+  Progress, Pagination, Grid, Paper, Title, Divider, 
+  Modal
+} from "@mantine/core";
+import { IconCalendar, IconArrowLeft, IconUsers, IconClock, IconEdit } from '@tabler/icons-react';
+import Header from "../Header/Header";
+import FilterAndSearch from "../../Layout/FilterAndSearch";
 
 const ProjectTasks = () => {
   const [projectName, setProjectName] = useState("");
-  const [projectTasks, setProjectTasks] = useState([]);
-  const [users,setUsers] = useState([]);
+  const [projectProcesses, setProjectProcesses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProcess, setSelectedProcess] = useState(null);
+  const [taskToReassign, setTaskToReassign] = useState(null);
+  const [processToReassign, setProcessToReassign] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [processAssignModalOpen, setProcessAssignModalOpen] = useState(false);
+  const [searchFilters, setSearchFilters] = useState({
+    processName: "",
+    taskName: "",
+    status: "",
+    startDate: "",
+    endDate: ""
+  });
 
-
-  const processId = localStorage.getItem("selectedProcessId");
+  const ITEMS_PER_PAGE = 6;
+  const CARD_HEIGHT = 500;
+  
+  // Cache edilmiş veriler
+  const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "{}"), []);
+  const currentUserId = user?.id || 1;
   const projectId = localStorage.getItem("selectedProjectId");
+  const token = localStorage.getItem("token");
 
+  // Status helper functions - memoized
+  const statusConfig = useMemo(() => ({
+    NotStarted: { label: "Başlamadı", color: "#7ed2e2" },
+    InProgress: { label: "Devam Ediyor", color: "#ffd43b" },
+    Completed: { label: "Tamamlandı", color: "#51cf66" },
+    Cancelled: { label: "İptal Edildi", color: "#ff6b6b" }
+  }), []);
+
+  const getStatusLabel = useCallback((status) => statusConfig[status]?.label || status, [statusConfig]);
+
+  // Kullanıcı ismini id'den almak için yardımcı fonksiyon
+  const getUserNameById = useCallback((id) => {
+    const u = users.find(u => u.id === id);
+    return u ? u.name : "Atanmamış";
+  }, [users]);
+
+  // Kullanıcıları API'den çek
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -20,63 +64,195 @@ const ProjectTasks = () => {
         });
         setUsers(res.data);
       } catch (error) {
-        console.error("Process adı alınamadı:", error);
-        setProcessName("Bilinmeyen Süreç");
+        console.error("Kullanıcılar alınamadı", error);
       }
     };
 
-    // project id'sini alma ve id'ye göre project name gösterme
-    const fetchProjectName = async () => {
-      try {
-        const res = await axios.get(`http://localhost:5000/api/projects/${projectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setProjectName(res.data.name);
-      } catch (error) {
-        console.error("Proje adı alınamadı:", error);
-        setProjectName("Bilinmeyen Proje");
-      }
-    };
+    fetchUsers();
+  }, [token]);
 
-    // alınan process id'ye göre taskları gösterme
-    const fetchProcessTasks = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/Tasks/by-process/${processId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
+  // Process atamasını değiştirme fonksiyonu
+  const handleProcessReassign = useCallback(async (newUserIdStr) => {
+    const newUserId = parseInt(newUserIdStr);
+    if (!processToReassign) return;
+
+    try {
+      // Process'in tüm görevlerini yeni kullanıcıya ata
+      const updatePromises = processToReassign.tasks.map(task => 
+        axios.put(`http://localhost:5000/api/projectTasks/${task.id}`, {
+          status: task.status || "NotStarted",
+          startDate: task.startDate ? new Date(task.startDate).toISOString() : new Date().toISOString(),
+          assignedUserId: newUserId,
+          endDate: task.endDate ? new Date(task.endDate).toISOString() : null,
+          description: task.description || "",
+          filePath: task.filePath || null,
+          updatedByUserId: currentUserId,
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      );
+
+      await Promise.all(updatePromises);
+
+      // State'i güncelle
+      setProjectProcesses(prevProcesses =>
+        prevProcesses.map(process => 
+          process.processId === processToReassign.processId
+            ? {
+                ...process,
+                assignedUser: getUserNameById(newUserId),
+                tasks: process.tasks.map(task => ({ ...task, assignedUserId: newUserId }))
+              }
+            : process
+        )
+      );
+
+      setProcessAssignModalOpen(false);
+      setProcessToReassign(null);
+      setSelectedUserId(null);
+
+      alert("Process ataması başarıyla değiştirildi!");
+    } catch (err) {
+      alert("Process ataması değiştirilemedi");
+      console.error("API HATASI:", err);
+    }
+  }, [processToReassign, token, currentUserId, getUserNameById]);
+
+  // Orijinal API çağrı mantığını koruyarak optimize et
+  const fetchProjectData = useCallback(async () => {
+    if (!projectId) return;
+    
+    setLoading(true);
+    try {
+      // 1. Proje adı
+      const projectRes = await axios.get(
+        `http://localhost:5000/api/projects/${projectId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setProjectName(projectRes.data.name);
+
+      // 2. ProjectTasks verisi
+      const projectTasksRes = await axios.get(
+        `http://localhost:5000/api/projectTasks/by-project/${projectId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Gruplandır
+      const grouped = {};
+      for (const task of projectTasksRes.data) {
+        const processId = task.processId;
+        if (!grouped[processId]) grouped[processId] = [];
+        grouped[processId].push(task);
+      }
+
+      // Her process için detayları getir
+      const result = await Promise.all(
+        Object.entries(grouped).map(async ([processId, tasks]) => {
+          let processName = "";
+          let assignedUser = "";
+          let processCreatedDate = "";
+
+          // Process bilgisi
+          try {
+            const processRes = await axios.get(
+              `http://localhost:5000/api/processes/${processId}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            processName = processRes.data.name;
+          } catch (err) {
+            console.error(`Process ${processId} alınamadı:`, err);
           }
-        );
-        setProjectTasks(res.data);
-      } catch (error) {
-        console.error("Görevler alınamadı:", error);
-        setProjectTasks([]);
-      }
-    };
 
-    // görev atanacak kullanıcıyı seçmek için combobox'a kullanıcıları atama
-    const fetchUsers = async () => {
-      try{
-        const res = await axios.get("http://localhost:5000/api/users",{
-          headers: {Authorization: `Bearer ${token}`},
-        });
-        setUsers(res.data);
-      }catch(error){
-        console.error("Kullanıcılar Alınmadı",error);
-        setUsers([]);
-      }
-    };
+          // ProcessTasks tablosundan en erken tarihi al
+          const earliestTask = tasks.reduce((earliest, task) => {
+            if (!earliest || (task.createdAt && task.createdAt < earliest.createdAt)) {
+              return task;
+            }
+            return earliest;
+          }, null);
 
-    if (processId) {
-      fetchProcessName();
-      fetchProcessTasks();
+          processCreatedDate = earliestTask?.createdAt || "";
+          console.log("ProcessTasks'ten alınan tarih: ", processCreatedDate);
+
+          // User bilgisi (ilk atanan)
+          try {
+            const firstAssigned = tasks.find(t => t.assignedUserId);
+            if (firstAssigned) {
+              const userRes = await axios.get(
+                `http://localhost:5000/api/users/${firstAssigned.assignedUserId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              assignedUser = userRes.data.name;
+            }
+          } catch (err) {
+            console.error("User bilgisi alınamadı:", err);
+          }
+
+          // Task detayları
+          const tasksWithNames = await Promise.all(
+            tasks.map(async (task) => {
+              try {
+                const taskRes = await axios.get(
+                  `http://localhost:5000/api/tasks/${task.taskId}`,
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                return { ...task, task: taskRes.data };
+              } catch (err) {
+                console.error(`Task ${task.taskId} alınamadı:`, err);
+                return { ...task, task: { title: "Bilinmeyen Görev" } };
+              }
+            })
+          );
+
+          // Sırala
+          const sortedTasks = tasksWithNames.sort((a, b) =>
+            (a.task.order || 0) - (b.task.order || 0)
+          );
+
+          return {
+            processId,
+            processName,
+            assignedUser,
+            processCreatedDate,
+            tasks: sortedTasks,
+          };
+        })
+      );
+      setProjectProcesses(result);
+    } catch (err) {
+      console.error("Veriler alınamadı", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId, token]);
+
+  // Filtrelenmiş süreçler - memoized
+  const filteredProcesses = useMemo(() => {
+    let filtered = projectProcesses;
+
+    if (searchFilters.processName) {
+      filtered = filtered.filter(process =>
+        process.processName.toLowerCase().includes(searchFilters.processName.toLowerCase())
+      );
     }
 
-    if (projectId) {
-      fetchProjectName();
+    if (searchFilters.taskName || searchFilters.status || searchFilters.startDate || searchFilters.endDate) {
+      filtered = filtered.map(process => ({
+        ...process,
+        tasks: process.tasks.filter(task => {
+          const matchesTaskName = !searchFilters.taskName ||
+            task.task?.title.toLowerCase().includes(searchFilters.taskName.toLowerCase());
+          const matchesStatus = !searchFilters.status || task.status === searchFilters.status;
+          const matchesStartDate = !searchFilters.startDate ||
+            (task.startDate && task.startDate.split('T')[0] >= searchFilters.startDate);
+          const matchesEndDate = !searchFilters.endDate ||
+            (task.endDate && task.endDate.split('T')[0] <= searchFilters.endDate);
+
+          return matchesTaskName && matchesStatus && matchesStartDate && matchesEndDate;
+        })
+      })).filter(process => process.tasks.length > 0);
     }
 
-<<<<<<< HEAD
     return filtered;
   }, [projectProcesses, searchFilters]);
 
@@ -435,7 +611,7 @@ const ProjectTasks = () => {
             <Stack spacing="lg">
               <div>
                 <Text size="sm" weight={500} className="mb-2">
-                  <span className="font-bold text-blue-400">Süreç: </span> 
+                  <span className="font-bold text-blue-600">Süreç: </span> 
                   {processToReassign.processName}
                 </Text>
                 <Text size="xs" color="dimmed">
@@ -494,55 +670,174 @@ const ProjectTasks = () => {
     (currentPage - 1) * ITEMS_PER_PAGE, 
     currentPage * ITEMS_PER_PAGE
   );
-=======
-    fetchUsers();
-  }, [processId, projectId]);
->>>>>>> 48a1e6c9af1b6d7e98d853008e022eb084767591
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl md:text-3xl font-semibold text-ivosis-600 mb-6 ">{projectName}</h1>
-      <div className="text-2xl md:text-3xl font-semibold text-ivosis-600 mb-6">
-        {processName}
-      </div>
+    <div className="min-h-screen bg-white">
+      <Header
+        title={currentProcess.processName}
+        subtitle={`${projectName} Görevleri`}
+        stats={processStats}
+        showStats={true}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {projectTasks.length === 0 ? (
-          <div className="text-gray-500">Bu sürece ait görev bulunamadı.</div>
-        ) : (
-          projectTasks.map((task) => (
-            <div
-              key={task.id}
-              className="border rounded-lg p-4 shadow hover:shadow-lg transition bg-white"
-            >
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">{task.title}</h3>
-              <Divider size="md" />
-              {/*durum ve açıklama */}
-              <div className="flex flex-row gap-x-8">
-              <Select
-                label="Durum"
-                data={[
-                  { value: "pending", label: "Beklemede" },
-                  { value: "in_progress", label: "Devam Ediyor" },
-                  { value: "completed", label: "Tamamlandı" },
-                ]}
-                className="w-40 text-natural-800"
-              />
-              <Textarea
-                label="Açıklama"
-                placeholder="Açıklama Girin"
-                className="w-80 text-natural-800"
-              />
-              </div>
-              {/*başlangıç bitiş tarihi */}
-              <div className="flex flex-row gap-x-8">
-                <div className="flex flex-col">
-                  <label className="text-natural-800 font-semibold">Başlangıç tarihi</label>
-                  <input type="date" className="border py-1"/>
-                </div>
-              </div>
-            </div>
-          ))
+      <div className="px-4">
+        <FilterAndSearch
+            searchFilters={searchFilters}
+            handleFilterChange={handleFilterChange}
+            clearFilters={clearFilters}
+            filtersConfig={[
+              { key: "taskName", type: "text", placeholder: "Görev adına göre ara..." },
+              {
+                key: "status",
+                type: "select",
+                placeholder: "Durum seçin...",
+                options: [
+                  { value: "", label: "Tümü" },
+                  { value: "NotStarted", label: "Başlamadı" },
+                  { value: "InProgress", label: "Devam Ediyor" },
+                  { value: "Completed", label: "Tamamlandı" },
+                  { value: "Cancelled", label: "İptal Edildi" },
+                ],
+              },
+              { key: "startDate", type: "date" },
+              { key: "endDate", type: "date" }
+            ]}
+          />
+        
+        <div className="flex justify-start mb-5">
+          <Button
+            onClick={() => setSelectedProcess(null)}
+            className="bg-gradient-to-r from-[#279ab3] to-[#1d7a8c] text-white hover:from-[#1d7a8c] hover:to-[#155b6b]"
+          >
+            <IconArrowLeft size={20} />
+            Süreçler
+          </Button>
+        </div>
+
+        <Grid gutter="lg">
+          {paginatedTasks.map((task) => (
+              <Grid.Col key={task.id} span={{ base: 12, sm: 6, lg: 4 }}>
+                <Card
+                  withBorder
+                  padding="md"
+                  style={{ height: CARD_HEIGHT }}
+                  className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
+                  shadow="sm"
+                  radius="lg"
+                >
+                  
+                  <Stack spacing="sm" className="h-full">
+                    <Group position="apart" align="flex-start">
+                      {/* Görev Başlığı */}
+                      <Text size="sm" weight={500} className="flex-1" style={{ color: '#112d3b' }}>
+                       {task.task?.title || "Görev Adı Yok"}
+                    </Text>
+                      {/* Görev Status */}
+                    <Badge color="cyan" size="sm" variant="light" radius="sm">
+                      {getStatusLabel(task.status)}
+                    </Badge>
+                    </Group>
+                    
+                    <Group position="apart">
+                      {/* Atanan Kullanıcı */}
+                      <Text size="xs" color="#279ab3" weight={500}>
+                      👤 Atanan: {getUserNameById(task.assignedUserId)}
+                    </Text>
+                    {/* Atanan Kullanıcı Değiştirme Butonu */}
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={() => {
+                        setTaskToReassign(task);
+                        setAssignModalOpen(true);
+                      }}
+                    >
+                      Atamayı Değiştir
+                    </Button>
+                    </Group>
+
+                    <Stack spacing="xs">
+                      <Paper padding="xs" className="bg-[#e3f2fd]">
+                        <Text size="xs" color="#1976d2" weight={500}>🏢 Proje: {projectName}</Text>
+                      </Paper>
+                      <Paper padding="xs" className="bg-[#f3e5f5]">
+                        <Text size="xs" color="#7b1fa2" weight={500}>⚙️ Süreç: {currentProcess.processName}</Text>
+                      </Paper>
+                    </Stack>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Text size="xs" color="#007bff" className="mb-1">📅 Başlangıç</Text>
+                        <input
+                          type="date"
+                          value={task.startDate?.split("T")[0] || ""}
+                          readOnly
+                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+                        />
+                      </div>
+                      <div>
+                        <Text size="xs" color="#007bff" className="mb-1">🎯 Bitiş</Text>
+                        <input
+                          type="date"
+                          value={task.endDate?.split("T")[0] || ""}
+                          onChange={(e) => updateTaskInState(task.id, { endDate: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+                        />
+                      </div>
+                    </div>
+
+                    <Select
+                      size="sm"
+                      placeholder="Durum Seçin"
+                      value={task.status}
+                      onChange={(value) => updateTaskInState(task.id, { status: value })}
+                      data={[
+                        { value: "NotStarted", label: "Başlamadı" },
+                        { value: "InProgress", label: "Devam Ediyor" },
+                        { value: "Completed", label: "Tamamlandı" },
+                        { value: "Cancelled", label: "İptal Edildi" },
+                      ]}
+                    />
+
+                    <Textarea
+                      size="sm"
+                      placeholder="Görev notları ve açıklamaları..."
+                      value={task.description || ""}
+                      onChange={(e) => updateTaskInState(task.id, { description: e.target.value })}
+                      minRows={2}
+                      maxRows={3}
+                      style={{ flex: 1 }}
+                    />
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm flex-shrink-0 text-[#007bff]">📎</span>
+                      <input
+                        type="file"
+                        onChange={(e) => updateTaskInState(task.id, {description: e.target.value})}
+                        className="flex-1 text-xs p-1 border border-[#ced4da] rounded"
+                      />
+                    </div>
+
+                    <Button
+                      size="sm"
+                      onClick={() => handleComplete(task)}
+                      className="border-0 mt-auto"
+                      style={{ background: 'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)' }}
+                    
+                      
+                    >
+                      Güncelle
+                    </Button>
+                  </Stack>
+                </Card>
+              </Grid.Col>
+            ))}
+        </Grid>
+
+         {totalPages > 1 && (
+          <div className="flex justify-center mt-8">
+            <Pagination value={currentPage} onChange={setCurrentPage} total={totalPages} size="md" color="ivosis.6" />
+          </div>
         )}
       </div>
       
