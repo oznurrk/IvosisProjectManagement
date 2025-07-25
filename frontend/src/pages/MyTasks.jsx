@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
-import { Select, Textarea, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Modal, Card } from "@mantine/core";
-import { IconUser, IconCalendarUser } from '@tabler/icons-react';
+import { Select, Textarea, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Modal, Card, ActionIcon, Tooltip } from "@mantine/core";
+import { IconUser, IconCalendarUser, IconFile, IconX, IconDownload, IconEye } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 
@@ -13,6 +13,7 @@ const MyTasks = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [uploadingFiles, setUploadingFiles] = useState({});
   
   const [searchFilters, setSearchFilters] = useState({
     projectName: "",
@@ -24,7 +25,7 @@ const MyTasks = () => {
   });
 
   const ITEMS_PER_PAGE = 6;
-  const CARD_HEIGHT = 500;
+  const CARD_HEIGHT = 600; // Arttırıldı çoklu dosya gösterimi için
 
   // Auth bilgileri
   const token = localStorage.getItem("token");
@@ -48,12 +49,29 @@ const MyTasks = () => {
       })
     ]);
 
+    // Dosya bilgilerini parse et
+    let files = [];
+    if (projectTask.filePath) {
+      try {
+        files = typeof projectTask.filePath === 'string' 
+          ? JSON.parse(projectTask.filePath) 
+          : projectTask.filePath;
+        if (!Array.isArray(files)) {
+          files = [files];
+        }
+      } catch (e) {
+        // Eski format - string olarak tek dosya
+        files = [{ name: projectTask.filePath, url: projectTask.filePath }];
+      }
+    }
+
     return {
       ...projectTask,
       projectName: projectRes.status === 'fulfilled' ? projectRes.value.data.name : "Bilinmeyen Proje",
       processName: processRes.status === 'fulfilled' ? processRes.value.data.name : "Bilinmeyen Süreç",
       taskDetails: taskRes.status === 'fulfilled' ? taskRes.value.data : { title: "Bilinmeyen Görev", description: "" },
-      assignedUserName: users.find(u => u.id === projectTask.assignedUserId)?.name || "Bilinmiyor"
+      assignedUserName: users.find(u => u.id === projectTask.assignedUserId)?.name || "Bilinmiyor",
+      files: files || []
     };
   }, [token, users]);
 
@@ -121,6 +139,87 @@ const MyTasks = () => {
     fetchUsers();
   }, [token]);
 
+  // Dosya yükleme fonksiyonu
+  const handleFileUpload = useCallback(async (taskId, files) => {
+    if (!files || files.length === 0) return;
+
+    setUploadingFiles(prev => ({ ...prev, [taskId]: true }));
+
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach((file, index) => {
+        formData.append(`files`, file);
+      });
+      formData.append('taskId', taskId);
+
+      const response = await axios.post(
+        'http://localhost:5000/api/files/upload-multiple',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      const uploadedFiles = response.data.files || [];
+      
+      // Task state'ini güncelle
+      setMyTasks(prev => prev.map(task => {
+        if (task.id === taskId) {
+          const currentFiles = task.files || [];
+          const newFiles = [...currentFiles, ...uploadedFiles];
+          return {
+            ...task,
+            files: newFiles,
+            filePath: JSON.stringify(newFiles)
+          };
+        }
+        return task;
+      }));
+
+      alert(`${uploadedFiles.length} dosya başarıyla yüklendi!`);
+    } catch (error) {
+      console.error('Dosya yükleme hatası:', error);
+      alert('Dosya yükleme hatası: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [taskId]: false }));
+    }
+  }, [token]);
+
+  // Dosya silme fonksiyonu
+  const handleFileDelete = useCallback(async (taskId, fileIndex) => {
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const task = myTasks.find(t => t.id === taskId);
+      const updatedFiles = task.files.filter((_, index) => index !== fileIndex);
+      
+      setMyTasks(prev => prev.map(t => 
+        t.id === taskId 
+          ? { ...t, files: updatedFiles, filePath: JSON.stringify(updatedFiles) }
+          : t
+      ));
+
+      alert('Dosya silindi!');
+    } catch (error) {
+      console.error('Dosya silme hatası:', error);
+      alert('Dosya silme hatası!');
+    }
+  }, [myTasks]);
+
+  // Dosya indirme fonksiyonu
+  const handleFileDownload = useCallback((file) => {
+    const link = document.createElement('a');
+    link.href = file.url || file.path;
+    link.download = file.name || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
   // Filtrelenmiş görevler
   const filteredTasks = useMemo(() => {
     return myTasks.filter(task => {
@@ -164,7 +263,7 @@ const MyTasks = () => {
   // Event handlers
   const handleFilterChange = useCallback((key, value) => {
     setSearchFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1); // Filtre değiştiğinde ilk sayfaya dön
+    setCurrentPage(1);
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -205,7 +304,6 @@ const MyTasks = () => {
     }
   }, [token, currentUserId]);
 
-  
   const handleReassign = useCallback(async (newUserIdStr) => {
     const newUserId = parseInt(newUserIdStr);
     if (!taskToReassign) return;
@@ -254,6 +352,25 @@ const MyTasks = () => {
       "Cancelled": "#dc3545"
     };
     return colors[status] || "#6c757d";
+  };
+
+  const getFileIcon = (fileName) => {
+    const extension = fileName.toLowerCase().split('.').pop();
+    const icons = {
+      pdf: '📄',
+      doc: '📄',
+      docx: '📄',
+      xls: '📊',
+      xlsx: '📊',
+      jpg: '🖼️',
+      jpeg: '🖼️',
+      png: '🖼️',
+      gif: '🖼️',
+      txt: '📝',
+      zip: '📦',
+      rar: '📦'
+    };
+    return icons[extension] || '📎';
   };
 
   // Early returns
@@ -404,17 +521,74 @@ const MyTasks = () => {
                       value={task.description || ""}
                       onChange={(e) => updateTaskInState(task.id, { description: e.target.value })}
                       minRows={2}
-                      maxRows={3}
-                      style={{ flex: 1 }}
+                      maxRows={2}
                     />
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm flex-shrink-0 text-[#007bff]">📎</span>
+                    {/* Çoklu Dosya Yükleme Alanı */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Text size="xs" color="#007bff" weight={500}>📎 Dosyalar</Text>
+                        <Badge size="xs" color="blue" variant="light">
+                          {task.files?.length || 0}
+                        </Badge>
+                      </div>
+                      
                       <input
                         type="file"
-                        onChange={(e) => updateTaskInState(task.id, {description: e.target.value})}
-                        className="flex-1 text-xs p-1 border border-[#ced4da] rounded"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.zip,.rar"
+                        onChange={(e) => handleFileUpload(task.id, e.target.files)}
+                        className="w-full text-xs p-1 border border-[#ced4da] rounded bg-white"
+                        disabled={uploadingFiles[task.id]}
                       />
+                      
+                      {uploadingFiles[task.id] && (
+                        <Text size="xs" color="blue">Dosyalar yükleniyor...</Text>
+                      )}
+
+                      {/* Yüklenen Dosyalar Listesi */}
+                      {task.files && task.files.length > 0 && (
+                        <div className="max-h-20 overflow-y-auto bg-gray-50 rounded p-2 space-y-1">
+                          {task.files.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white rounded px-2 py-1">
+                              <div className="flex items-center gap-1 flex-1 min-w-0">
+                                <span className="text-xs">{getFileIcon(file.name)}</span>
+                                <Text size="xs" className="truncate" title={file.name}>
+                                  {file.name}
+                                </Text>
+                              </div>
+                              <Group spacing="xs">
+                                <Tooltip label="İndir">
+                                  <ActionIcon
+                                    size="xs"
+                                    color="blue"
+                                    variant="light"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleFileDownload(file);
+                                    }}
+                                  >
+                                    <IconDownload size={12} />
+                                  </ActionIcon>
+                                </Tooltip>
+                                <Tooltip label="Sil">
+                                  <ActionIcon
+                                    size="xs"
+                                    color="red"
+                                    variant="light"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleFileDelete(task.id, index);
+                                    }}
+                                  >
+                                    <IconX size={12} />
+                                  </ActionIcon>
+                                </Tooltip>
+                              </Group>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <Button

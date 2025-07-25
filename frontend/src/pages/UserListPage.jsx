@@ -98,7 +98,7 @@ const UserListPage = () => {
               <th className="p-2 border">ID</th>
               <th className="p-2 border">Ad</th>
               <th className="p-2 border">E-posta</th>
-              <th className="p-2 border">Rol</th>
+              <th className="p-2 border">Ünvan</th>
               <th className="p-2 border">İşlemler</th>
             </tr>
           </thead>
@@ -111,7 +111,7 @@ const UserListPage = () => {
                 <td className="p-2 border text-center">{user.role}</td>
                 <td className="p-2 border text-center space-x-2">
                   <button
-                    className="bg-yellow-500 text-white px-2 py-1 rounded"
+                    className="bg-ivosis-500 text-white px-2 py-1 rounded"
                     onClick={() => handleEdit(user)}
                   >
                     Güncelle
