@@ -55,12 +55,13 @@ namespace IvosisProjectManagement.API.Data
                 .HasForeignKey(p => p.NeighborhoodId)
                 .OnDelete(DeleteBehavior.SetNull); // Nullable olduğu için
             
-            modelBuilder.Entity<ProjectTask>()
-                .Property(pa => pa.FilePath)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
-        );
+            modelBuilder.Entity<ProjectTask>() // veya ProjectAddress
+            .Property(e => e.FilePath)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                v => string.IsNullOrWhiteSpace(v)
+                    ? new List<string>()
+                    : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null));
 
         }
 
