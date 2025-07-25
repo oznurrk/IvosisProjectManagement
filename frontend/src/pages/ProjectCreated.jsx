@@ -6,8 +6,6 @@ import axios from 'axios';
 const ProjectCreated = () => {
   const [hasEkYapi, setHasEkYapi] = useState(false);
   const [cities, setCities] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [neighborhood, setNeighborhood] = useState([]);
   const [projectTypes, setProjectTypes] = useState([]);
   const [panelBrand, setPanelBrand] = useState([]);
   const [inverterBrand, setInverterBrand] = useState([]);
