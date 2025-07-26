@@ -44,6 +44,9 @@ const ProjectCreated = () => {
         cityId: 0,
         districtId: 0,
         neighborhoodId: 0,
+        cityName: "",
+        districtName: "",
+        neighborhoodName: "",
         ada: "",
         parsel: ""
       }
@@ -127,6 +130,9 @@ const ProjectCreated = () => {
           cityId: 0,
           districtId: 0,
           neighborhoodId: 0,
+          cityName: "",
+          districtName: "",
+          neighborhoodName: "",
           ada: "",
           parsel: ""
         }
@@ -167,13 +173,28 @@ const ProjectCreated = () => {
         if (field === 'cityId') {
           updatedAddr.districtId = 0;
           updatedAddr.neighborhoodId = 0;
+          // Şehir adını da kaydet
+          const selectedCity = cities.find(city => city.value === value.toString());
+          updatedAddr.cityName = selectedCity ? selectedCity.label : '';
+          updatedAddr.districtName = '';
+          updatedAddr.neighborhoodName = '';
           fetchDistricts(value, index);
         }
         
         // İlçe değiştiğinde mahalleyi sıfırla
         if (field === 'districtId') {
           updatedAddr.neighborhoodId = 0;
+          // İlçe adını da kaydet
+          const selectedDistrict = (addressDistricts[index] || []).find(district => district.value === value.toString());
+          updatedAddr.districtName = selectedDistrict ? selectedDistrict.label : '';
+          updatedAddr.neighborhoodName = '';
           fetchNeighborhoods(value, index);
+        }
+        
+        // Mahalle değiştiğinde mahalle adını kaydet
+        if (field === 'neighborhoodId') {
+          const selectedNeighborhood = (addressNeighborhoods[index] || []).find(neighborhood => neighborhood.value === value.toString());
+          updatedAddr.neighborhoodName = selectedNeighborhood ? selectedNeighborhood.label : '';
         }
         
         return updatedAddr;
@@ -193,11 +214,14 @@ const ProjectCreated = () => {
       const panelPower = parseFloat(formData.panelPower) || 0;
       const dcValue = (panelCount * panelPower) / 1000;
 
-      // Adres verilerini temizle - null/0 değerleri backend kabul etmiyor olabilir
+      // Adres verilerini temizle - Backend name alanları istiyor
       const cleanedAddresses = formData.address.map(addr => ({
         cityId: addr.cityId || null,
         districtId: addr.districtId || null,
         neighborhoodId: addr.neighborhoodId || null,
+        cityName: addr.cityName || "",
+        districtName: addr.districtName || "",
+        neighborhoodName: addr.neighborhoodName || "",
         ada: addr.ada || "",
         parsel: addr.parsel || ""
       }));
@@ -208,15 +232,6 @@ const ProjectCreated = () => {
         dcValue: parseFloat(dcValue.toFixed(2)),
         address: cleanedAddresses
       };
-
-      // 🔍 Alternatif: DTO wrapper gerekiyorsa
-      // const updatedFormData = {
-      //   dto: {
-      //     ...formData,
-      //     dcValue: parseFloat(dcValue.toFixed(2)),
-      //     address: cleanedAddresses
-      //   }
-      // };
 
       // 🔍 Gönderilecek veriyi kontrol et
       console.log("Gönderilecek veri:", JSON.stringify(updatedFormData, null, 2));
@@ -255,6 +270,9 @@ const ProjectCreated = () => {
             cityId: 0,
             districtId: 0,
             neighborhoodId: 0,
+            cityName: "",
+            districtName: "",
+            neighborhoodName: "",
             ada: "",
             parsel: ""
           }
@@ -283,136 +301,151 @@ const ProjectCreated = () => {
   };
   
   return (
-    <div className="py-6 px-6">
-      <h2 className="text-2xl font-bold  mb-6 text-ivosis-700">Proje Ekle</h2>
-      <div className="border rounded-lg p-6 bg-white space-y-8 ">
+    <div className="py-4 px-4 sm:py-6 sm:px-6 max-w-full">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-ivosis-700">Proje Ekle</h2>
+      <div className="border rounded-lg p-4 sm:p-6 bg-white space-y-6 sm:space-y-8">
+        
         {/* GENEL BİLGİLER */}
-        <h6 className="text-lg font-bold text-ivosis-700 mb-4">Genel Bilgiler</h6>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Sol Sütun - Proje Adı ve Açıklama */}
-          <div className="space-y-6">
-            {/* Proje Adı */}
-            <div>
-              <label className="text-natural-800 font-semibold block mb-1">
-                Proje Adı <span className="text-red-500">*</span>
-              </label>
-              <TextInput
-                className="w-full"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.currentTarget.value })}
-              />
-            </div>
-            {/* Açıklama */}
-            <div>
-              <label className="text-natural-800 font-semibold block mb-1">
-                Açıklama
-              </label>
-              <Textarea
-                placeholder="Açıklama yazın"
-                rows={2}
-                className="w-full h-full"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.currentTarget.value })}
-              />
-            </div>
-          </div>
-          {/* Sağ Sütun - Diğer Bilgiler */}
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/*Başlangıç Tarihi*/}
+        <div className="space-y-4">
+          <h6 className="text-base sm:text-lg font-bold text-ivosis-700">Genel Bilgiler</h6>
+          
+          {/* Responsive Grid - Mobilde tek sütun, tablette/masaüstünde iki sütun */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Sol Sütun - Proje Adı ve Açıklama */}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Proje Adı */}
               <div>
-                <label className="text-natural-800 font-semibold block mb-1">
-                  Başlangıç Tarihi <span className="text-red-500">*</span>
+                <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                  Proje Adı <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="date"
-                  className="border rounded-md px-3 py-2 w-full"
-                  value={formData.startDate.split("T")[0]}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                <TextInput
+                  className="w-full"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.currentTarget.value })}
                 />
               </div>
-              {/* Bitiş Tarihi */}
+              
+              {/* Açıklama */}
               <div>
-                <label className="text-natural-800 font-semibold block mb-1">
-                  Bitiş Tarihi <span className="text-red-500">*</span>
+                <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                  Açıklama
                 </label>
-                <input
-                  type="date"
-                  className="border rounded-md px-3 py-2 w-full"
-                  value={formData.endDate.split("T")[0]}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                <Textarea
+                  placeholder="Açıklama yazın"
+                  rows={2}
+                  className="w-full"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.currentTarget.value })}
                 />
               </div>
             </div>
+            
+            {/* Sağ Sütun - Diğer Bilgiler */}
+            <div className="space-y-4 sm:space-y-6">
+              
+              {/* Tarih Alanları - Mobilde dikey, tablette yatay */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {/* Başlangıç Tarihi */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                    Başlangıç Tarihi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="border rounded-md px-3 py-2 w-full text-sm sm:text-base"
+                    value={formData.startDate.split("T")[0]}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  />
+                </div>
+                
+                {/* Bitiş Tarihi */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                    Bitiş Tarihi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    className="border rounded-md px-3 py-2 w-full text-sm sm:text-base"
+                    value={formData.endDate.split("T")[0]}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Durum */}
-              <div>
-                <label className="text-natural-800 font-semibold block mb-1">
-                  Durum <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  placeholder="Durum Seçin"
-                  searchable
-                  clearable
-                  className="w-full"
-                  data={[
-                    { value: "isPlanned", label: "Planlanıyor" },
-                    { value: "ToDo", label: "Yapılıyor" },
-                    { value: "Done", label: "Tamamlandı" },
-                    { value: "Canceled", label: "İptal" }
-                  ]}
-                  value={formData.status ? formData.status.toString() : null}
-                  onChange={(e) => setFormData({ ...formData, status: e })}
-                />
-              </div>
-              {/*Önem */}
-              <div>
-                <label className="text-natural-800 font-semibold block mb-1">
-                  Önem <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  placeholder="Önem Seçin"
-                  searchable
-                  clearable
-                  className="w-full"
-                  data={[
-                    { value: "Low", label: "Düşük" },
-                    { value: "Medium", label: "Orta" },
-                    { value: "High", label: "Yüksek" },
-                    { value: "Critical", label: "Kritik" }
-                  ]}
-                  value={formData.priority ? formData.priority.toString() : null}
-                  onChange={(e) => setFormData({ ...formData, priority: e })}
-                />
-              </div>
-              {/* Proje Türü */}
-              <div>
-                <label className="text-natural-800 font-semibold block mb-1">
-                  Proje Türü <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  placeholder="Proje Türü Seçin"
-                  searchable
-                  clearable
-                  className="w-full"
-                  data={projectTypes}
-                  value={formData.projectTypeId ? formData.projectTypeId.toString() : null}
-                  onChange={(e) => setFormData({ ...formData, projectTypeId: Number(e) })}
-                />
+              {/* Select Alanları - Responsive grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {/* Durum */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                    Durum <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    placeholder="Durum Seçin"
+                    searchable
+                    clearable
+                    className="w-full"
+                    data={[
+                      { value: "isPlanned", label: "Planlanıyor" },
+                      { value: "ToDo", label: "Yapılıyor" },
+                      { value: "Done", label: "Tamamlandı" },
+                      { value: "Canceled", label: "İptal" }
+                    ]}
+                    value={formData.status ? formData.status.toString() : null}
+                    onChange={(e) => setFormData({ ...formData, status: e })}
+                  />
+                </div>
+                
+                {/* Önem */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                    Önem <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    placeholder="Önem Seçin"
+                    searchable
+                    clearable
+                    className="w-full"
+                    data={[
+                      { value: "Low", label: "Düşük" },
+                      { value: "Medium", label: "Orta" },
+                      { value: "High", label: "Yüksek" },
+                      { value: "Critical", label: "Kritik" }
+                    ]}
+                    value={formData.priority ? formData.priority.toString() : null}
+                    onChange={(e) => setFormData({ ...formData, priority: e })}
+                  />
+                </div>
+                
+                {/* Proje Türü */}
+                <div className="sm:col-span-2 lg:col-span-1">
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                    Proje Türü <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    placeholder="Proje Türü Seçin"
+                    searchable
+                    clearable
+                    className="w-full"
+                    data={projectTypes}
+                    value={formData.projectTypeId ? formData.projectTypeId.toString() : null}
+                    onChange={(e) => setFormData({ ...formData, projectTypeId: Number(e) })}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
+        
         <Divider />
         
         {/* KONUM BİLGİLERİ - Çoklu Adres Desteği */}
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h6 className="text-lg font-bold text-ivosis-700">Konum Bilgileri</h6>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <h6 className="text-base sm:text-lg font-bold text-ivosis-700">Konum Bilgileri</h6>
             <Button 
               size="sm" 
-              className="bg-ivosis-500 hover:!bg-ivosis-600"
+              className="bg-ivosis-500 hover:!bg-ivosis-600 self-start sm:self-auto"
               onClick={addNewAddress}
             >
               + Adres Ekle
@@ -421,9 +454,9 @@ const ProjectCreated = () => {
           
           {/* Adres Listesi */}
           {formData.address.map((address, index) => (
-            <div key={index} className="border rounded-lg p-4 bg-gray-50 space-y-4">
+            <div key={index} className="border rounded-lg p-3 sm:p-4 bg-gray-50 space-y-4">
               <div className="flex justify-between items-center">
-                <h6 className="text-md font-semibold text-ivosis-700">
+                <h6 className="text-sm sm:text-md font-semibold text-ivosis-700">
                   Adres {index + 1}
                 </h6>
                 {formData.address.length > 1 && (
@@ -438,10 +471,11 @@ const ProjectCreated = () => {
                 )}
               </div>
               
-              <div className="grid grid-cols-5 gap-4">
+              {/* Responsive Grid - Mobilde 1 sütun, tablette 2 sütun, masaüstünde 5 sütun */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
                 {/* Şehir */}
                 <div>
-                  <label className="text-natural-800 font-semibold block mb-1">
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm">
                     Şehir <span className="text-red-500">*</span>
                   </label>
                   <Select
@@ -456,7 +490,7 @@ const ProjectCreated = () => {
                 
                 {/* İlçe */}
                 <div>
-                  <label className="text-natural-800 font-semibold block mb-1">
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm">
                     İlçe <span className="text-red-500">*</span>
                   </label>
                   <Select
@@ -471,7 +505,7 @@ const ProjectCreated = () => {
                 
                 {/* Mahalle */}
                 <div>
-                  <label className="text-natural-800 font-semibold block mb-1">
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm">
                     Mahalle <span className="text-red-500">*</span>
                   </label>
                   <Select
@@ -486,7 +520,7 @@ const ProjectCreated = () => {
                 
                 {/* Ada */}
                 <div>
-                  <label className="text-natural-800 font-semibold block mb-1">
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm">
                     Ada <span className="text-red-500">*</span>
                   </label>
                   <TextInput
@@ -497,7 +531,7 @@ const ProjectCreated = () => {
                 
                 {/* Parsel */}
                 <div>
-                  <label className="text-natural-800 font-semibold block mb-1">
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm">
                     Parsel <span className="text-red-500">*</span>
                   </label>
                   <TextInput
@@ -511,13 +545,17 @@ const ProjectCreated = () => {
         </div>
         
         <Divider />
+        
         {/* TEKNİK BİLGİLER */}
-        <div className="w-full space-y-6">
-          <h6 className="text-lg font-bold text-ivosis-700 mb-6">Teknik Bilgiler</h6>
-          <div className="grid grid-cols-8 gap-6 mb-6">
+        <div className="space-y-4 sm:space-y-6">
+          <h6 className="text-base sm:text-lg font-bold text-ivosis-700">Teknik Bilgiler</h6>
+          
+          {/* Responsive Grid - Teknik bilgiler için özel düzenleme */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3 sm:gap-4 lg:gap-6">
+            
             {/* Panel Sayısı */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 Panel Sayısı <span className="text-red-500">*</span>
               </label>
               <TextInput
@@ -528,9 +566,10 @@ const ProjectCreated = () => {
                 }
               />
             </div>
+            
             {/* Panel Gücü */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 Panel Gücü <span className="text-red-500">*</span>
               </label>
               <TextInput
@@ -541,9 +580,10 @@ const ProjectCreated = () => {
                 }
               />
             </div>
+            
             {/* Panel Markası */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-2 md:col-span-1 lg:col-span-1 xl:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 Panel Markası <span className="text-red-500">*</span>
               </label>
               <Select
@@ -558,16 +598,18 @@ const ProjectCreated = () => {
                 }
               />
             </div>
+            
             {/* DC (kWp) */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 DC (kWp) <span className="text-red-500">*</span>
               </label>
               <TextInput className="w-full" value={formData.dcValue} readOnly />
             </div>
+            
             {/* İnvertör Sayısı */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 İnvertör Sayısı <span className="text-red-500">*</span>
               </label>
               <TextInput
@@ -578,9 +620,10 @@ const ProjectCreated = () => {
                 }
               />
             </div>
+            
             {/* İnvertör Gücü */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 İnvertör Gücü <span className="text-red-500">*</span>
               </label>
               <TextInput
@@ -591,9 +634,10 @@ const ProjectCreated = () => {
                 }
               />
             </div>
+            
             {/* İnvertör Markası */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-2 md:col-span-1 lg:col-span-1 xl:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 İnvertör Markası <span className="text-red-500">*</span>
               </label>
               <Select
@@ -608,9 +652,10 @@ const ProjectCreated = () => {
                 }
               />
             </div>
+            
             {/* AC (kWe) */}
-            <div className="col-span-1">
-              <label className="text-natural-800 font-semibold block mb-1">
+            <div className="sm:col-span-1">
+              <label className="text-natural-800 font-semibold block mb-1 text-sm">
                 AC (kWe) <span className="text-red-500">*</span>
               </label>
               <TextInput
@@ -623,24 +668,32 @@ const ProjectCreated = () => {
             </div>
           </div>
         </div>
+        
         <Divider />
+        
         {/* EK YAPI BİLGİLERİ */}
-        <div className="w-full md:w-1/2 space-y-6">
-          <h6 className="text-lg font-bold text-ivosis-700 mb-4">Ek Yapı Bilgileri</h6>
+        <div className="space-y-4 sm:space-y-6">
+          <h6 className="text-base sm:text-lg font-bold text-ivosis-700">Ek Yapı Bilgileri</h6>
+          
           {/* Checkbox */}
-          <div className="mb-6">
-            <Checkbox label="Ek Yapı mı?" checked={hasEkYapi} onChange={(e) => {
-              const checked = e.currentTarget.checked;
-              setHasEkYapi(checked);
-              setFormData({ ...formData, hasAdditionalStructure: checked });
-            }} />
+          <div className="mb-4 sm:mb-6">
+            <Checkbox 
+              label="Ek Yapı mı?" 
+              checked={hasEkYapi} 
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setHasEkYapi(checked);
+                setFormData({ ...formData, hasAdditionalStructure: checked });
+              }} 
+            />
           </div>
+          
           {/* Grid alanlar sadece checkbox işaretliyse görünsün */}
           {hasEkYapi && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Panel Sayısı */}
               <div>
-                <label className="text-natural-800 font-semibold block mb-1">
+                <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
                   Panel Sayısı <span className="text-red-500">*</span>
                 </label>
                 <TextInput
@@ -649,9 +702,10 @@ const ProjectCreated = () => {
                   onChange={(e) => setFormData({ ...formData, additionalPanelCount: Number(e.currentTarget.value) })}
                 />
               </div>
+              
               {/* Panel Gücü */}
               <div>
-                <label className='text-natural-800 font-semibold block mb-1'>
+                <label className='text-natural-800 font-semibold block mb-1 text-sm sm:text-base'>
                   Panel Gücü <span className='text-red-500'>*</span>
                 </label>
                 <TextInput
@@ -660,9 +714,10 @@ const ProjectCreated = () => {
                   onChange={(e) => setFormData({ ...formData, additionalPanelPower: Number(e.currentTarget.value) })}
                 />
               </div>
+              
               {/* İnvertör Sayısı */}
               <div>
-                <label className="text-natural-800 font-semibold block mb-1">
+                <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
                   İnvertör Sayısı <span className="text-red-500">*</span>
                 </label>
                 <TextInput
@@ -674,48 +729,81 @@ const ProjectCreated = () => {
             </div>
           )}
         </div>
+        
         {/* KAYDET BUTONU */}
-        <div className="w-full flex justify-end">
-          <Button className="bg-ivosis-500 hover:!bg-ivosis-600" onClick={handleClickSave}>
+        <div className="w-full flex justify-center sm:justify-end pt-4">
+          <Button 
+            className="bg-ivosis-500 hover:!bg-ivosis-600 w-full sm:w-auto px-8" 
+            onClick={handleClickSave}
+          >
             Kaydet
           </Button>
         </div>
       </div>
+      
       {/* Onay Modalı */}
       <Modal
         opened={showConfirm}
         onClose={() => setShowConfirm(false)}
         title="Proje Kaydetme Onayı"
         centered
+        size="sm"
       >
-        <p>Projeyi kaydetmek istiyor musunuz?</p>
-        <div className="flex justify-end gap-4 mt-4">
-          <Button variant="default" onClick={() => setShowConfirm(false)}>Hayır</Button>
-          <Button color="green" onClick={submitProject}>Evet</Button>
+        <p className="text-sm sm:text-base">Projeyi kaydetmek istiyor musunuz?</p>
+        <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-4">
+          <Button 
+            variant="default" 
+            onClick={() => setShowConfirm(false)}
+            className="w-full sm:w-auto"
+          >
+            Hayır
+          </Button>
+          <Button 
+            color="green" 
+            onClick={submitProject}
+            className="w-full sm:w-auto"
+          >
+            Evet
+          </Button>
         </div>
       </Modal>
+      
       {/* Başarı Modalı */}
       <Modal
         opened={showSuccess}
         onClose={() => setShowSuccess(false)}
         title="Başarılı"
         centered
+        size="sm"
       >
-        <p>Proje başarıyla kaydedildi.</p>
+        <p className="text-sm sm:text-base">Proje başarıyla kaydedildi.</p>
         <div className="flex justify-end mt-4">
-          <Button onClick={() => setShowSuccess(false)}>Tamam</Button>
+          <Button 
+            onClick={() => setShowSuccess(false)}
+            className="w-full sm:w-auto"
+          >
+            Tamam
+          </Button>
         </div>
       </Modal>
+      
       {/* Hata Modalı */}
       <Modal
         opened={showError}
         onClose={() => setShowError(false)}
         title="Hata"
         centered
+        size="sm"
       >
-        <p>Proje kaydı sırasında bir hata oluştu.</p>
+        <p className="text-sm sm:text-base">Proje kaydı sırasında bir hata oluştu.</p>
         <div className="flex justify-end mt-4">
-          <Button color="red" onClick={() => setShowError(false)}>Tamam</Button>
+          <Button 
+            color="red" 
+            onClick={() => setShowError(false)}
+            className="w-full sm:w-auto"
+          >
+            Tamam
+          </Button>
         </div>
       </Modal>
     </div>
