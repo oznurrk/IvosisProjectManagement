@@ -55,7 +55,7 @@ namespace IvosisProjectManagement.API.Data
                 .HasForeignKey(p => p.NeighborhoodId)
                 .OnDelete(DeleteBehavior.SetNull); // Nullable olduğu için
             
-            modelBuilder.Entity<ProjectTask>() // veya ProjectAddress
+            modelBuilder.Entity<ProjectTask>() 
             .Property(e => e.FilePath)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),

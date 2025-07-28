@@ -11,6 +11,8 @@ namespace IvosisProjectManagement.API.DTOs
         public DateTime? EndDate { get; set; }
         public string Description { get; set; } = string.Empty;
         public List<string> FilePath { get; set; }
+        public List<string> FileNames =>
+            FilePath?.Select(IvosisProjectManagement.API.Helpers.FileHelper.ExtractOriginalFileName).ToList() ?? new();
         public int CreatedByUserId { get; set; }
     }
 }
