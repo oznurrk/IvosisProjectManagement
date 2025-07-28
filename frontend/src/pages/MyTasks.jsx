@@ -25,7 +25,7 @@ const MyTasks = () => {
   });
 
   const ITEMS_PER_PAGE = 6;
-  const CARD_HEIGHT = 550;
+  const CARD_HEIGHT = 650;
 
   // Auth bilgileri
   const token = localStorage.getItem("token");

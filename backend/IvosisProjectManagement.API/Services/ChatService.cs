@@ -17,4 +17,20 @@ public class ChatService : IChatService
             .OrderBy(m => m.SentAt)
             .ToListAsync();
     }
+
+    public async Task<ChatMessage> SaveMessageAsync(int taskId, int userId, string message)
+    {
+        var chatMessage = new ChatMessage
+        {
+            TaskId = taskId,
+            UserId = userId,    
+            Message = message,
+            SentAt = DateTime.UtcNow
+        };
+
+        _context.ChatMessages.Add(chatMessage);
+        await _context.SaveChangesAsync();
+
+        return chatMessage;
+    }
 }

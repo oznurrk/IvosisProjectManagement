@@ -44,6 +44,8 @@ builder.Services.AddScoped<IUserActivityService, UserActivityService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProjectAddressService, ProjectAddressService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSignalR();
+
 
 // ⬇️ JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -60,15 +62,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // ⬇️ CORS (Geliştirme için tamamen açık)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:3000") 
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              .AllowCredentials());
 });
 
 // ⬇️ Model Validasyon Hatalarını Özelleştir
@@ -81,8 +99,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             .Select(e => e.ErrorMessage)
             .ToList();
 
-        var result = Result<List<string>>.Failure("Gönderilen veriler geçerli değil."
-        , errors);
+        var result = Result<List<string>>.Failure("Gönderilen veriler geçerli değil.", errors);
 
         return new BadRequestObjectResult(result);
     };
