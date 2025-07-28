@@ -2,6 +2,7 @@ using IvosisProjectManagement.API.Data;
 using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.Models;
 using Microsoft.EntityFrameworkCore;
+using IvosisProjectManagement.API.Helpers;
 
 namespace IvosisProjectManagement.API.Services
 {
@@ -16,7 +17,7 @@ namespace IvosisProjectManagement.API.Services
 
         public async Task<IEnumerable<ProjectTaskDto>> GetAllAsync()
         {
-            return await _context.ProjectTasks
+            var items = await _context.ProjectTasks
                 .Select(pt => new ProjectTaskDto
                 {
                     Id = pt.Id,
@@ -28,9 +29,17 @@ namespace IvosisProjectManagement.API.Services
                     StartDate = pt.StartDate,
                     EndDate = pt.EndDate,
                     Description = pt.Description,
-                    FilePath = NormalizeFilePaths(pt.FilePath ?? new List<string>())
+                    FilePath = pt.FilePath ?? new List<string>(),
+                    CreatedAt = pt.CreatedAt,
+                    CreatedByUserId = pt.CreatedByUserId,
+                    UpdatedAt = pt.UpdatedAt,
+                    UpdatedByUserId = pt.UpdatedByUserId
                 }).ToListAsync();
 
+            foreach (var item in items)
+                item.FilePath = FileHelper.NormalizeFilePaths(item.FilePath);
+
+            return items;
         }
 
         public async Task<ProjectTaskDto?> GetByIdAsync(int id)
@@ -49,13 +58,17 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = pt.StartDate,
                 EndDate = pt.EndDate,
                 Description = pt.Description,
-                FilePath = NormalizeFilePaths(pt.FilePath ?? new List<string>())
+                FilePath = FileHelper.NormalizeFilePaths(pt.FilePath ?? new List<string>()),
+                CreatedAt = pt.CreatedAt,
+                CreatedByUserId = pt.CreatedByUserId,
+                UpdatedAt = pt.UpdatedAt,
+                UpdatedByUserId = pt.UpdatedByUserId
             };
         }
 
         public async Task<IEnumerable<ProjectTaskDto>> GetTasksByProjectIdAsync(int projectId)
         {
-            var projectTasks = await _context.ProjectTasks
+            var items = await _context.ProjectTasks
                 .Where(pt => pt.ProjectId == projectId)
                 .Select(pt => new ProjectTaskDto
                 {
@@ -68,7 +81,7 @@ namespace IvosisProjectManagement.API.Services
                     StartDate = pt.StartDate,
                     EndDate = pt.EndDate,
                     Description = pt.Description,
-                    FilePath =NormalizeFilePaths(pt.FilePath ?? new List<string>()),
+                    FilePath = pt.FilePath ?? new List<string>(),
                     CreatedAt = pt.CreatedAt,
                     CreatedByUserId = pt.CreatedByUserId,
                     UpdatedAt = pt.UpdatedAt,
@@ -76,8 +89,12 @@ namespace IvosisProjectManagement.API.Services
                 })
                 .ToListAsync();
 
-            return projectTasks;
+            foreach (var item in items)
+                item.FilePath = FileHelper.NormalizeFilePaths(item.FilePath);
+
+            return items;
         }
+
         public async Task<List<ProjectTaskDto>> GetTasksByUserIdAsync(int userId)
         {
             var tasks = await _context.ProjectTasks
@@ -99,7 +116,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = pt.StartDate,
                 EndDate = pt.EndDate,
                 Description = pt.Description,
-                FilePath = NormalizeFilePaths(pt.FilePath ?? new List<string>()),
+                FilePath = FileHelper.NormalizeFilePaths(pt.FilePath ?? new List<string>()),
                 CreatedAt = pt.CreatedAt,
                 CreatedByUserId = pt.CreatedByUserId,
                 UpdatedAt = pt.UpdatedAt,
@@ -109,8 +126,6 @@ namespace IvosisProjectManagement.API.Services
                 ProcessName = pt.Process?.Name
             }).ToList();
         }
-
-
 
         public async Task<ProjectTaskDto> CreateAsync(ProjectTaskCreateDto dto)
         {
@@ -124,7 +139,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 Description = dto.Description,
-                FilePath = NormalizeFilePaths(dto.FilePath ?? new List<string>()),
+                FilePath = FileHelper.NormalizeFilePaths(dto.FilePath ?? new List<string>()),
                 CreatedAt = DateTime.Now,
                 CreatedByUserId = dto.CreatedByUserId
             };
@@ -146,7 +161,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
                 Description = dto.Description,
-                FilePath = NormalizeFilePaths(dto.FilePath ?? new List<string>()),
+                FilePath = FileHelper.NormalizeFilePaths(dto.FilePath ?? new List<string>()),
                 CreatedAt = DateTime.Now,
                 CreatedByUserId = dto.CreatedByUserId
             }).ToList();
@@ -165,7 +180,7 @@ namespace IvosisProjectManagement.API.Services
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,
                 Description = entity.Description,
-                FilePath = NormalizeFilePaths(entity.FilePath ?? new List<string>()),
+                FilePath = FileHelper.NormalizeFilePaths(entity.FilePath ?? new List<string>()),
                 CreatedAt = entity.CreatedAt,
                 CreatedByUserId = entity.CreatedByUserId
             }).ToList();
@@ -181,7 +196,7 @@ namespace IvosisProjectManagement.API.Services
             pt.EndDate = dto.EndDate;
             pt.Description = dto.Description;
             pt.AssignedUserId = dto.AssignedUserId;
-            pt.FilePath = NormalizeFilePaths(dto.FilePath ?? new List<string>());
+            pt.FilePath = FileHelper.NormalizeFilePaths(dto.FilePath ?? new List<string>());
             pt.UpdatedAt = DateTime.Now;
             pt.UpdatedByUserId = dto.UpdatedByUserId;
 
@@ -199,15 +214,5 @@ namespace IvosisProjectManagement.API.Services
             await _context.SaveChangesAsync();
             return true;
         }
-        
-        private List<string> NormalizeFilePaths(List<string> input)
-        {
-            return input.Select(path =>
-            {
-                var uri = new Uri(path, UriKind.RelativeOrAbsolute);
-                return uri.IsAbsoluteUri ? uri.LocalPath.TrimStart('/') : path;
-            }).ToList();
-        }
-
     }
 }

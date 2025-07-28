@@ -4,17 +4,20 @@ namespace IvosisProjectManagement.API.Helpers
 {
     public static class FileHelper
     {
+        public static List<string> NormalizeFilePaths(List<string> input)
+        {
+            return input.Select(path =>
+            {
+                var uri = new Uri(path, UriKind.RelativeOrAbsolute);
+                return uri.IsAbsoluteUri ? uri.LocalPath.TrimStart('/') : path;
+            }).ToList();
+        }
+
         public static string ExtractOriginalFileName(string fullPath)
         {
-            var nameOnly = Path.GetFileName(fullPath); // uploads/1753448221691_0_belge.pdf → 1753448221691_0_belge.pdf
+            var nameOnly = Path.GetFileName(fullPath);
             var parts = nameOnly.Split('_');
-
-            if (parts.Length >= 3)
-            {
-                return string.Join("_", parts.Skip(2)); // belge.pdf
-            }
-
-            return nameOnly;
+            return parts.Length >= 3 ? string.Join("_", parts.Skip(2)) : nameOnly;
         }
     }
 }
