@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header/Header";
 import ProjectProcessSelectModal from "../components/Project/ProjectProcessSelectModal";
 import FilterAndSearch from "../Layout/FilterAndSearch";
+import TaskChatWidget from "../components/TaskChat/TaskChat";
+
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -339,6 +341,12 @@ const Projects = () => {
           ]}
         />
       </div>
+      <TaskChatWidget
+        taskId="your-task-id"
+        userName="Kullanıcı Adı"
+        apiBaseUrl="http://localhost:5000"
+        position="bottom-right" // bottom-left, top-right, top-left
+      />
 
       {/* yeni proje butonu */}
       <div className="flex justify-end mb-5 px-4">
@@ -517,6 +525,7 @@ const Projects = () => {
         onClose={() => setDetailsModalOpen(false)}
         projectId={selectedProjectId}
       />
+      
     </div>
   );
 };

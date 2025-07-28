@@ -24,9 +24,7 @@ const AppRoutes = () => {
                     <Route path="/settings" element={<Random />} />
                     <Route path="/projectCreated" element={<ProjectCreated />} />
                     <Route path="/projectTasks" element={<ProjectTasks />} />
-                    <Route path="//my-tasks" element={<MyTasks />} />
-                    <Route path="//my-tasks" element={<MyTasks />} />
-                    <Route path="/taskChat" element={<TaskChat />} />
+                    <Route path="/my-tasks" element={<MyTasks />} />
                     <Route path="/processes" element={<Processes />} />
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
