@@ -1,12 +1,11 @@
-
 import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import { 
   Select, Textarea, Card, Text, Group, Stack, Badge, Button, 
   Progress, Pagination, Grid, Paper, Title, Divider, 
-  Modal
+  Modal, ActionIcon, Tooltip
 } from "@mantine/core";
-import { IconCalendar, IconArrowLeft, IconUsers, IconClock, IconEdit } from '@tabler/icons-react';
+import { IconCalendar, IconArrowLeft, IconUsers, IconClock, IconEdit, IconDownload, IconX } from '@tabler/icons-react';
 import Header from "../Header/Header";
 import FilterAndSearch from "../../Layout/FilterAndSearch";
 
@@ -22,6 +21,7 @@ const ProjectTasks = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [processAssignModalOpen, setProcessAssignModalOpen] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState({});
   const [searchFilters, setSearchFilters] = useState({
     processName: "",
     taskName: "",
@@ -31,7 +31,7 @@ const ProjectTasks = () => {
   });
 
   const ITEMS_PER_PAGE = 6;
-  const CARD_HEIGHT = 500;
+  const CARD_HEIGHT = 600; // Increased height for file management
   
   // Cache edilmiş veriler
   const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "{}"), []);
@@ -48,6 +48,197 @@ const ProjectTasks = () => {
   }), []);
 
   const getStatusLabel = useCallback((status) => statusConfig[status]?.label || status, [statusConfig]);
+
+  // Dosya formatını normalize et - MyTasks'ten alınan fonksiyon
+  const normalizeFiles = useCallback((filePath) => {
+    if (!filePath) return [];
+    
+    try {
+      if (typeof filePath === 'string') {
+        // JSON string ise parse et
+        if (filePath.startsWith('[') || filePath.startsWith('{')) {
+          const parsed = JSON.parse(filePath);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        }
+        // Basit string ise dosya olarak kabul et
+        return [{ name: filePath, url: filePath, path: filePath }];
+      }
+      
+      if (Array.isArray(filePath)) {
+        return filePath.map(file => {
+          if (typeof file === 'string') {
+            return { name: file, url: file, path: file };
+          }
+          return file;
+        });
+      }
+      
+      return [filePath];
+    } catch (e) {
+      console.warn('Dosya formatı parse edilemedi:', e);
+      return [];
+    }
+  }, []);
+
+  // Dosya simgesi belirleme fonksiyonu
+  const getFileIcon = (fileName) => {
+    const extension = fileName.toLowerCase().split('.').pop();
+    const icons = {
+      pdf: '📄',
+      doc: '📄',
+      docx: '📄',
+      xls: '📊',
+      xlsx: '📊',
+      jpg: '🖼️',
+      jpeg: '🖼️',
+      png: '🖼️',
+      gif: '🖼️',
+      txt: '📝',
+      zip: '📦',
+      rar: '📦'
+    };
+    return icons[extension] || '📎';
+  };
+
+  // Çoklu dosya yükleme fonksiyonu
+  const handleMultipleFileUpload = useCallback(async (taskId, files) => {
+    if (!files || files.length === 0) return;
+
+    setUploadingFiles(prev => ({ ...prev, [taskId]: true }));
+
+    try {
+      // Mevcut task'ı bul
+      let currentTask = null;
+      for (const process of projectProcesses) {
+        const task = process.tasks.find(t => t.id === taskId);
+        if (task) {
+          currentTask = task;
+          break;
+        }
+      }
+
+      if (!currentTask) {
+        throw new Error('Task bulunamadı');
+      }
+
+      // Mevcut dosyaları al
+      const currentFiles = currentTask.files || [];
+      
+      // Yeni dosyalar için simülasyon (gerçek implementasyonda backend'e upload edilecek)
+      const newFiles = Array.from(files).map((file, index) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        path: `uploads/${Date.now()}_${index}_${file.name}`,
+        url: `http://localhost:5000/uploads/${Date.now()}_${index}_${file.name}`
+      }));
+
+      // Tüm dosyaları birleştir
+      const allFiles = [...currentFiles, ...newFiles];
+      const filePaths = allFiles.map(file => file.url || file.path || file.name);
+
+      // Task'ı güncelle
+      const updateDto = {
+        status: currentTask.status,
+        startDate: currentTask.startDate ? new Date(currentTask.startDate).toISOString() : new Date().toISOString(),
+        assignedUserId: currentTask.assignedUserId,
+        endDate: currentTask.endDate ? new Date(currentTask.endDate).toISOString() : null,
+        description: currentTask.description || "",
+        filePath: filePaths,
+        updatedByUserId: currentUserId
+      };
+
+      console.log('Dosya yükleme payload:', updateDto);
+
+      await axios.put(`http://localhost:5000/api/projectTasks/${taskId}`, updateDto, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // State'i güncelle
+      setProjectProcesses(prev => prev.map(process => ({
+        ...process,
+        tasks: process.tasks.map(task => {
+          if (task.id === taskId) {
+            return { ...task, files: allFiles };
+          }
+          return task;
+        })
+      })));
+
+      alert(`${newFiles.length} dosya başarıyla yüklendi ve task güncellendi!`);
+    } catch (error) {
+      console.error('Dosya yükleme hatası:', error);
+      alert('Dosya yükleme hatası: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [taskId]: false }));
+    }
+  }, [token, projectProcesses, currentUserId]);
+
+  // Dosya silme fonksiyonu
+  const handleFileDelete = useCallback(async (taskId, fileIndex) => {
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      // Mevcut task'ı bul
+      let currentTask = null;
+      for (const process of projectProcesses) {
+        const task = process.tasks.find(t => t.id === taskId);
+        if (task) {
+          currentTask = task;
+          break;
+        }
+      }
+
+      if (!currentTask) return;
+
+      // Dosyayı listeden çıkar
+      const updatedFiles = currentTask.files.filter((_, index) => index !== fileIndex);
+      const filePaths = updatedFiles.map(file => file.url || file.path || file.name);
+
+      // Task'ı güncelle
+      const updateDto = {
+        status: currentTask.status,
+        startDate: currentTask.startDate ? new Date(currentTask.startDate).toISOString() : new Date().toISOString(),
+        assignedUserId: currentTask.assignedUserId,
+        endDate: currentTask.endDate ? new Date(currentTask.endDate).toISOString() : null,
+        description: currentTask.description || "",
+        filePath: filePaths,
+        updatedByUserId: currentUserId
+      };
+
+      await axios.put(`http://localhost:5000/api/projectTasks/${taskId}`, updateDto, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // State'i güncelle
+      setProjectProcesses(prev => prev.map(process => ({
+        ...process,
+        tasks: process.tasks.map(task => {
+          if (task.id === taskId) {
+            return { ...task, files: updatedFiles };
+          }
+          return task;
+        })
+      })));
+
+      alert('Dosya silindi ve task güncellendi!');
+    } catch (error) {
+      console.error('Dosya silme hatası:', error);
+      alert('Dosya silme hatası: ' + (error.response?.data?.message || error.message));
+    }
+  }, [projectProcesses, token, currentUserId]);
+
+  // Dosya indirme fonksiyonu
+  const handleFileDownload = useCallback((file) => {
+    const link = document.createElement('a');
+    link.href = file.url || file.path || file.name;
+    link.download = file.name || 'download';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
 
   // Kullanıcı ismini id'den almak için yardımcı fonksiyon
   const getUserNameById = useCallback((id) => {
@@ -78,19 +269,24 @@ const ProjectTasks = () => {
 
     try {
       // Process'in tüm görevlerini yeni kullanıcıya ata
-      const updatePromises = processToReassign.tasks.map(task => 
-        axios.put(`http://localhost:5000/api/projectTasks/${task.id}`, {
+      const updatePromises = processToReassign.tasks.map(task => {
+        // Dosya path'lerini hazırla
+        const filePaths = task.files ? task.files.map(file => {
+          return file.url || file.path || file.name;
+        }) : [];
+
+        return axios.put(`http://localhost:5000/api/projectTasks/${task.id}`, {
           status: task.status || "NotStarted",
           startDate: task.startDate ? new Date(task.startDate).toISOString() : new Date().toISOString(),
           assignedUserId: newUserId,
           endDate: task.endDate ? new Date(task.endDate).toISOString() : null,
           description: task.description || "",
-          filePath: task.filePath || null,
+          filePath: filePaths,
           updatedByUserId: currentUserId,
         }, {
           headers: { Authorization: `Bearer ${token}` }
-        })
-      );
+        });
+      });
 
       await Promise.all(updatePromises);
 
@@ -196,10 +392,22 @@ const ProjectTasks = () => {
                   `http://localhost:5000/api/tasks/${task.taskId}`,
                   { headers: { Authorization: `Bearer ${token}` } }
                 );
-                return { ...task, task: taskRes.data };
+                
+                // Dosya bilgilerini normalize et
+                const files = normalizeFiles(task.filePath);
+
+                return { 
+                  ...task, 
+                  task: taskRes.data,
+                  files: files
+                };
               } catch (err) {
                 console.error(`Task ${task.taskId} alınamadı:`, err);
-                return { ...task, task: { title: "Bilinmeyen Görev" } };
+                return { 
+                  ...task, 
+                  task: { title: "Bilinmeyen Görev" },
+                  files: normalizeFiles(task.filePath)
+                };
               }
             })
           );
@@ -224,7 +432,7 @@ const ProjectTasks = () => {
     } finally {
       setLoading(false);
     }
-  }, [projectId, token]);
+  }, [projectId, token, normalizeFiles]);
 
   // Filtrelenmiş süreçler - memoized
   const filteredProcesses = useMemo(() => {
@@ -290,13 +498,18 @@ const ProjectTasks = () => {
 
   const handleComplete = useCallback(async (task) => {
     try {
+      // Dosya path'lerini hazırla
+      const filePaths = task.files ? task.files.map(file => {
+        return file.url || file.path || file.name;
+      }) : [];
+
       const dto = {
         status: task.status,
         startDate: task.startDate,
         assignedUserId: task.assignedUserId,
         endDate: task.endDate || null,
         description: task.description,
-        filePath: task.filePath || null,
+        filePath: filePaths,
         updatedByUserId: currentUserId,
       };
 
@@ -315,13 +528,18 @@ const ProjectTasks = () => {
     if (!taskToReassign) return;
 
     try {
+      // Dosya path'lerini hazırla
+      const filePaths = taskToReassign.files ? taskToReassign.files.map(file => {
+        return file.url || file.path || file.name;
+      }) : [];
+
       const payload = {
         status: taskToReassign.status || "NotStarted",
         startDate: taskToReassign.startDate ? new Date(taskToReassign.startDate).toISOString() : new Date().toISOString(),
         assignedUserId: newUserId,
         endDate: taskToReassign.endDate ? new Date(taskToReassign.endDate).toISOString() : null,
         description: taskToReassign.description || "",
-        filePath: taskToReassign.filePath || null,
+        filePath: filePaths,
         updatedByUserId: taskToReassign.assignedUserId || 1,
       };
 
@@ -805,17 +1023,77 @@ const ProjectTasks = () => {
                       value={task.description || ""}
                       onChange={(e) => updateTaskInState(task.id, { description: e.target.value })}
                       minRows={2}
-                      maxRows={3}
-                      style={{ flex: 1 }}
+                      maxRows={2}
                     />
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm flex-shrink-0 text-[#007bff]">📎</span>
+                    {/* Optimize Edilmiş Çoklu Dosya Yönetimi */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Text size="xs" color="#007bff" weight={500}>📎 Dosyalar</Text>
+                        <Badge size="xs" color="blue" variant="light">
+                          {task.files?.length || 0}
+                        </Badge>
+                      </div>
+                      
                       <input
                         type="file"
-                        onChange={(e) => updateTaskInState(task.id, {description: e.target.value})}
-                        className="flex-1 text-xs p-1 border border-[#ced4da] rounded"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.zip,.rar"
+                        onChange={(e) => handleMultipleFileUpload(task.id, e.target.files)}
+                        className="w-full text-xs p-1.5 border border-[#ced4da] rounded bg-white hover:bg-gray-50 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        disabled={uploadingFiles[task.id]}
                       />
+                      
+                      {uploadingFiles[task.id] && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                          <Text size="xs" color="blue">Dosyalar yükleniyor ve task güncelleniyor...</Text>
+                        </div>
+                      )}
+
+                      {/* Yüklenen Dosyalar Listesi */}
+                      {task.files && task.files.length > 0 && (
+                        <div className="max-h-24 overflow-y-auto bg-gray-50 rounded p-2 space-y-1">
+                          {task.files.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white rounded px-2 py-1 shadow-sm">
+                              <div className="flex items-center gap-1 flex-1 min-w-0">
+                                <span className="text-xs">{getFileIcon(file.name)}</span>
+                                <Text size="xs" className="truncate" title={file.name}>
+                                  {file.name}
+                                </Text>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Tooltip label="İndir">
+                                  <ActionIcon
+                                    size="xs"
+                                    color="blue"
+                                    variant="light"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleFileDownload(file);
+                                    }}
+                                  >
+                                    <IconDownload size={12} />
+                                  </ActionIcon>
+                                </Tooltip>
+                                <Tooltip label="Sil">
+                                  <ActionIcon
+                                    size="xs"
+                                    color="red"
+                                    variant="light"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleFileDelete(task.id, index);
+                                    }}
+                                  >
+                                    <IconX size={12} />
+                                  </ActionIcon>
+                                </Tooltip>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <Button
@@ -823,8 +1101,7 @@ const ProjectTasks = () => {
                       onClick={() => handleComplete(task)}
                       className="border-0 mt-auto"
                       style={{ background: 'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)' }}
-                    
-                      
+                      loading={uploadingFiles[task.id]}
                     >
                       Güncelle
                     </Button>
