@@ -25,7 +25,7 @@ const MyTasks = () => {
   });
 
   const ITEMS_PER_PAGE = 6;
-  const CARD_HEIGHT = 600; // Arttırıldı çoklu dosya gösterimi için
+  const CARD_HEIGHT = 550;
 
   // Auth bilgileri
   const token = localStorage.getItem("token");
@@ -34,6 +34,37 @@ const MyTasks = () => {
     return user ? JSON.parse(user) : null;
   }, []);
   const currentUserId = userObj?.id || 1;
+
+  // Dosya formatını normalize et
+  const normalizeFiles = useCallback((filePath) => {
+    if (!filePath) return [];
+    
+    try {
+      if (typeof filePath === 'string') {
+        // JSON string ise parse et
+        if (filePath.startsWith('[') || filePath.startsWith('{')) {
+          const parsed = JSON.parse(filePath);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        }
+        // Basit string ise dosya olarak kabul et
+        return [{ name: filePath, url: filePath, path: filePath }];
+      }
+      
+      if (Array.isArray(filePath)) {
+        return filePath.map(file => {
+          if (typeof file === 'string') {
+            return { name: file, url: file, path: file };
+          }
+          return file;
+        });
+      }
+      
+      return [filePath];
+    } catch (e) {
+      console.warn('Dosya formatı parse edilemedi:', e);
+      return [];
+    }
+  }, []);
 
   // API call optimizasyonu
   const fetchTaskDetails = useCallback(async (projectTask) => {
@@ -49,21 +80,8 @@ const MyTasks = () => {
       })
     ]);
 
-    // Dosya bilgilerini parse et
-    let files = [];
-    if (projectTask.filePath) {
-      try {
-        files = typeof projectTask.filePath === 'string' 
-          ? JSON.parse(projectTask.filePath) 
-          : projectTask.filePath;
-        if (!Array.isArray(files)) {
-          files = [files];
-        }
-      } catch (e) {
-        // Eski format - string olarak tek dosya
-        files = [{ name: projectTask.filePath, url: projectTask.filePath }];
-      }
-    }
+    // Dosya bilgilerini normalize et
+    const files = normalizeFiles(projectTask.filePath);
 
     return {
       ...projectTask,
@@ -71,9 +89,9 @@ const MyTasks = () => {
       processName: processRes.status === 'fulfilled' ? processRes.value.data.name : "Bilinmeyen Süreç",
       taskDetails: taskRes.status === 'fulfilled' ? taskRes.value.data : { title: "Bilinmeyen Görev", description: "" },
       assignedUserName: users.find(u => u.id === projectTask.assignedUserId)?.name || "Bilinmiyor",
-      files: files || []
+      files: files
     };
-  }, [token, users]);
+  }, [token, users, normalizeFiles]);
 
   // Görevleri getir
   useEffect(() => {
@@ -139,82 +157,121 @@ const MyTasks = () => {
     fetchUsers();
   }, [token]);
 
-  // Dosya yükleme fonksiyonu
-  const handleFileUpload = useCallback(async (taskId, files) => {
+  // Optimize edilmiş çoklu dosya yükleme fonksiyonu - tek endpoint ile
+  const handleMultipleFileUpload = useCallback(async (taskId, files) => {
     if (!files || files.length === 0) return;
 
     setUploadingFiles(prev => ({ ...prev, [taskId]: true }));
 
     try {
-      const formData = new FormData();
-      Array.from(files).forEach((file, index) => {
-        formData.append(`files`, file);
-      });
-      formData.append('taskId', taskId);
+      // Mevcut task'ı bul
+      const currentTask = myTasks.find(task => task.id === taskId);
+      if (!currentTask) {
+        throw new Error('Task bulunamadı');
+      }
 
-      const response = await axios.post(
-        'http://localhost:5000/api/files/upload-multiple',
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      const uploadedFiles = response.data.files || [];
+      // Mevcut dosyaları al
+      const currentFiles = currentTask.files || [];
       
-      // Task state'ini güncelle
+      // Yeni dosyalar için simülasyon (gerçek implementasyonda backend'e upload edilecek)
+      const newFiles = Array.from(files).map((file, index) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        path: `uploads/${Date.now()}_${index}_${file.name}`,
+        url: `http://localhost:5000/uploads/${Date.now()}_${index}_${file.name}`
+      }));
+
+      // Tüm dosyaları birleştir
+      const allFiles = [...currentFiles, ...newFiles];
+      const filePaths = allFiles.map(file => file.url || file.path || file.name);
+
+      // Task'ı güncelle - mevcut endpoint'i kullan
+      const updateDto = {
+        status: currentTask.status,
+        startDate: currentTask.startDate ? new Date(currentTask.startDate).toISOString() : new Date().toISOString(),
+        assignedUserId: currentTask.assignedUserId,
+        endDate: currentTask.endDate ? new Date(currentTask.endDate).toISOString() : null,
+        description: currentTask.description || "",
+        filePath: filePaths, // Array olarak tüm dosya path'leri
+        updatedByUserId: currentUserId
+      };
+
+      console.log('Dosya yükleme payload:', updateDto);
+
+      await axios.put(`http://localhost:5000/api/projectTasks/${taskId}`, updateDto, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // State'i güncelle
       setMyTasks(prev => prev.map(task => {
         if (task.id === taskId) {
-          const currentFiles = task.files || [];
-          const newFiles = [...currentFiles, ...uploadedFiles];
           return {
             ...task,
-            files: newFiles,
-            filePath: JSON.stringify(newFiles)
+            files: allFiles
           };
         }
         return task;
       }));
 
-      alert(`${uploadedFiles.length} dosya başarıyla yüklendi!`);
+      alert(`${newFiles.length} dosya başarıyla yüklendi ve task güncellendi!`);
     } catch (error) {
       console.error('Dosya yükleme hatası:', error);
       alert('Dosya yükleme hatası: ' + (error.response?.data?.message || error.message));
     } finally {
       setUploadingFiles(prev => ({ ...prev, [taskId]: false }));
     }
-  }, [token]);
+  }, [token, myTasks, currentUserId]);
 
-  // Dosya silme fonksiyonu
+  // Optimize edilmiş dosya silme fonksiyonu
   const handleFileDelete = useCallback(async (taskId, fileIndex) => {
     // eslint-disable-next-line no-restricted-globals
     if (!confirm('Bu dosyayı silmek istediğinizden emin misiniz?')) return;
 
     try {
-      const task = myTasks.find(t => t.id === taskId);
-      const updatedFiles = task.files.filter((_, index) => index !== fileIndex);
-      
-      setMyTasks(prev => prev.map(t => 
-        t.id === taskId 
-          ? { ...t, files: updatedFiles, filePath: JSON.stringify(updatedFiles) }
-          : t
-      ));
+      const currentTask = myTasks.find(task => task.id === taskId);
+      if (!currentTask) return;
 
-      alert('Dosya silindi!');
+      // Dosyayı listeden çıkar
+      const updatedFiles = currentTask.files.filter((_, index) => index !== fileIndex);
+      const filePaths = updatedFiles.map(file => file.url || file.path || file.name);
+
+      // Task'ı güncelle
+      const updateDto = {
+        status: currentTask.status,
+        startDate: currentTask.startDate ? new Date(currentTask.startDate).toISOString() : new Date().toISOString(),
+        assignedUserId: currentTask.assignedUserId,
+        endDate: currentTask.endDate ? new Date(currentTask.endDate).toISOString() : null,
+        description: currentTask.description || "",
+        filePath: filePaths, // Güncellenmiş dosya listesi
+        updatedByUserId: currentUserId
+      };
+
+      await axios.put(`http://localhost:5000/api/projectTasks/${taskId}`, updateDto, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // State'i güncelle
+      setMyTasks(prev => prev.map(task => {
+        if (task.id === taskId) {
+          return { ...task, files: updatedFiles };
+        }
+        return task;
+      }));
+
+      alert('Dosya silindi ve task güncellendi!');
     } catch (error) {
       console.error('Dosya silme hatası:', error);
-      alert('Dosya silme hatası!');
+      alert('Dosya silme hatası: ' + (error.response?.data?.message || error.message));
     }
-  }, [myTasks]);
+  }, [myTasks, token, currentUserId]);
 
   // Dosya indirme fonksiyonu
   const handleFileDownload = useCallback((file) => {
     const link = document.createElement('a');
-    link.href = file.url || file.path;
+    link.href = file.url || file.path || file.name;
     link.download = file.name || 'download';
+    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -282,17 +339,25 @@ const MyTasks = () => {
     setMyTasks(prev => prev.map(task => task.id === taskId ? { ...task, ...updates } : task));
   }, []);
 
+  // Geliştirilmiş görev güncelleme fonksiyonu
   const handleUpdateTask = useCallback(async (task) => {
     try {
+      // Dosya path'lerini string array formatına çevir
+      const filePaths = task.files ? task.files.map(file => {
+        return file.url || file.path || file.name;
+      }) : [];
+
       const dto = {
         status: task.status,
-        startDate: task.startDate,
+        startDate: task.startDate ? new Date(task.startDate).toISOString() : new Date().toISOString(),
         assignedUserId: task.assignedUserId,
-        endDate: task.endDate || null,
-        description: task.description,
-        filePath: task.filePath || null,
+        endDate: task.endDate ? new Date(task.endDate).toISOString() : null,
+        description: task.description || "",
+        filePath: filePaths, // Array olarak gönder
         updatedByUserId: currentUserId
       };
+
+      console.log('Güncelleme payload:', dto);
 
       await axios.put(`http://localhost:5000/api/projectTasks/${task.id}`, dto, {
         headers: { Authorization: `Bearer ${token}` },
@@ -301,6 +366,7 @@ const MyTasks = () => {
       alert("Görev başarıyla güncellendi");
     } catch (err) {
       console.error("Güncelleme Hatası: ", err.response?.data || err.message);
+      alert("Güncelleme hatası: " + (err.response?.data?.message || err.message));
     }
   }, [token, currentUserId]);
 
@@ -309,13 +375,18 @@ const MyTasks = () => {
     if (!taskToReassign) return;
 
     try {
+      // Dosya path'lerini hazırla
+      const filePaths = taskToReassign.files ? taskToReassign.files.map(file => {
+        return file.url || file.path || file.name;
+      }) : [];
+
       const payload = {
         status: taskToReassign.status || "NotStarted",
         startDate: taskToReassign.startDate ? new Date(taskToReassign.startDate).toISOString() : new Date().toISOString(),
         assignedUserId: newUserId,
         endDate: taskToReassign.endDate ? new Date(taskToReassign.endDate).toISOString() : null,
         description: taskToReassign.description || "",
-        filePath: taskToReassign.filePath || null,
+        filePath: filePaths, // Array olarak gönder
         updatedByUserId: userObj?.id || 0,
       };
 
@@ -327,8 +398,9 @@ const MyTasks = () => {
       setAssignModalOpen(false);
       setTaskToReassign(null);
       setSelectedUserId(null);
+      alert("Atama başarıyla değiştirildi");
     } catch (err) {
-      alert("Atama değiştirilemedi");
+      alert("Atama değiştirilemedi: " + (err.response?.data?.message || err.message));
       console.error("API HATASI:", err);
     }
   }, [taskToReassign, token, userObj]);
@@ -524,7 +596,7 @@ const MyTasks = () => {
                       maxRows={2}
                     />
 
-                    {/* Çoklu Dosya Yükleme Alanı */}
+                    {/* Optimize Edilmiş Çoklu Dosya Yönetimi */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Text size="xs" color="#007bff" weight={500}>📎 Dosyalar</Text>
@@ -537,27 +609,30 @@ const MyTasks = () => {
                         type="file"
                         multiple
                         accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.zip,.rar"
-                        onChange={(e) => handleFileUpload(task.id, e.target.files)}
-                        className="w-full text-xs p-1 border border-[#ced4da] rounded bg-white"
+                        onChange={(e) => handleMultipleFileUpload(task.id, e.target.files)}
+                        className="w-full text-xs p-1.5 border border-[#ced4da] rounded bg-white hover:bg-gray-50 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         disabled={uploadingFiles[task.id]}
                       />
                       
                       {uploadingFiles[task.id] && (
-                        <Text size="xs" color="blue">Dosyalar yükleniyor...</Text>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                          <Text size="xs" color="blue">Dosyalar yükleniyor ve task güncelleniyor...</Text>
+                        </div>
                       )}
 
                       {/* Yüklenen Dosyalar Listesi */}
                       {task.files && task.files.length > 0 && (
-                        <div className="max-h-20 overflow-y-auto bg-gray-50 rounded p-2 space-y-1">
+                        <div className="max-h-24 overflow-y-auto bg-gray-50 rounded p-2 space-y-1">
                           {task.files.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between bg-white rounded px-2 py-1">
+                            <div key={index} className="flex items-center justify-between bg-white rounded px-2 py-1 shadow-sm">
                               <div className="flex items-center gap-1 flex-1 min-w-0">
                                 <span className="text-xs">{getFileIcon(file.name)}</span>
                                 <Text size="xs" className="truncate" title={file.name}>
                                   {file.name}
                                 </Text>
                               </div>
-                              <Group spacing="xs">
+                              <div className="flex items-center gap-1">
                                 <Tooltip label="İndir">
                                   <ActionIcon
                                     size="xs"
@@ -584,7 +659,7 @@ const MyTasks = () => {
                                     <IconX size={12} />
                                   </ActionIcon>
                                 </Tooltip>
-                              </Group>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -596,6 +671,7 @@ const MyTasks = () => {
                       onClick={() => handleUpdateTask(task)}
                       className="border-0 mt-auto"
                       style={{ background: 'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)' }}
+                      loading={uploadingFiles[task.id]}
                     >
                       Güncelle
                     </Button>

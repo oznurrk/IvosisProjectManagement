@@ -133,7 +133,7 @@ const ProjectTasks = () => {
 
       // 2. ProjectTasks verisi
       const projectTasksRes = await axios.get(
-        `http://localhost:5000/api/projectTasks/by-project/${projectId}`,
+        `http://localhost:5000/api/ProjectTasks/by-project/${projectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

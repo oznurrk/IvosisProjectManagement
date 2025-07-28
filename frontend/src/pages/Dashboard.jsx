@@ -85,6 +85,7 @@ const Dashboard = () => {
   const completionRate = summary ? Math.round((summary.completedTasks / summary.totalTasks) * 100) : 0;
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
             <div>
@@ -279,6 +280,7 @@ const Dashboard = () => {
         </Card>
       </div>
     </div>
+  
   );
 };
 
@@ -342,6 +344,7 @@ const UserStatCard = ({ user, gradient }) => {
         </div>
       </CardContent>
     </Card>
+    
   );
 };
 
