@@ -10,6 +10,8 @@ import {
   IconArrowBarRight,
   IconLogout,
   IconCalendarUser,
+  IconUserCircle,
+  IconUsers,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 
@@ -21,7 +23,18 @@ const Sidebar = () => {
 
   const links = [
     { name: "Dashboard", url: "/dashboard", icon: <IconLayoutGrid size={20} /> },
-    { name: "Kullanıcılar", url: "/users", icon: <IconLayoutGrid size={20} /> },
+    { 
+      name: "İnsan Kaynakları", 
+      url: "/", 
+      icon: <IconUserCircle size={20} />,
+      children: [
+        {
+          name: "Personel Listesi",
+          url: "/users",
+          icon: <IconUsers size={20} />,
+        },
+      ]
+    },
     {
       name: "Projeler",
       url: "/projects",

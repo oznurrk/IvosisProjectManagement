@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import { Select, Textarea, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Modal, Card, ActionIcon, Tooltip } from "@mantine/core";
-import { IconUser, IconCalendarUser, IconFile, IconX, IconDownload, IconEye } from '@tabler/icons-react';
+import { IconUser, IconCalendarUser, IconFile, IconX, IconDownload, IconEye, IconMessage } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
+import TaskChatWidget from "../components/TaskChat/TaskChat";
 
 const MyTasks = () => {
   const [myTasks, setMyTasks] = useState([]);
@@ -14,6 +15,10 @@ const MyTasks = () => {
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [uploadingFiles, setUploadingFiles] = useState({});
+  
+  // Chat için state'ler
+  const [activeChatTaskId, setActiveChatTaskId] = useState(null);
+  const [showGlobalChat, setShowGlobalChat] = useState(false);
   
   const [searchFilters, setSearchFilters] = useState({
     projectName: "",
@@ -34,6 +39,8 @@ const MyTasks = () => {
     return user ? JSON.parse(user) : null;
   }, []);
   const currentUserId = userObj?.id || 1;
+
+  // ... (diğer tüm fonksiyonlar aynı kalacak - sadece render kısmını değiştiriyoruz)
 
   // Dosya formatını normalize et
   const normalizeFiles = useCallback((filePath) => {
@@ -156,6 +163,8 @@ const MyTasks = () => {
 
     fetchUsers();
   }, [token]);
+
+  // ... (diğer tüm handler fonksiyonları aynı)
 
   // Optimize edilmiş çoklu dosya yükleme fonksiyonu - tek endpoint ile
   const handleMultipleFileUpload = useCallback(async (taskId, files) => {
@@ -405,6 +414,15 @@ const MyTasks = () => {
     }
   }, [taskToReassign, token, userObj]);
 
+  // Chat için yardımcı fonksiyonlar
+  const handleOpenTaskChat = useCallback((taskId) => {
+    setActiveChatTaskId(taskId);
+  }, []);
+
+  const handleCloseChat = useCallback(() => {
+    setActiveChatTaskId(null);
+  }, []);
+
   // Utility functions
   const getStatusLabel = (status) => {
     const labels = {
@@ -509,6 +527,18 @@ const MyTasks = () => {
             ]}
           />
 
+          {/* Chat Toggle Button */}
+          <div className="mb-4 flex justify-end">
+            <Button
+              leftIcon={<IconMessage size={16} />}
+              onClick={() => setShowGlobalChat(!showGlobalChat)}
+              variant={showGlobalChat ? "filled" : "outline"}
+              color="blue"
+            >
+              {showGlobalChat ? "Chat'i Gizle" : "Genel Chat"}
+            </Button>
+          </div>
+
           <Grid gutter="lg">
             {paginatedTasks.map((task) => (
               <Grid.Col key={task.id} span={{ base: 12, sm: 6, lg: 4 }}>
@@ -525,9 +555,21 @@ const MyTasks = () => {
                       <Text size="sm" weight={500} className="text-[#212529] leading-[1.4] flex-1">
                         {task.taskDetails?.title || 'Görev Başlığı'}
                       </Text>
-                      <Badge style={{ backgroundColor: getStatusColor(task.status), color: 'white' }} size="sm">
-                        {getStatusLabel(task.status)}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge style={{ backgroundColor: getStatusColor(task.status), color: 'white' }} size="sm">
+                          {getStatusLabel(task.status)}
+                        </Badge>
+                        {/* Task-specific chat button */}
+                        <Tooltip label="Görev Chat">
+                          <ActionIcon
+                            color="blue"
+                            variant={activeChatTaskId === task.id ? "filled" : "light"}
+                            onClick={() => handleOpenTaskChat(task.id)}
+                          >
+                            <IconMessage size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                      </div>
                     </Group>
                     
                     <Group position="apart">
@@ -617,7 +659,7 @@ const MyTasks = () => {
                       {uploadingFiles[task.id] && (
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                          <Text size="xs" color="blue">Dosyalar yükleniyor ve task güncelleniyor...</Text>
+                          <Text size="xs" color="blue">Dosyalar yükleniyor və task güncelleniyor...</Text>
                         </div>
                       )}
 
@@ -702,6 +744,7 @@ const MyTasks = () => {
         )}
       </div>
 
+      {/* Task Assignment Modal */}
       <Modal
         opened={assignModalOpen}
         onClose={() => {
@@ -737,6 +780,32 @@ const MyTasks = () => {
           </Stack>
         )}
       </Modal>
+
+      {/* Chat Widgets */}
+      {/* Global Chat - Genel görüşmeler için */}
+      {showGlobalChat && (
+        <TaskChatWidget
+          taskId="global"
+          userId={currentUserId}
+          userName={userObj?.name || 'Kullanıcı'}
+          apiBaseUrl="http://localhost:5000"
+          authToken={token}
+          position="bottom-left"
+        />
+      )}
+
+      {/* Task-specific Chat - Belirli görev için */}
+      {activeChatTaskId && (
+        <TaskChatWidget
+          taskId={activeChatTaskId}
+          userId={currentUserId}
+          userName={userObj?.name || 'Kullanıcı'}
+          apiBaseUrl="http://localhost:5000"
+          authToken={token}
+          position="bottom-right"
+          onClose={handleCloseChat}
+        />
+      )}
     </div>
   );
 };
