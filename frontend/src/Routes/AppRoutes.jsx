@@ -6,11 +6,11 @@ import ProjectCreated from "../pages/ProjectCreated";
 import ProjectTasks from "../components/Project/ProjectTasks";
 import MyTasks from "../pages/MyTasks";
 import Login from "../pages/Login";
-import TaskChat from "../components/TaskChat/TaskChat";
 import Processes from "../pages/Processes";
 import TaskAdd from "../components/Tasks/TaskAdd";
 import Dashboard from "../pages/Dashboard";
-import UserListPage from "../pages/UserListPage";
+import PersonnelListPage from "../pages/PersonnelListPage";
+import PersonnelAddPage from "../pages/PersonnelAddPage";
 
 
 const AppRoutes = () => {
@@ -28,7 +28,8 @@ const AppRoutes = () => {
                     <Route path="/processes" element={<Processes />} />
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/users" element={<UserListPage  />} />
+                    <Route path="/users" element={<PersonnelListPage  />} />
+                    <Route path="personel-add" element={<PersonnelAddPage />} />
                 </Route>
             </Routes>
         </BrowserRouter>
