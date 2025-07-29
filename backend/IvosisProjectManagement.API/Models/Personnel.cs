@@ -1,4 +1,3 @@
-// Personnel.cs - Model
 using System.ComponentModel.DataAnnotations;
 
 namespace IvosisProjectManagement.API.Models
