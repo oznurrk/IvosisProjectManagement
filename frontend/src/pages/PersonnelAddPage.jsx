@@ -83,6 +83,10 @@ const PersonnelAddPage = () => {
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setError("");
+    // Success mesajını temizle - sadece string kontrolü ile
+    if (success && typeof success === 'string' && success.length > 0) {
+      setSuccess("");
+    }
   };
 
   const validateCurrentTab = () => {
@@ -119,7 +123,10 @@ const PersonnelAddPage = () => {
   const handleNextTab = () => {
     if (validateCurrentTab()) {
       setCompletedTabs(prev => new Set([...prev, activeTab]));
-      setActiveTab(prev => Math.min(prev + 1, tabs.length - 1));
+      // Son sekmeye geçerken otomatik submit'i önle
+      if (activeTab < tabs.length - 1) {
+        setActiveTab(prev => prev + 1);
+      }
       setError("");
     }
   };
@@ -128,11 +135,16 @@ const PersonnelAddPage = () => {
     if (tabIndex <= activeTab || completedTabs.has(tabIndex)) {
       setActiveTab(tabIndex);
       setError("");
+      // Tab değişirken success mesajını temizle - sadece string kontrolü ile
+      if (success && typeof success === 'string' && success.length > 0) {
+        setSuccess("");
+      }
     }
   };
 
   const canSubmit = () => {
-    return completedTabs.size === tabs.length - 1 && validateCurrentTab();
+    // Son sekmede olmalı ve geçerli olmalı
+    return activeTab === tabs.length - 1 && validateCurrentTab();
   };
 
   const handleSubmit = async (e) => {
@@ -159,7 +171,19 @@ const PersonnelAddPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setSuccess("Personel başarıyla eklendi.");
+      // API response'u düzgün handle et
+      let successMessage = "Personel başarıyla eklendi.";
+      if (response.data) {
+        if (typeof response.data === 'string') {
+          successMessage = response.data;
+        } else if (response.data.message && typeof response.data.message === 'string') {
+          successMessage = response.data.message;
+        } else if (response.data.success && typeof response.data.success === 'string') {
+          successMessage = response.data.success;
+        }
+      }
+
+      setSuccess(String(successMessage));
       
       // Reset form
       setForm({
@@ -190,14 +214,27 @@ const PersonnelAddPage = () => {
       
       setActiveTab(0);
       setCompletedTabs(new Set());
+
+      // Success mesajını 5 saniye sonra temizle
+      setTimeout(() => {
+        setSuccess("");
+      }, 5000);
       
     } catch (err) {
       console.error(err);
+      let errorMessage = "Bir hata oluştu. Lütfen tekrar deneyin.";
+      
       if (err.response?.data) {
-        setError(err.response.data);
-      } else {
-        setError("Bir hata oluştu. Lütfen tekrar deneyin.");
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.message && typeof err.response.data.message === 'string') {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data.error && typeof err.response.data.error === 'string') {
+          errorMessage = err.response.data.error;
+        }
       }
+      
+      setError(String(errorMessage));
     } finally {
       setLoading(false);
     }
@@ -207,8 +244,8 @@ const PersonnelAddPage = () => {
     switch (activeTab) {
       case 0: // Temel Bilgiler
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <span className="text-red-500">*</span> Sicil No 
@@ -217,7 +254,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.sicilNo}
                   onChange={(e) => handleChange("sicilNo", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Sicil numarasını giriniz"
                   required
                 />
@@ -231,7 +268,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.name}
                   onChange={(e) => handleChange("name", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Adını giriniz"
                   required
                 />
@@ -245,7 +282,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.surname}
                   onChange={(e) => handleChange("surname", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Soyadını giriniz"
                   required
                 />
@@ -259,7 +296,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.title}
                   onChange={(e) => handleChange("title", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Ünvanını giriniz"
                 />
               </div>
@@ -271,7 +308,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.badge}
                   onChange={(e) => handleChange("badge", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 >
                   <option value="">Seçiniz</option>
                   <option value="Beyaz Yaka">Beyaz Yaka</option>
@@ -286,7 +323,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.gender}
                   onChange={(e) => handleChange("gender", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 >
                   <option value="">Seçiniz</option>
                   <option value="Erkek">Erkek</option>
@@ -299,8 +336,8 @@ const PersonnelAddPage = () => {
 
       case 1: // Organizasyon Bilgileri
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Bölüm
@@ -309,7 +346,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.department}
                   onChange={(e) => handleChange("department", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Bölüm adını giriniz"
                 />
               </div>
@@ -322,7 +359,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.section}
                   onChange={(e) => handleChange("section", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Departman adını giriniz"
                 />
               </div>
@@ -335,7 +372,7 @@ const PersonnelAddPage = () => {
                   type="date"
                   value={form.startDate}
                   onChange={(e) => handleChange("startDate", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 />
               </div>
 
@@ -346,7 +383,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.workStatus}
                   onChange={(e) => handleChange("workStatus", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 >
                   <option value="Aktif">Aktif</option>
                   <option value="Pasif">Pasif</option>
@@ -358,8 +395,8 @@ const PersonnelAddPage = () => {
 
       case 2: // Kişisel Bilgiler
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   TC Kimlik No
@@ -369,7 +406,7 @@ const PersonnelAddPage = () => {
                   value={form.tcKimlikNo}
                   onChange={(e) => handleChange("tcKimlikNo", e.target.value)}
                   maxLength="11"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="11 haneli TC Kimlik No"
                 />
               </div>
@@ -382,7 +419,7 @@ const PersonnelAddPage = () => {
                   type="date"
                   value={form.birthDate}
                   onChange={(e) => handleChange("birthDate", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 />
               </div>
 
@@ -394,7 +431,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.birthPlace}
                   onChange={(e) => handleChange("birthPlace", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Doğum yerini giriniz"
                 />
               </div>
@@ -407,7 +444,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.nationality}
                   onChange={(e) => handleChange("nationality", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="Uyruğunu giriniz"
                 />
               </div>
@@ -419,7 +456,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.educationLevel}
                   onChange={(e) => handleChange("educationLevel", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                 >
                   <option value="">Seçiniz</option>
                   <option value="İlkokul">İlkokul</option>
@@ -437,8 +474,8 @@ const PersonnelAddPage = () => {
 
       case 3: // Adres Bilgileri
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   İl
@@ -447,7 +484,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.city}
                   onChange={(e) => handleChange("city", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="İl adını giriniz"
                 />
               </div>
@@ -460,7 +497,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.district}
                   onChange={(e) => handleChange("district", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="İlçe adını giriniz"
                 />
               </div>
@@ -472,8 +509,8 @@ const PersonnelAddPage = () => {
                 <textarea
                   value={form.address}
                   onChange={(e) => handleChange("address", e.target.value)}
-                  rows="4"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                  rows="3"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
                   placeholder="Detaylı adres bilgilerini giriniz..."
                 />
               </div>
@@ -483,8 +520,8 @@ const PersonnelAddPage = () => {
 
       case 4: // İletişim ve Mali Bilgiler
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Cep Telefonu
@@ -493,7 +530,7 @@ const PersonnelAddPage = () => {
                   type="tel"
                   value={form.mobilePhone}
                   onChange={(e) => handleChange("mobilePhone", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="0555 123 45 67"
                 />
               </div>
@@ -506,7 +543,7 @@ const PersonnelAddPage = () => {
                   type="email"
                   value={form.email}
                   onChange={(e) => handleChange("email", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="ornek@email.com"
                 />
               </div>
@@ -520,7 +557,7 @@ const PersonnelAddPage = () => {
                   step="0.01"
                   value={form.salary}
                   onChange={(e) => handleChange("salary", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="0.00"
                 />
               </div>
@@ -534,7 +571,7 @@ const PersonnelAddPage = () => {
                   value={form.iban}
                   onChange={(e) => handleChange("iban", e.target.value)}
                   maxLength="26"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="TR00 0000 0000 0000 0000 00"
                 />
               </div>
@@ -547,7 +584,7 @@ const PersonnelAddPage = () => {
                   type="url"
                   value={form.photo}
                   onChange={(e) => handleChange("photo", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full border-2 border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   placeholder="https://example.com/photo.jpg"
                 />
               </div>
@@ -561,18 +598,16 @@ const PersonnelAddPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br ">
+    <div className="min-h-screen bg-gray-50">
       <Header 
         title="İnsan Kaynakları Yönetimi"
         subtitle="Yeni Personel Kaydı"
         icon={IconUserPlus}
       />
-      
-   
 
-      {/* Progress Tabs - Full Width */}
+      {/* Progress Tabs */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto">
+        <div className="container mx-auto px-4">
           <div className="flex overflow-x-auto">
             {tabs.map((tab, index) => {
               const Icon = tab.icon;
@@ -586,7 +621,7 @@ const PersonnelAddPage = () => {
                   onClick={() => handleTabClick(index)}
                   disabled={!isAccessible}
                   className={`
-                    flex-1 min-w-48 px-6 py-4 flex items-center justify-center space-x-3 border-b-4 transition-all duration-300
+                    flex-1 min-w-48 px-4 py-3 flex items-center justify-center space-x-2 border-b-4 transition-all duration-300
                     ${isActive 
                       ? 'border-blue-500 bg-blue-50 text-blue-700' 
                       : isCompleted
@@ -598,7 +633,7 @@ const PersonnelAddPage = () => {
                   `}
                 >
                   <div className={`
-                    p-2 rounded-full
+                    p-1.5 rounded-full
                     ${isActive 
                       ? 'bg-blue-500 text-white' 
                       : isCompleted
@@ -606,12 +641,12 @@ const PersonnelAddPage = () => {
                       : 'bg-gray-200 text-gray-500'
                     }
                   `}>
-                    {isCompleted ? <IconCheck size={16} /> : <Icon size={16} />}
+                    {isCompleted ? <IconCheck size={14} /> : <Icon size={14} />}
                   </div>
-                  <div>
+                  <div className="text-left">
                     <div className="font-semibold text-sm">{tab.title}</div>
                     {tab.required.length > 0 && (
-                      <div className="text-xs opacity-75">Zorunlu alanlar var</div>
+                      <div className="text-xs opacity-75">{tab.required.length} zorunlu alan</div>
                     )}
                   </div>
                 </button>
@@ -621,102 +656,101 @@ const PersonnelAddPage = () => {
         </div>
       </div>
 
-      {/* Main Content - Full Width */}
-      <div className="bg-white min-h-screen">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Alert Messages */}
-          {error && (
-            <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
-              <div className="flex items-center">
-                <IconAlertCircle className="text-red-400 mr-3" size={20} />
-                <p className="text-red-700 font-medium">{error}</p>
-              </div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-6">
+        {/* Alert Messages */}
+        {error && typeof error === 'string' && error.length > 0 && (
+          <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+            <div className="flex items-center">
+              <IconAlertCircle className="text-red-400 mr-3" size={20} />
+              <p className="text-red-700 font-medium">{error}</p>
             </div>
-          )}
-          
-          {success && (
-            <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
-              <div className="flex items-center">
-                <IconCheck className="text-green-400 mr-3" size={20} />
-                <p className="text-green-700 font-medium">{success}</p>
-              </div>
+          </div>
+        )}
+        
+        {success && typeof success === 'string' && success.length > 0 && (
+          <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+            <div className="flex items-center">
+              <IconCheck className="text-green-400 mr-3" size={20} />
+              <p className="text-green-700 font-medium">{success}</p>
             </div>
-          )}
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit}>
-            {/* Section Header */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                {tabs[activeTab].title}
-              </h2>
-              <p className="text-gray-600 text-lg">
-                {tabs[activeTab].required.length > 0 
-                  ? `Bu sekmede ${tabs[activeTab].required.length} zorunlu alan bulunmaktadır.`
-                  : 'Bu sekmede opsiyonel bilgileri girebilirsiniz.'
-                }
-              </p>
-              <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mt-4 rounded-full"></div>
-            </div>
+        <form onSubmit={handleSubmit}>
+          {/* Section Header */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              {tabs[activeTab].title}
+            </h2>
+            <p className="text-gray-600">
+              {tabs[activeTab].required.length > 0 
+                ? `Bu sekmede ${tabs[activeTab].required.length} zorunlu alan bulunmaktadır.`
+                : 'Bu sekmede opsiyonel bilgileri girebilirsiniz.'
+              }
+            </p>
+            <div className="w-20 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mt-3 rounded-full"></div>
+          </div>
 
-            {/* Form Content */}
-            <div className="bg-gray-50 rounded-2xl p-8 mb-8">
-              {renderTabContent()}
-            </div>
+          {/* Form Content */}
+          <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
+            {renderTabContent()}
+          </div>
 
-            {/* Navigation Buttons - Full Width */}
-            <div className="flex justify-between items-center py-6 border-t border-gray-200 bg-gray-50 rounded-xl px-8">
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center py-4 border-t border-gray-200 bg-white rounded-lg px-6 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setActiveTab(prev => Math.max(prev - 1, 0))}
+              disabled={activeTab === 0}
+              className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              ← Önceki
+            </button>
+
+            <div className="flex space-x-3">
               <button
                 type="button"
-                onClick={() => setActiveTab(prev => Math.max(prev - 1, 0))}
-                disabled={activeTab === 0}
-                className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                onClick={() => window.history.back()}
+                className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium"
               >
-                ← Önceki
+                İptal
               </button>
 
-              <div className="flex space-x-4">
+              {activeTab < tabs.length - 1 ? (
                 <button
                   type="button"
-                  onClick={() => window.history.back()}
-                  className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:border-gray-400 transition-all duration-200 font-medium"
+                  onClick={handleNextTab}
+                  className="px-8 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-semibold shadow-md"
                 >
-                  İptal
+                  Sonraki →
                 </button>
-
-                {activeTab < tabs.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={handleNextTab}
-                    className="px-12 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-semibold shadow-lg"
-                  >
-                    Sonraki →
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={loading || !canSubmit()}
-                    className="px-12 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg flex items-center space-x-2"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Kaydediliyor...</span>
-                      </>
-                    ) : (
-                      <>
-                        <IconCheck size={18} />
-                        <span>Personeli Kaydet</span>
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading || !canSubmit()}
+                  className="px-8 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md flex items-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Kaydediliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <IconCheck size={16} />
+                      <span>Personeli Kaydet</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
 export default PersonnelAddPage;
+
