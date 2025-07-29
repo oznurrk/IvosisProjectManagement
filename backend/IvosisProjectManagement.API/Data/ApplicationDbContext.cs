@@ -22,6 +22,7 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<ProjectAddress> ProjectAddresses { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<UserActivityLog> UserActivityLogs { get; set; }
+        public DbSet<Personnel> Personnel { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -54,14 +55,33 @@ namespace IvosisProjectManagement.API.Data
                 .WithMany()
                 .HasForeignKey(p => p.NeighborhoodId)
                 .OnDelete(DeleteBehavior.SetNull); // Nullable olduğu için
-            
-            modelBuilder.Entity<ProjectTask>() 
+
+            modelBuilder.Entity<ProjectTask>()
             .Property(e => e.FilePath)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
                 v => string.IsNullOrWhiteSpace(v)
                     ? new List<string>()
                     : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null));
+
+            modelBuilder.Entity<Personnel>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SicilNo).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Surname).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.TCKimlikNo).HasMaxLength(11);
+                entity.Property(e => e.Email).HasMaxLength(150);
+                entity.Property(e => e.IBAN).HasMaxLength(26);
+                entity.Property(e => e.WorkStatus).HasMaxLength(20).HasDefaultValue("Aktif");
+                entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UpdatedDate).HasDefaultValueSql("GETDATE()");
+
+                // Unique constraints
+                entity.HasIndex(e => e.SicilNo).IsUnique();
+                entity.HasIndex(e => e.TCKimlikNo).IsUnique().HasFilter("[TCKimlikNo] IS NOT NULL");
+                entity.HasIndex(e => e.Email).IsUnique().HasFilter("[Email] IS NOT NULL");
+            });
 
         }
 

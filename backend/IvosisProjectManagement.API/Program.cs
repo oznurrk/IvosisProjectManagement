@@ -43,6 +43,7 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserActivityService, UserActivityService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProjectAddressService, ProjectAddressService>();
+builder.Services.AddScoped<IPersonnelService, PersonnelService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
 
