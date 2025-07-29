@@ -64,7 +64,7 @@ namespace IvosisProjectManagement.API.Data
                     ? new List<string>()
                     : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null));
 
-            modelBuilder.Entity<Personnel>(entity =>
+             modelBuilder.Entity<Personnel>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.SicilNo).IsRequired().HasMaxLength(20);
@@ -77,11 +77,17 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.UpdatedDate).HasDefaultValueSql("GETDATE()");
 
-                // Unique constraints
+                // Unique constraints - NULL değerleri hariç tut
                 entity.HasIndex(e => e.SicilNo).IsUnique();
-                entity.HasIndex(e => e.TCKimlikNo).IsUnique().HasFilter("[TCKimlikNo] IS NOT NULL");
-                entity.HasIndex(e => e.Email).IsUnique().HasFilter("[Email] IS NOT NULL");
+                entity.HasIndex(e => e.TCKimlikNo).IsUnique().HasDatabaseName("IX_Personnel_TCKimlikNo").HasFilter("[TCKimlikNo] IS NOT NULL");
+                entity.HasIndex(e => e.Email).IsUnique().HasDatabaseName("IX_Personnel_Email").HasFilter("[Email] IS NOT NULL");
+                
+                // Diğer indexler
+                entity.HasIndex(e => e.WorkStatus).HasDatabaseName("IX_Personnel_WorkStatus");
+                entity.HasIndex(e => e.Department).HasDatabaseName("IX_Personnel_Department");
+                entity.HasIndex(e => new { e.Name, e.Surname }).HasDatabaseName("IX_Personnel_Name");
             });
+
 
         }
 
