@@ -191,10 +191,10 @@ const PersonnelListPage = () => {
 
       {/* Tablo */}
       <div className="px-4">
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-blue rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white">
+              <thead className="bg-blue">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Sicil No
@@ -206,10 +206,10 @@ const PersonnelListPage = () => {
                     Ünvan
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                    Bölüm
+                    Departman
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                    Departman
+                    Firma
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Giriş Tarihi

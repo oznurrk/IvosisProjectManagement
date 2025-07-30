@@ -12,4 +12,12 @@
     <noscript>Bu uygulamayı çalıştırmak için JavaScript etkinleştirilmelidir.</noscript>
     <div id="root"></div>
   </body>
+  <script>
+  // ResizeObserver error suppression for development
+  window.addEventListener('error', function(e) {
+    if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
+      e.stopImmediatePropagation();
+    }
+  });
+</script>
 </html>
