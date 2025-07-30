@@ -60,32 +60,26 @@ const ProcessAdd = ({ isModal = false, closeModal }) => {
 };
 
 
-
-import { useState } from "react";
-import { Modal, Button } from "@mantine/core";
-import ProcessAdd from "./ProcessAdd";
-
-const Processes = () => {
-  const [openAddModal, setOpenAddModal] = useState(false);
-
-  return (
-    <>
-      <Button onClick={() => setOpenAddModal(true)}>Ekle</Button>
-
-      <Modal
-        opened={openAddModal}
-        onClose={() => setOpenAddModal(false)}
-        centered
-        title="Yeni Süreç Ekle"
-        size="auto"
-        styles={{
-          content: { width: "900px", maxWidth: "95vw" },
-        }}
-      >
-        <ProcessAdd isModal closeModal={() => setOpenAddModal(false)} />
-      </Modal>
-    </>
-  );
-};
-
-export default Processes;
+Sicin No: kendisi verecek otomatik artacak
+Name: text
+surname: text
+title: text
+badge: select
+department: select
+section: select - enerji çelik
+startDate - date
+BirthPlace  - select (şehir listesi)
+birthDate - date
+Tc kimlik - text
+educationalLevel - select
+gender - select
+nationality - text
+city - select (şehirler)
+district - select (ilçeler)
+adress -text area
+mobilePhone - text
+email - text
+salary - text
+IBAN - text
+photo - file
+workstatus - select (aktif pasif çalışma durumu)
