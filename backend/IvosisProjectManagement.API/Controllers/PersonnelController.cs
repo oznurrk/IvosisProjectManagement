@@ -9,6 +9,7 @@ namespace IvosisProjectManagement.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PersonnelController : BaseController
     {
         private readonly IPersonnelService _personnelService;
@@ -92,12 +93,12 @@ namespace IvosisProjectManagement.API.Controllers
                 return BadRequest("Bu sicil numarası zaten kullanılıyor.");
 
             // Check TC Kimlik No
-            if (!string.IsNullOrWhiteSpace(dto.TCKimlikNo) && oldPersonnel.TCKimlikNo != dto.TCKimlikNo && 
+            if (!string.IsNullOrWhiteSpace(dto.TCKimlikNo) && oldPersonnel.TCKimlikNo != dto.TCKimlikNo &&
                 await _personnelService.TCKimlikNoExistsAsync(dto.TCKimlikNo))
                 return BadRequest("Bu TC Kimlik numarası zaten kayıtlı.");
 
             // Check Email
-            if (!string.IsNullOrWhiteSpace(dto.Email) && oldPersonnel.Email != dto.Email && 
+            if (!string.IsNullOrWhiteSpace(dto.Email) && oldPersonnel.Email != dto.Email &&
                 await _personnelService.EmailExistsAsync(dto.Email))
                 return BadRequest("Bu e-posta adresi zaten kayıtlı.");
 
