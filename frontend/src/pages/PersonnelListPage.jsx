@@ -1,422 +1,212 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Header from "../components/Header/Header";
-import { 
-  IconUserPlus, 
-  IconUser, 
-  IconBuilding, 
-  IconId, 
-  IconMapPin, 
-  IconPhone,
-  IconCheck,
-  IconAlertCircle,
-  IconCamera,
-  IconUpload,
-  IconX
-} from "@tabler/icons-react";
+import { IconPlus, IconUsers } from "@tabler/icons-react";
+import FilterAndSearch from "../Layout/FilterAndSearch";
+import PersonnelEditModal from "../components/Personel/PersonnelEditModal";
+import { useNavigate } from "react-router-dom";
 
-const PersonnelAddPage = () => {
-  const [form, setForm] = useState({
-    sicilNo: "",
-    name: "",
-    surname: "",
-    title: "",
-    badge: "",
-    department: "",
-    section: "",
-    startDate: "",
-    birthPlace: "",
-    birthDate: "",
-    tcKimlikNo: "",
-    educationLevel: "",
-    gender: "",
-    nationality: "Türk",
-    city: "",
-    district: "",
-    address: "",
-    mobilePhone: "",
-    email: "",
-    salary: "",
-    iban: "",
-    photo: "",
-    workStatus: "Aktif",
-  });
 
-  const [activeTab, setActiveTab] = useState(0);
-  const [completedTabs, setCompletedTabs] = useState(new Set());
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [uploadMethod, setUploadMethod] = useState("url"); // "url" or "file"
-
+const PersonnelListPage = () => {
+  const [personnel, setPersonnel] = useState([]);
+  const [selectedPersonnel, setSelectedPersonnel] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const navigate = useNavigate();
+ 
   const token = localStorage.getItem("token");
 
-  const tabs = [
-    {
-      id: 0,
-      title: "Temel Bilgiler",
-      icon: IconUser,
-      required: ["sicilNo", "name", "surname"],
-    },
-    {
-      id: 1,
-      title: "Organizasyon",
-      icon: IconBuilding,
-      required: [],
-    },
-    {
-      id: 2,
-      title: "Kişisel Bilgiler",
-      icon: IconId,
-      required: [],
-    },
-    {
-      id: 3,
-      title: "Adres Bilgileri",
-      icon: IconMapPin,
-      required: [],
-    },
-    {
-      id: 4,
-      title: "İletişim & Mali",
-      icon: IconPhone,
-      required: [],
-    }
-  ];
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setError("");
-    if (success && typeof success === 'string' && success.length > 0) {
-      setSuccess("");
-    }
-  };
+  const [searchFilters, setSearchFilters] = useState({
+    name: "",
+    surname: "",
+    sicilNo: "",
+    department: "",
+    workStatus: ""
+  });
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Dosya boyutu kontrolü (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Dosya boyutu 5MB'dan küçük olmalıdır.");
-        return;
-      }
 
-      // Dosya tipi kontrolü
-      if (!file.type.startsWith('image/')) {
-        setError("Lütfen geçerli bir resim dosyası seçiniz.");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target.result;
-        setPreviewImage(base64);
-        setForm((prev) => ({ ...prev, photo: base64 }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageUrlChange = (url) => {
-    setForm((prev) => ({ ...prev, photo: url }));
-    if (url) {
-      setPreviewImage(url);
-    } else {
-      setPreviewImage(null);
-    }
-  };
-
-  const removeImage = () => {
-    setPreviewImage(null);
-    setForm((prev) => ({ ...prev, photo: "" }));
-  };
-
-  const validateCurrentTab = () => {
-    const currentTab = tabs[activeTab];
-    const missingFields = currentTab.required.filter(field => !form[field]);
-    
-    if (missingFields.length > 0) {
-      setError(`Lütfen zorunlu alanları doldurunuz: ${missingFields.join(", ")}`);
-      return false;
-    }
-
-    // Additional validations
-    if (activeTab === 2) {
-      if (form.tcKimlikNo && form.tcKimlikNo.length !== 11) {
-        setError("TC Kimlik No 11 haneli olmalıdır.");
-        return false;
-      }
-    }
-
-    if (activeTab === 4) {
-      if (form.email && !/\S+@\S+\.\S+/.test(form.email)) {
-        setError("Geçerli bir e-posta adresi giriniz.");
-        return false;
-      }
-      if (form.iban && form.iban.length > 26) {
-        setError("IBAN en fazla 26 karakter olabilir.");
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const handleNextTab = () => {
-  setCompletedTabs(prev => new Set([...prev, activeTab]));
-  if (activeTab < tabs.length - 1) {
-    setActiveTab(prev => prev + 1);
-  }
-  setError("");
-};
-
-  const handleTabClick = (tabIndex) => {
-    if (tabIndex <= activeTab || completedTabs.has(tabIndex)) {
-      setActiveTab(tabIndex);
-      setError("");
-      if (success && typeof success === 'string' && success.length > 0) {
-        setSuccess("");
-      }
-    }
-  };
-
-  const canSubmit = () => {
-  const requiredFields = ["sicilNo", "name", "surname"];
-  const missingFields = requiredFields.filter(field => !form[field]);
-  return activeTab === tabs.length - 1 && missingFields.length === 0;
-};
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    if (loading) return;
-
-    // Validate all required fields
-    const requiredFields = ["sicilNo", "name", "surname"];
-    const missingFields = requiredFields.filter(field => !form[field]);
-    
-    if (missingFields.length > 0) {
-      setError(`Lütfen zorunlu alanları doldurunuz: ${missingFields.join(", ")}`);
-      return;
-    }
-
-    setLoading(true);
-
+  const fetchPersonnel = async () => {
     try {
-      const formData = {
-        ...form,
-        email: form.email?.trim() || null,
-        salary: form.salary ? parseFloat(form.salary) : null,
-        startDate: form.startDate || null,
-        birthDate: form.birthDate || null,
-      };
-
-      const response = await axios.post("http://localhost:5000/api/personnel", formData, {
+      setLoading(true);
+      const res = await axios.get("http://localhost:5000/api/personnel", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      let successMessage = "Personel başarıyla eklendi.";
-      if (response.data) {
-        if (typeof response.data === 'string') {
-          successMessage = response.data;
-        } else if (response.data.message && typeof response.data.message === 'string') {
-          successMessage = response.data.message;
-        } else if (response.data.success && typeof response.data.success === 'string') {
-          successMessage = response.data.success;
-        }
-      }
-
-      setSuccess(String(successMessage));
-      
-      // Reset form
-      setForm({
-        sicilNo: "",
-        name: "",
-        surname: "",
-        title: "",
-        badge: "",
-        department: "",
-        section: "",
-        startDate: "",
-        birthPlace: "",
-        birthDate: "",
-        tcKimlikNo: "",
-        educationLevel: "",
-        gender: "",
-        nationality: "Türk",
-        city: "",
-        district: "",
-        address: "",
-        mobilePhone: "",
-        email: "",
-        salary: "",
-        iban: "",
-        photo: "",
-        workStatus: "Aktif",
-      });
-      
-      setActiveTab(0);
-      setCompletedTabs(new Set());
-      setPreviewImage(null);
-
-      setTimeout(() => {
-        setSuccess("");
-      }, 5000);
-      
+      setPersonnel(res.data);
     } catch (err) {
-      console.error(err);
-      let errorMessage = "Bir hata oluştu. Lütfen tekrar deneyin.";
-      
-      if (err.response?.data) {
-        if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
-        } else if (err.response.data.message && typeof err.response.data.message === 'string') {
-          errorMessage = err.response.data.message;
-        } else if (err.response.data.error && typeof err.response.data.error === 'string') {
-          errorMessage = err.response.data.error;
-        }
-      }
-      
-      setError(String(errorMessage));
+      console.error("Personel listesi alınamadı", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 0: // Temel Bilgiler
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="relative">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    <span className="text-red-500">*</span> Sicil No 
-                  </label>
-                  <input
-                    type="text"
-                    value={form.sicilNo}
-                    onChange={(e) => handleChange("sicilNo", e.target.value)}
-                    className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                    placeholder="Sicil numarasını giriniz"
-                    required
-                  />
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <span className="text-red-500">*</span> Ad 
-                    </label>
-                    <input
-                      type="text"
-                      value={form.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                      placeholder="Adını giriniz"
-                      required
-                    />
-                  </div>
+  useEffect(() => {
+    fetchPersonnel();
+  }, []);
 
-                  <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <span className="text-red-500">*</span> Soyad
-                    </label>
-                    <input
-                      type="text"
-                      value={form.surname}
-                      onChange={(e) => handleChange("surname", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                      placeholder="Soyadını giriniz"
-                      required
-                    />
-                  </div>
-                </div>
 
-                <div className="relative">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Ünvan
-                  </label>
-                  <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => handleChange("title", e.target.value)}
-                    className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                    placeholder="Ünvanını giriniz"
-                  />
-                </div>
+  const handleEdit = (person) => {
+    setSelectedPersonnel(person);
+    setShowModal(true);
+  };
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Yaka
-                    </label>
-                    <select
-                      value={form.badge}
-                      onChange={(e) => handleChange("badge", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                    >
-                      <option value="">Seçiniz</option>
-                      <option value="BY">Beyaz Yaka</option>
-                      <option value="MY">Mavi Yaka</option>
-                    </select>
-                  </div>
 
-                  <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Cinsiyet
-                    </label>
-                    <select
-                      value={form.gender}
-                      onChange={(e) => handleChange("gender", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                    >
-                      <option value="">Seçiniz</option>
-                      <option value="Erkek">Erkek</option>
-                      <option value="Kadın">Kadın</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+  const handleViewDetails = (person) => {
+    setSelectedPersonnel(person);
+    setShowDetailModal(true);
+  };
 
-              <div className="space-y-4">
-      {/* Fotoğraf Yükleme */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Fotoğraf</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+
+  const handleUpdate = async (id, updatedData) => {
+    try {
+      await axios.put(`http://localhost:5000/api/personnel/${id}`, updatedData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchPersonnel();
+      setShowModal(false);
+    } catch (err) {
+      console.error("Güncelleme hatası", err);
+      throw err;
+    }
+  };
+
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Bu personeli silmek istediğinizden emin misiniz?")) {
+      try {
+        await axios.delete(`http://localhost:5000/api/personnel/${id}`, {
+          headers: { Authorization: `Bearer ${token}`},
+        });
+        fetchPersonnel();
+      } catch (err) {
+        console.error("Silme hatası", err);
+        alert("Personel silinirken bir hata oluştu.");
+      }
+    }
+  };
+
+
+  const handleFilterChange = (key, value) => {
+    setSearchFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+    setCurrentPage(1);
+  };
+
+
+  const clearFilters = () => {
+    setSearchFilters({
+      name: "",
+      surname: "",
+      sicilNo: "",
+      department: "",
+      workStatus: ""
+    });
+    setCurrentPage(1);
+  };
+
+
+  const visiblePersonnel = personnel.filter((person) => {
+    const nameMatch = person.name.toLowerCase().includes(searchFilters.name.toLowerCase());
+    const surnameMatch = person.surname.toLowerCase().includes(searchFilters.surname.toLowerCase());
+    const sicilMatch = person.sicilNo.toLowerCase().includes(searchFilters.sicilNo.toLowerCase());
+    const departmentMatch = person.department?.toLowerCase().includes(searchFilters.department.toLowerCase()) || !searchFilters.department;
+    const statusMatch = !searchFilters.workStatus || person.workStatus === searchFilters.workStatus;
+   
+    return nameMatch && surnameMatch && sicilMatch && departmentMatch && statusMatch;
+  });
+
+
+  // Pagination
+  const totalPages = Math.ceil(visiblePersonnel.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPersonnel = visiblePersonnel.slice(startIndex, endIndex);
+
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("tr-TR");
+  };
+
+
+  const formatCurrency = (amount) => {
+    if (!amount) return "-";
+    return new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: "TRY"
+    }).format(amount);
+  };
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <Header title="İnsan Kaynakları" subtitle="Personel Listesi" icon={IconUsers} />
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg text-gray-600">Yükleniyor...</div>
+        </div>
+      </div>
+    );
+  }
+
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Header
+        title="İnsan Kaynakları"
+        subtitle="Personel Listesi"
+        icon={IconUsers}
+        totalCount={` ${visiblePersonnel.length} personel (${personnel.filter(p => p.workStatus === 'Aktif').length} aktif)`}
+      />
+
+
+      {/* Filtreleme alanı */}
+      <div className="px-4">
+        <FilterAndSearch
+          searchFilters={searchFilters}
+          handleFilterChange={handleFilterChange}
+          clearFilters={clearFilters}
+          filtersConfig={[
+            { key: "sicilNo", type: "text", placeholder: "Sicil No..." },
+            { key: "name", type: "text", placeholder: "Ad..." },
+            { key: "surname", type: "text", placeholder: "Soyad..." },
+            { key: "department", type: "text", placeholder: "Bölüm..." },
+            {
+              key: "workStatus",
+              type: "select",
+              placeholder: "Çalışma Durumu",
+              options: [
+                { value: "", label: "Tümü" },
+                { value: "Aktif", label: "Aktif" },
+                { value: "Pasif", label: "Pasif" }
+              ]
+            }
+          ]}
         />
       </div>
 
-      {/* Önizleme Kutusu */}
-      <div className="w-full bg-gray-50 rounded-2xl p-4 text-center shadow-sm">
-        <div className="w-40 h-60 bg-gray-200 rounded-md overflow-hidden flex items-center justify-center mx-auto">
-        {previewImage || form.photo ? (
-          <img
-            src={previewImage || form.photo}
-            alt="Preview"
-            className="w-full h-full object-cover"
-            onError={() => {
-              setPreviewImage(null);
-              setForm(prev => ({ ...prev, photo: "" }));
-            }}
-          />
-        ) : (
-          <IconUser size={48} className="text-gray-400" />
-        )}
+
+      {/* Actions */}
+      <div className="px-4 mb-4">
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+          </div>
+          <button
+            onClick={() => navigate("/personel-add")}
+            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+          >
+            <IconPlus size={20} />
+            Ekle
+          </button>
+        </div>
       </div>
-        <h3 className="text-lg font-bold text-gray-800">
-          {form.name || "Ad"} {form.surname || "Soyad"}
-        </h3>
-        <p className="text-gray-600">{form.title || "Ünvan"}</p>
-        <p className="text-sm text-gray-500">Sicil No: {form.sicilNo || "000"}</p>
-      </div>
+
 
       {/* Tablo */}
       <div className="px-4">
@@ -492,8 +282,8 @@ const PersonnelAddPage = () => {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        person.workStatus === 'Aktif' 
-                          ? 'bg-green-100 text-green-800' 
+                        person.workStatus === 'Aktif'
+                          ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
                         {person.workStatus}
@@ -525,274 +315,261 @@ const PersonnelAddPage = () => {
             </table>
           </div>
 
-            {/* Upload Method Selection */}
-            <div className="flex justify-center mb-6">
-              <div className="flex bg-gray-100 rounded-lg p-1">
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+              <div className="flex-1 flex justify-between sm:hidden">
                 <button
-                  type="button"
-                  onClick={() => setUploadMethod("url")}
-                  className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                    uploadMethod === "url" 
-                      ? "bg-white shadow-sm text-blue-600 font-medium" 
-                      : "text-gray-600 hover:text-gray-800"
-                  }`}
+                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
-                  URL ile Ekle
+                  Önceki
                 </button>
                 <button
-                  type="button"
-                  onClick={() => setUploadMethod("file")}
-                  className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                    uploadMethod === "file" 
-                      ? "bg-white shadow-sm text-blue-600 font-medium" 
-                      : "text-gray-600 hover:text-gray-800"
-                  }`}
+                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
-                  Dosya Yükle
+                  Sonraki
                 </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(endIndex, visiblePersonnel.length)}</span> arası,{" "}
+                    toplam <span className="font-medium">{visiblePersonnel.length}</span> kayıt
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Önceki
+                    </button>
+                   
+                    {[...Array(totalPages)].map((_, index) => {
+                      const pageNumber = index + 1;
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === pageNumber
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    })}
+                   
+                    <button
+                      onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Sonraki
+                    </button>
+                  </nav>
+                </div>
               </div>
             </div>
+          )}
+        </div>
+      </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Upload Section */}
-              <div className="space-y-4">
-                {uploadMethod === "url" ? (
-                  <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Fotoğraf URL
-                    </label>
-                    <input
-                      type="url"
-                      value={form.photo}
-                      onChange={(e) => handleImageUrlChange(e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                      placeholder="https://example.com/photo.jpg"
-                    />
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Fotoğraf Dosyası
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors duration-200">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        id="photo-upload"
-                      />
-                      <label htmlFor="photo-upload" className="cursor-pointer">
-                        <IconUpload size={48} className="mx-auto text-gray-400 mb-4" />
-                        <p className="text-gray-600 mb-2">Fotoğraf yüklemek için tıklayın</p>
-                        <p className="text-sm text-gray-500">PNG, JPG, JPEG (Maks. 5MB)</p>
-                      </label>
+
+      {/* Edit Modal */}
+      <PersonnelEditModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        personnel={selectedPersonnel}
+        onSave={handleUpdate}
+      />
+
+
+      {/* Detail Modal */}
+      {showDetailModal && selectedPersonnel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800">
+                Personel Detayları - {selectedPersonnel.name} {selectedPersonnel.surname}
+              </h2>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+           
+            <div className="p-6 space-y-6">
+              {/* Fotoğraf ve Temel Bilgiler */}
+              <div className="flex items-start space-x-6">
+                {selectedPersonnel.photo && (
+                  <img
+                    src={selectedPersonnel.photo}
+                    alt={`${selectedPersonnel.name} ${selectedPersonnel.surname}`}
+                    className="w-24 h-24 rounded-full object-cover"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {selectedPersonnel.name} {selectedPersonnel.surname}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-600">Sicil No:</span>
+                      <span className="ml-2">{selectedPersonnel.sicilNo}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Durum:</span>
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                        selectedPersonnel.workStatus === 'Aktif'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedPersonnel.workStatus}
+                      </span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Preview Section */}
-              <div className="flex items-center justify-center">
-                <div className="w-full max-w-xs">
-                  <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-100">
-                    <div className="relative">
-                      {previewImage || form.photo ? (
-                        <div className="relative">
-                          <img
-                            src={previewImage || form.photo}
-                            alt="Preview"
-                            className="w-48 h-48 object-cover rounded-xl mx-auto"
-                            onError={() => {
-                              setPreviewImage(null);
-                              setForm(prev => ({ ...prev, photo: "" }));
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={removeImage}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors duration-200"
-                          >
-                            <IconX size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="w-48 h-48 bg-gray-100 rounded-xl mx-auto flex items-center justify-center">
-                          <div className="text-center">
-                            <IconCamera size={48} className="text-gray-400 mx-auto mb-2" />
-                            <p className="text-gray-500 text-sm">Fotoğraf Önizleme</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-4 text-center">
-                      <h4 className="font-semibold text-gray-800">
-                        {form.name || "Ad"} {form.surname || "Soyad"}
-                      </h4>
-                      <p className="text-gray-600 text-sm">{form.title || "Ünvan"}</p>
-                      <p className="text-gray-500 text-xs mt-1">Sicil: {form.sicilNo || "000"}</p>
-                    </div>
+
+              {/* Organizasyon Bilgileri */}
+              <div className="border-t pt-6">
+                <h4 className="text-md font-medium text-gray-800 mb-3">Organizasyon Bilgileri</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Ünvan:</span>
+                    <span className="ml-2">{selectedPersonnel.title || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Yaka:</span>
+                    <span className="ml-2">{selectedPersonnel.badge || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Bölüm:</span>
+                    <span className="ml-2">{selectedPersonnel.department || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Departman:</span>
+                    <span className="ml-2">{selectedPersonnel.section || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Giriş Tarihi:</span>
+                    <span className="ml-2">{formatDate(selectedPersonnel.startDate)}</span>
+                  </div>
+                </div>
+              </div>
+
+
+              {/* Kişisel Bilgiler */}
+              <div className="border-t pt-6">
+                <h4 className="text-md font-medium text-gray-800 mb-3">Kişisel Bilgiler</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Doğum Yeri:</span>
+                    <span className="ml-2">{selectedPersonnel.birthPlace || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Doğum Tarihi:</span>
+                    <span className="ml-2">{formatDate(selectedPersonnel.birthDate)}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">TC Kimlik No:</span>
+                    <span className="ml-2">{selectedPersonnel.tcKimlikNo || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Cinsiyet:</span>
+                    <span className="ml-2">{selectedPersonnel.gender || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Uyruk:</span>
+                    <span className="ml-2">{selectedPersonnel.nationality || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Öğrenim:</span>
+                    <span className="ml-2">{selectedPersonnel.educationLevel || "-"}</span>
+                  </div>
+                </div>
+              </div>
+
+
+              {/* İletişim Bilgileri */}
+              <div className="border-t pt-6">
+                <h4 className="text-md font-medium text-gray-800 mb-3">İletişim Bilgileri</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Cep Telefonu:</span>
+                    <span className="ml-2">{selectedPersonnel.mobilePhone || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">E-posta:</span>
+                    <span className="ml-2">{selectedPersonnel.email || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">İl:</span>
+                    <span className="ml-2">{selectedPersonnel.city || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">İlçe:</span>
+                    <span className="ml-2">{selectedPersonnel.district || "-"}</span>
+                  </div>
+                  <div className="md:col-span-2">
+                    <span className="font-medium text-gray-600">Adres:</span>
+                    <span className="ml-2">{selectedPersonnel.address || "-"}</span>
+                  </div>
+                </div>
+              </div>
+
+
+              {/* Mali Bilgiler */}
+              <div className="border-t pt-6">
+                <h4 className="text-md font-medium text-gray-800 mb-3">Mali Bilgiler</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Maaş:</span>
+                    <span className="ml-2">{formatCurrency(selectedPersonnel.salary)}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">IBAN:</span>
+                    <span className="ml-2">{selectedPersonnel.iban || "-"}</span>
+                  </div>
+                </div>
+              </div>
+
+
+              {/* Sistem Bilgileri */}
+              <div className="border-t pt-6">
+                <h4 className="text-md font-medium text-gray-800 mb-3">Sistem Bilgileri</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Oluşturulma:</span>
+                    <span className="ml-2">{formatDate(selectedPersonnel.createdDate)}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Son Güncelleme:</span>
+                    <span className="ml-2">{formatDate(selectedPersonnel.updatedDate)}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-      <Header 
-        title="İnsan Kaynakları Yönetimi"
-        subtitle="Yeni Personel Kaydı"
-        icon={IconUserPlus}
-      />
-
-      {/* Progress Tabs */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 lg:px-6">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map((tab, index) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === index;
-              const isCompleted = completedTabs.has(index);
-              const isAccessible = index <= activeTab || completedTabs.has(index);
-              
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(index)}
-                  disabled={!isAccessible}
-                  className={`
-                    flex-shrink-0 min-w-[200px] px-6 py-4 flex items-center justify-center space-x-3 border-b-4 transition-all duration-300
-                    ${isActive 
-                      ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700' 
-                      : isCompleted
-                      ? 'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 hover:from-green-100 hover:to-emerald-100'
-                      : isAccessible
-                      ? 'border-transparent hover:bg-gray-50 text-gray-600 hover:text-gray-800'
-                      : 'border-transparent bg-gray-50 text-gray-400 cursor-not-allowed'
-                    }
-                  `}
-                >
-                  <div className={`
-                    p-2 rounded-full transition-all duration-300
-                    ${isActive 
-                      ? 'bg-blue-500 text-white shadow-lg' 
-                      : isCompleted
-                      ? 'bg-green-500 text-white shadow-lg'
-                      : isAccessible
-                      ? 'bg-gray-200 text-gray-600'
-                      : 'bg-gray-100 text-gray-400'
-                    }
-                  `}>
-                    {isCompleted ? <IconCheck size={16} /> : <Icon size={16} />}
-                  </div>
-                  <div className="text-left">
-                    <div className="font-semibold text-sm">{tab.title}</div>
-                    {tab.required.length > 0 && (
-                      <div className="text-xs opacity-75">
-                        <span className="text-red-500">*</span> {tab.required.length} zorunlu alan
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 lg:px-6 py-8">
-        {/* Alert Messages */}
-        {error && typeof error === 'string' && error.length > 0 && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-6 rounded-r-xl shadow-sm">
-            <div className="flex items-center">
-              <IconAlertCircle className="text-red-400 mr-3 flex-shrink-0" size={24} />
-              <p className="text-red-700 font-medium">{error}</p>
-            </div>
-          </div>
-        )}
-        
-        {success && typeof success === 'string' && success.length > 0 && (
-          <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-6 rounded-r-xl shadow-sm">
-            <div className="flex items-center">
-              <IconCheck className="text-green-400 mr-3 flex-shrink-0" size={24} />
-              <p className="text-green-700 font-medium">{success}</p>
-            </div>
-          </div>
-        )}
-
-        <form className="max-w-6xl mx-auto">
-          {/* Section Header */}
-         
-
-          {/* Form Content */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 mb-8 shadow-xl border border-gray-100">
-            {renderTabContent()}
-          </div>
-
-          {/* Navigation Buttons */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-100">
-            <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-              <button
-                type="button"
-                onClick={() => setActiveTab(prev => Math.max(prev - 1, 0))}
-                disabled={activeTab === 0}
-                className="w-full sm:w-auto px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold order-2 sm:order-1"
-              >
-                ← Önceki Sekme
-              </button>
-
-              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto order-1 sm:order-2">
-                <button
-                  type="button"
-                  onClick={() => window.history.back()}
-                  className="w-full sm:w-auto px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-semibold"
-                >
-                  İptal Et
-                </button>
-
-                {activeTab < tabs.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={handleNextTab}
-                    className="w-full sm:w-auto px-10 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    Sonraki Sekme →
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={loading || !canSubmit()}
-                    className="w-full sm:w-auto px-10 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none flex items-center justify-center space-x-2"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Kaydediliyor...</span>
-                      </>
-                    ) : (
-                      <>
-                        <IconCheck size={20} />
-                        <span>Personeli Kaydet</span>
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </form>
-      </div>
+      )}
     </div>
   );
 };
 
-export default PersonnelAddPage;
+
+export default PersonnelListPage;
