@@ -140,9 +140,9 @@ const TaskListModal = ({ opened, onClose, process }) => {
                         <Button
                             leftSection={<IconPlus size={16} />}
                             onClick={() => setTaskAddModalOpened(true)}
-                            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 hover:from-ivosis-600 hover:to-ivosis-700"
                         >
-                            Görev Ekle
+                            Ekle
                         </Button>
                     </div>
 

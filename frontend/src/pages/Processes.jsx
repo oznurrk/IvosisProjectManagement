@@ -238,7 +238,7 @@ const Processes = () => {
           <div className="flex justify-end mb-5">
             <button
               onClick={() => setModalOpened(true)} // Modal'ı aç
-              className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+              className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 h-8 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
             >
               <IconPlus size={20} />
               Ekle

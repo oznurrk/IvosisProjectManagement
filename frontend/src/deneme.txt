@@ -83,3 +83,22 @@ salary - text
 IBAN - text
 photo - file
 workstatus - select (aktif pasif çalışma durumu)
+
+
+
+
+ekle butonları daha dar olacak +
+
+personel listesi detay modal tasarımı düzenlenecek +
+personel düzenle modal'ı personel ekle sayfası gibi olacak +
+sil butonu gizlenecek kodlar kalacak +
+ekle sayfasındaki footer sabitlenecek modalda da aynı yapı olacak +
+ekle sayfasındaki header enable ayarları düzenlenecek
+
+belgeler indirilme sorunu var
+Proje düzenleme ekranı tasarlanacak
+
+TaskListModal'da düzenle ve silme işlemleri çalışmıyor
+TaskAddModal ekleme işlemi çalışmıyor.
+
+Personel Düzenle modalinde düzenle butonu çalışmıyor.

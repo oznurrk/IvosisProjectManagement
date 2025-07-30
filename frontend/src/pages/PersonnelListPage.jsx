@@ -16,7 +16,7 @@ const PersonnelListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const navigate = useNavigate();
- 
+
   const token = localStorage.getItem("token");
 
 
@@ -79,7 +79,7 @@ const PersonnelListPage = () => {
     if (window.confirm("Bu personeli silmek istediğinizden emin misiniz?")) {
       try {
         await axios.delete(`http://localhost:5000/api/personnel/${id}`, {
-          headers: { Authorization: `Bearer ${token}`},
+          headers: { Authorization: `Bearer ${token}` },
         });
         fetchPersonnel();
       } catch (err) {
@@ -117,7 +117,7 @@ const PersonnelListPage = () => {
     const sicilMatch = person.sicilNo.toLowerCase().includes(searchFilters.sicilNo.toLowerCase());
     const departmentMatch = person.department?.toLowerCase().includes(searchFilters.department.toLowerCase()) || !searchFilters.department;
     const statusMatch = !searchFilters.workStatus || person.workStatus === searchFilters.workStatus;
-   
+
     return nameMatch && surnameMatch && sicilMatch && departmentMatch && statusMatch;
   });
 
@@ -199,7 +199,7 @@ const PersonnelListPage = () => {
           </div>
           <button
             onClick={() => navigate("/personel-add")}
-            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold h-8"
           >
             <IconPlus size={20} />
             Ekle
@@ -281,33 +281,35 @@ const PersonnelListPage = () => {
                       {person.email || "-"}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        person.workStatus === 'Aktif'
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${person.workStatus === 'Aktif'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
-                      }`}>
+                        }`}>
                         {person.workStatus}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
                         onClick={() => handleViewDetails(person)}
-                        className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs"
+                        className="text-ivosis-500 hover:text-ivosis-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs"
                       >
                         Detay
                       </button>
                       <button
                         onClick={() => handleEdit(person)}
-                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded text-xs"
+                        className="text-ivosis-700 hover:text-ivosis-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded text-xs"
                       >
                         Düzenle
                       </button>
+                      {/*
                       <button
                         onClick={() => handleDelete(person.id)}
                         className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
+                        
                       >
                         Sil
                       </button>
+                      */}
                     </td>
                   </tr>
                 ))}
@@ -351,24 +353,23 @@ const PersonnelListPage = () => {
                     >
                       Önceki
                     </button>
-                   
+
                     {[...Array(totalPages)].map((_, index) => {
                       const pageNumber = index + 1;
                       return (
                         <button
                           key={pageNumber}
                           onClick={() => setCurrentPage(pageNumber)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === pageNumber
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNumber
                               ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                               : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {pageNumber}
                         </button>
                       );
                     })}
-                   
+
                     <button
                       onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
                       disabled={currentPage === totalPages}
@@ -396,175 +397,279 @@ const PersonnelListPage = () => {
 
       {/* Detail Modal */}
       {showDetailModal && selectedPersonnel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Personel Detayları - {selectedPersonnel.name} {selectedPersonnel.surname}
-              </h2>
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-           
-            <div className="p-6 space-y-6">
-              {/* Fotoğraf ve Temel Bilgiler */}
-              <div className="flex items-start space-x-6">
-                {selectedPersonnel.photo && (
-                  <img
-                    src={selectedPersonnel.photo}
-                    alt={`${selectedPersonnel.name} ${selectedPersonnel.surname}`}
-                    className="w-24 h-24 rounded-full object-cover"
-                    onError={(e) => { e.target.style.display = 'none'; }}
-                  />
-                )}
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {selectedPersonnel.name} {selectedPersonnel.surname}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-600">Sicil No:</span>
-                      <span className="ml-2">{selectedPersonnel.sicilNo}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-600">Durum:</span>
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                        selectedPersonnel.workStatus === 'Aktif'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-ivosis-600 to-ivosis-700 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 h-32">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                  {/* Profil Fotoğrafı */}
+                  <div className="relative group">
+                    {selectedPersonnel.photo ? (
+                      <div className="relative">
+                        <img
+                          src={selectedPersonnel.photo}
+                          alt={`${selectedPersonnel.name} ${selectedPersonnel.surname}`}
+                          className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full object-cover border-4 border-white shadow-lg cursor-pointer transition-transform duration-200 group-hover:scale-105"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                        {/* Fotoğraf büyütme ikonu */}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer">
+                          <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 border-4 border-white shadow-lg flex items-center justify-center">
+                        <svg className="w-8 h-8 sm:w-10 sm:h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <h2 className="text-sm sm:text-lg lg:text-xl font-bold text-white leading-tight">
+                      {selectedPersonnel.name} {selectedPersonnel.surname}
+                    </h2>
+                    <p className="text-blue-100 text-xs sm:text-sm mt-1">
+                      {selectedPersonnel.title || "Personel Detayları"}
+                    </p>
+                    <div className="flex items-center mt-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${selectedPersonnel.workStatus === 'Aktif'
+                          ? 'bg-green-200 bg-opacity-20 text-white border border-green-300'
+                          : 'bg-red-200 bg-opacity-20 text-red-100 border border-red-300'
+                        }`}>
+                        <span className={`w-1 h-1 rounded-full mr-1.5 ${selectedPersonnel.workStatus === 'Aktif' ? 'bg-green-300' : 'bg-red-300'
+                          }`}></span>
                         {selectedPersonnel.workStatus}
                       </span>
                     </div>
                   </div>
                 </div>
+
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-white hover:text-blue-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-lg self-end sm:self-center"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
+            </div>
 
+            {/* Content */}
+            <div className="overflow-y-auto max-h-[calc(95vh-140px)] sm:max-h-[calc(90vh-160px)]">
+              <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
 
-              {/* Organizasyon Bilgileri */}
-              <div className="border-t pt-6">
-                <h4 className="text-md font-medium text-gray-800 mb-3">Organizasyon Bilgileri</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-600">Ünvan:</span>
-                    <span className="ml-2">{selectedPersonnel.title || "-"}</span>
+                {/* Temel Bilgiler */}
+                <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Temel Bilgiler</h3>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Yaka:</span>
-                    <span className="ml-2">{selectedPersonnel.badge || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Bölüm:</span>
-                    <span className="ml-2">{selectedPersonnel.department || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Departman:</span>
-                    <span className="ml-2">{selectedPersonnel.section || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Giriş Tarihi:</span>
-                    <span className="ml-2">{formatDate(selectedPersonnel.startDate)}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ad Soyad</label>
+                      <p className="text-gray-900 font-medium text-sm sm:text-base">{selectedPersonnel.name} {selectedPersonnel.surname}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Sicil No</label>
+                      <p className="text-gray-900 font-medium text-sm sm:text-base">{selectedPersonnel.sicilNo}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">TC Kimlik No</label>
+                      <p className="text-gray-900 font-mono text-sm sm:text-base">{selectedPersonnel.tcKimlikNo || "-"}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-
-              {/* Kişisel Bilgiler */}
-              <div className="border-t pt-6">
-                <h4 className="text-md font-medium text-gray-800 mb-3">Kişisel Bilgiler</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-600">Doğum Yeri:</span>
-                    <span className="ml-2">{selectedPersonnel.birthPlace || "-"}</span>
+                {/* Organizasyon Bilgileri */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-600 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Organizasyon Bilgileri</h3>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Doğum Tarihi:</span>
-                    <span className="ml-2">{formatDate(selectedPersonnel.birthDate)}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">TC Kimlik No:</span>
-                    <span className="ml-2">{selectedPersonnel.tcKimlikNo || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Cinsiyet:</span>
-                    <span className="ml-2">{selectedPersonnel.gender || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Uyruk:</span>
-                    <span className="ml-2">{selectedPersonnel.nationality || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Öğrenim:</span>
-                    <span className="ml-2">{selectedPersonnel.educationLevel || "-"}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ünvan</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.title || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Yaka</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.badge || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Bölüm</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.department || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Departman</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.section || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Giriş Tarihi</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{formatDate(selectedPersonnel.startDate)}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-
-              {/* İletişim Bilgileri */}
-              <div className="border-t pt-6">
-                <h4 className="text-md font-medium text-gray-800 mb-3">İletişim Bilgileri</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-600">Cep Telefonu:</span>
-                    <span className="ml-2">{selectedPersonnel.mobilePhone || "-"}</span>
+                {/* Kişisel Bilgiler */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Kişisel Bilgiler</h3>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-600">E-posta:</span>
-                    <span className="ml-2">{selectedPersonnel.email || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">İl:</span>
-                    <span className="ml-2">{selectedPersonnel.city || "-"}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-600">İlçe:</span>
-                    <span className="ml-2">{selectedPersonnel.district || "-"}</span>
-                  </div>
-                  <div className="md:col-span-2">
-                    <span className="font-medium text-gray-600">Adres:</span>
-                    <span className="ml-2">{selectedPersonnel.address || "-"}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Doğum Yeri</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.birthPlace || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Doğum Tarihi</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{formatDate(selectedPersonnel.birthDate)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Cinsiyet</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.gender || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Uyruk</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.nationality || "-"}</p>
+                    </div>
+                    <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Öğrenim Durumu</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.educationLevel || "-"}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-
-              {/* Mali Bilgiler */}
-              <div className="border-t pt-6">
-                <h4 className="text-md font-medium text-gray-800 mb-3">Mali Bilgiler</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-600">Maaş:</span>
-                    <span className="ml-2">{formatCurrency(selectedPersonnel.salary)}</span>
+                {/* İletişim Bilgileri */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-600 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">İletişim Bilgileri</h3>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-600">IBAN:</span>
-                    <span className="ml-2">{selectedPersonnel.iban || "-"}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Cep Telefonu</label>
+                      <p className="text-gray-900 font-mono text-sm sm:text-base">{selectedPersonnel.mobilePhone || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">E-posta</label>
+                      <p className="text-gray-900 text-sm sm:text-base break-all">{selectedPersonnel.email || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">İl</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.city || "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">İlçe</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{selectedPersonnel.district || "-"}</p>
+                    </div>
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adres</label>
+                      <p className="text-gray-900 text-sm sm:text-base leading-relaxed">{selectedPersonnel.address || "-"}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-
-              {/* Sistem Bilgileri */}
-              <div className="border-t pt-6">
-                <h4 className="text-md font-medium text-gray-800 mb-3">Sistem Bilgileri</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-600">Oluşturulma:</span>
-                    <span className="ml-2">{formatDate(selectedPersonnel.createdDate)}</span>
+                {/* Mali Bilgiler */}
+                <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-emerald-600 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Mali Bilgiler</h3>
                   </div>
-                  <div>
-                    <span className="font-medium text-gray-600">Son Güncelleme:</span>
-                    <span className="ml-2">{formatDate(selectedPersonnel.updatedDate)}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Maaş</label>
+                      <p className="text-emerald-700 font-semibold text-base sm:text-lg">{formatCurrency(selectedPersonnel.salary)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">IBAN</label>
+                      <p className="text-gray-900 font-mono text-xs sm:text-sm break-all">{selectedPersonnel.iban || "-"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sistem Bilgileri */}
+                <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-600 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">Sistem Bilgileri</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Oluşturulma Tarihi</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{formatDate(selectedPersonnel.createdDate)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Son Güncelleme</label>
+                      <p className="text-gray-900 text-sm sm:text-base">{formatDate(selectedPersonnel.updatedDate)}</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Fotoğraf Büyütme Modalı */}
+          {selectedPersonnel.photo && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-60 p-4 cursor-pointer"
+              style={{ display: 'none' }}
+              id="photoModal"
+              onClick={() => document.getElementById('photoModal').style.display = 'none'}
+            >
+              <div className="relative max-w-2xl max-h-[80vh] w-full h-full flex items-center justify-center">
+                <img
+                  src={selectedPersonnel.photo}
+                  alt={`${selectedPersonnel.name} ${selectedPersonnel.surname}`}
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                />
+                <button
+                  className="absolute top-4 right-4 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2 transition-colors duration-200"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    document.getElementById('photoModal').style.display = 'none';
+                  }}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

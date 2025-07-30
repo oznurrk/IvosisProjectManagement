@@ -159,7 +159,7 @@ const TaskAddModal = ({ opened, onClose, process, onTaskAdded }) => {
       onClose={handleClose}
       title={
         <Group spacing="sm">
-          <IconPlus size={24} color="#22c55e" />
+          <IconPlus size={24} color="#23657b" />
           <Text size="lg" weight={600} color="#2d3748">
             Yeni Görev Ekle
           </Text>
@@ -232,10 +232,10 @@ const TaskAddModal = ({ opened, onClose, process, onTaskAdded }) => {
               type="submit"
               loading={loading}
               leftSection={<IconPlus size={16} />}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+              className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 hover:from-ivosis-600 hover:to-ivosis-500"
               size="md"
             >
-              {loading ? "Ekleniyor..." : "Görev Ekle"}
+              {loading ? "Ekleniyor..." : "Ekle"}
             </Button>
           </Group>
         </Stack>
