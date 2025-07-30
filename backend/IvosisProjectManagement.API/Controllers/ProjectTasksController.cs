@@ -4,6 +4,7 @@ using IvosisProjectManagement.API.Attributes;
 using IvosisProjectManagement.API.DTOs;
 using IvosisProjectManagement.API.DTOs.Common;
 using IvosisProjectManagement.API.Enums;
+using IvosisProjectManagement.API.Helpers;
 using IvosisProjectManagement.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -97,17 +98,21 @@ namespace IvosisProjectManagement.API.Controllers
 
             var result = await _service.CreateManyAsync(dtos);
             return Created("api/ProjectTasks", result);
-
         }
 
         [HttpPut("{id}")]
         [LogActivity(ActivityType.Update, "ProjectTask")]
         public async Task<IActionResult> Update(int id, ProjectTaskUpdateDto dto)
         {
+            // UpdatedByUserId'yi set et
+            dto.UpdatedByUserId = GetCurrentUserId();
+            
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();
-            //var updatedItem = await _service.GetByIdAsync(id); 
-            return Ok(await _service.UpdateAsync(id, dto));
+            
+            // Güncellenmiş item'ı döndür
+            var updatedItem = await _service.GetByIdAsync(id);
+            return Ok(updatedItem);
         }
 
         [HttpDelete("{id}")]
@@ -117,6 +122,137 @@ namespace IvosisProjectManagement.API.Controllers
             var deleted = await _service.DeleteAsync(id);
             return deleted ? Ok() : NotFound();
         }
-    }
 
+        /// <summary>
+        /// Task'a ait dosyayı indir (sadece dosya adı ile)
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <param name="fileName">Orijinal dosya adı (örn: "Yeni Metin Belgesi.txt")</param>
+        /// <returns>Dosya</returns>
+        [HttpGet("{taskId}/files/{fileName}")]
+        [LogActivity(ActivityType.View, "ProjectTask/File")]
+        public async Task<IActionResult> DownloadTaskFile(int taskId, string fileName)
+        {
+            try
+            {
+                // URL'den decode et (dosya adında özel karakterler olabilir)
+                fileName = Uri.UnescapeDataString(fileName);
+
+                // Dosya var mı kontrol et
+                bool fileExists = await _service.TaskFileExistsAsync(taskId, fileName);
+                if (!fileExists)
+                {
+                    return NotFound($"Dosya bulunamadı: {fileName}");
+                }
+
+                // Dosyayı byte array olarak al
+                byte[] fileBytes = await _service.GetTaskFileAsync(taskId, fileName);
+                if (fileBytes == null)
+                {
+                    return NotFound($"Dosya okunamadı: {fileName}");
+                }
+
+                // Content type belirle
+                string contentType = FileHelper.GetContentType(fileName);
+
+                // Dosyayı döndür
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Dosya indirirken hata oluştu: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Task'a ait dosyayı stream olarak indir
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <param name="fileName">Orijinal dosya adı</param>
+        /// <returns>Dosya stream</returns>
+        [HttpGet("{taskId}/files/{fileName}/stream")]
+        [LogActivity(ActivityType.View, "ProjectTask/FileStream")]
+        public async Task<IActionResult> StreamTaskFile(int taskId, string fileName)
+        {
+            try
+            {
+                // URL'den decode et
+                fileName = Uri.UnescapeDataString(fileName);
+
+                // Dosya stream'i al
+                Stream fileStream = await _service.GetTaskFileStreamAsync(taskId, fileName);
+                if (fileStream == null)
+                {
+                    return NotFound($"Dosya bulunamadı: {fileName}");
+                }
+
+                // Content type belirle
+                string contentType = FileHelper.GetContentType(fileName);
+
+                // Stream'i döndür
+                return File(fileStream, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Dosya stream'i oluştururken hata oluştu: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Task'a ait tüm dosya adlarını listele
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <returns>Dosya adları listesi</returns>
+        [HttpGet("{taskId}/files")]
+        [LogActivity(ActivityType.View, "ProjectTask/FileList")]
+        public async Task<IActionResult> GetTaskFiles(int taskId)
+        {
+            var task = await _service.GetByIdAsync(taskId);
+            if (task == null)
+            {
+                return NotFound($"Task bulunamadı: {taskId}");
+            }
+
+            return Ok(new
+            {
+                TaskId = taskId,
+                Files = task.FileNames,
+                Count = task.FileNames.Count
+            });
+        }
+
+        /// <summary>
+        /// Dosyanın tam path'ini al (debug/test için)
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <param name="fileName">Orijinal dosya adı</param>
+        /// <returns>Tam dosya yolu</returns>
+        [HttpGet("{taskId}/files/{fileName}/path")]
+        [LogActivity(ActivityType.View, "ProjectTask/FilePath")]
+        public async Task<IActionResult> GetTaskFilePath(int taskId, string fileName)
+        {
+            try 
+            {
+                // URL'den decode et
+                fileName = Uri.UnescapeDataString(fileName);
+
+                string filePath = await _service.GetTaskFilePathAsync(taskId, fileName);
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    return NotFound($"Dosya bulunamadı: {fileName}");
+                }
+
+                return Ok(new
+                {
+                    OriginalFileName = fileName,
+                    FullPath = filePath,
+                    Exists = System.IO.File.Exists(filePath)
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Dosya path'i alınırken hata oluştu: {ex.Message}");
+            }
+        }
+    }
 }

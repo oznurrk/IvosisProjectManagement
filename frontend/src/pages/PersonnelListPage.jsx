@@ -417,276 +417,113 @@ const PersonnelAddPage = () => {
         <p className="text-gray-600">{form.title || "Ünvan"}</p>
         <p className="text-sm text-gray-500">Sicil No: {form.sicilNo || "000"}</p>
       </div>
-    </div>
-    </div>
-  </div>
-);
-           
 
-      case 1: // Organizasyon Bilgileri
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Firma
-                </label>
-                <select
-                  value={form.department}
-                  onChange={(e) => handleChange("department", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                >
-                  <option value="">Firma Seçiniz</option>
-                  <option value="Üretim">Üretim</option>
-                  <option value="Enerji">Enerji</option>
-                </select>
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Departman
-                </label>
-                <select
-                  value={form.section}
-                  onChange={(e) => handleChange("section", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                >
-                  <option value="">Departman Seçiniz</option>
-                  <option value="Çelik">Çelik</option>
-                  <option value="Enerji">Enerji</option>
-                  <option value="Satış Pazarlama">Satış Pazarlama</option>
-                  <option value="İnsan Kayakları">İnsan Kayakları</option>
-                  <option value="Sevkiyat">Sevkiyat</option>
-                  <option value="Satınalma">Satınalma</option>
-                  <option value="İdari İşler">İdari İşler</option>
-                </select>
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  İşe Giriş Tarihi
-                </label>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={(e) => handleChange("startDate", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Çalışma Durumu
-                </label>
-                <select
-                  value={form.workStatus}
-                  onChange={(e) => handleChange("workStatus", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                >
-                  <option value="Aktif">Aktif</option>
-                  <option value="Pasif">Pasif</option>
-                </select>
-              </div>
-            </div>
+      {/* Tablo */}
+      <div className="px-4">
+        <div className="bg-blue rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-blue">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    Sicil No
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    Ad Soyad
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    Ünvan
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    Departman
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    Firma
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    Giriş Tarihi
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    E-posta
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    Durum
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                    İşlemler
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentPersonnel.map((person) => (
+                  <tr key={person.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {person.sicilNo}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {person.photo && (
+                          <img
+                            className="h-8 w-8 rounded-full mr-3"
+                            src={person.photo}
+                            alt={`${person.name} ${person.surname}`}
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        )}
+                        <div className="text-sm font-medium text-gray-900">
+                          {person.name} {person.surname}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {person.title || "-"}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {person.department || "-"}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {person.section || "-"}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(person.startDate)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {person.email || "-"}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        person.workStatus === 'Aktif' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {person.workStatus}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => handleViewDetails(person)}
+                        className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs"
+                      >
+                        Detay
+                      </button>
+                      <button
+                        onClick={() => handleEdit(person)}
+                        className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded text-xs"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDelete(person.id)}
+                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
+                      >
+                        Sil
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        );
-
-      case 2: // Kişisel Bilgiler
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  TC Kimlik No
-                </label>
-                <input
-                  type="text"
-                  value={form.tcKimlikNo}
-                  onChange={(e) => handleChange("tcKimlikNo", e.target.value)}
-                  maxLength="11"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="11 haneli TC Kimlik No"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Doğum Tarihi
-                </label>
-                <input
-                  type="date"
-                  value={form.birthDate}
-                  onChange={(e) => handleChange("birthDate", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Doğum Yeri
-                </label>
-                <input
-                  type="text"
-                  value={form.birthPlace}
-                  onChange={(e) => handleChange("birthPlace", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="Doğum yerini giriniz"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Uyruk
-                </label>
-                <select
-                  value={form.nationality}
-                  onChange={(e) => handleChange("nationality", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                >
-                  <option value="TC">TC</option>
-                  <option value="SRY">SRY</option>
-                  <option value="Diğer">Diğer</option>
-                </select>
-              </div>
-
-              <div className="relative lg:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Öğrenim Durumu
-                </label>
-                <select
-                  value={form.educationLevel}
-                  onChange={(e) => handleChange("educationLevel", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                >
-                  <option value="">Seçiniz</option>
-                  <option value="İLKOKUL">İlkokul</option>
-                  <option value="ORTAOKUL">Ortaokul</option>
-                  <option value="LİSE">Lise</option>
-                  <option value="ÖNLİSANS">Ön Lisans</option>
-                  <option value="LİSANS">Lisans</option>
-                  <option value="YÜKSEK LİSANS">Yüksek Lisans</option>
-                  <option value="DOKTORA">Doktora</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 3: // Adres Bilgileri
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  İl
-                </label>
-                <input
-                  type="text"
-                  value={form.city}
-                  onChange={(e) => handleChange("city", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="İl adını giriniz"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  İlçe
-                </label>
-                <input
-                  type="text"
-                  value={form.district}
-                  onChange={(e) => handleChange("district", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="İlçe adını giriniz"
-                />
-              </div>
-
-              <div className="relative lg:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Adres Detayı
-                </label>
-                <textarea
-                  value={form.address}
-                  onChange={(e) => handleChange("address", e.target.value)}
-                  rows="4"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none text-lg"
-                  placeholder="Detaylı adres bilgilerini giriniz..."
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 4: // İletişim ve Mali Bilgiler
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Cep Telefonu
-                </label>
-                <input
-                  type="tel"
-                  value={form.mobilePhone}
-                  maxLength="11"
-                  onChange={(e) => handleChange("mobilePhone", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="0555 123 45 67"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  E-posta Adresi
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="ornek@email.com"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Maaş (₺)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.salary}
-                  onChange={(e) => handleChange("salary", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="relative">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  IBAN
-                </label>
-                <input
-                  type="text"
-                  value={form.iban}
-                  onChange={(e) => handleChange("iban", e.target.value)}
-                  maxLength="26"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
-                  placeholder="TR00 0000 0000 0000 0000 00"
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 5: // Fotoğraf
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Personel Fotoğrafı</h3>
-              <p className="text-gray-600">Personel için profil fotoğrafı ekleyebilirsiniz</p>
-            </div>
 
             {/* Upload Method Selection */}
             <div className="flex justify-center mb-6">

@@ -214,5 +214,42 @@ namespace IvosisProjectManagement.API.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        // Dosya işlemleri için yeni metodlar
+        public async Task<byte[]> GetTaskFileAsync(int taskId, string fileName)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) return null;
+
+            var normalizedPaths = FileHelper.NormalizeFilePaths(task.FilePath ?? new List<string>());
+            return FileHelper.GetFileBytes(normalizedPaths, fileName);
+        }
+
+        public async Task<Stream> GetTaskFileStreamAsync(int taskId, string fileName)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) return null;
+
+            var normalizedPaths = FileHelper.NormalizeFilePaths(task.FilePath ?? new List<string>());
+            return FileHelper.GetFileStream(normalizedPaths, fileName);
+        }
+
+        public async Task<bool> TaskFileExistsAsync(int taskId, string fileName)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) return false;
+
+            var normalizedPaths = FileHelper.NormalizeFilePaths(task.FilePath ?? new List<string>());
+            return FileHelper.FileExists(normalizedPaths, fileName);
+        }
+
+        public async Task<string> GetTaskFilePathAsync(int taskId, string fileName)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) return null;
+
+            var normalizedPaths = FileHelper.NormalizeFilePaths(task.FilePath ?? new List<string>());
+            return FileHelper.FindFileByOriginalName(normalizedPaths, fileName);
+        }
     }
 }
