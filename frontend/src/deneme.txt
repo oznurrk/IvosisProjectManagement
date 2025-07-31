@@ -82,7 +82,7 @@ email - text
 salary - text
 IBAN - text
 photo - file
-workstatus - select (aktif pasif çalışma durumu)
+workstatus - select (aktif pasif çalışma durumu) 
 
 
 
@@ -101,4 +101,4 @@ Proje düzenleme ekranı tasarlanacak
 TaskListModal'da düzenle ve silme işlemleri çalışmıyor
 TaskAddModal ekleme işlemi çalışmıyor.
 
-Personel Düzenle modalinde düzenle butonu çalışmıyor.
+Personel Düzenle modalinde düzenle butonu çalışmıyor. (backende update fonksiyonundaki alan kontrolleri tc ve email kontrol edilecek)
