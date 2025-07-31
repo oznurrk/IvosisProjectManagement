@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
 import { Card, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Divider } from "@mantine/core";
 import {  IconCalendar, IconSettings, IconPlus, IconLoader, IconEdit } from '@tabler/icons-react';
@@ -8,6 +9,7 @@ import ProcessAddModal from "../components/Process/ProcessAddModal";
 import TaskListModal from "../components/Tasks/TaskListModal";
 
 const Processes = () => {
+  const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [processes, setProcesses] = useState([]);
   const [filteredProcesses, setFilteredProcesses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -223,6 +225,8 @@ const Processes = () => {
           icon={IconLoader}
           userName={localStorage.getItem("userName") || undefined}
           totalCount={processes.length}
+          showMenuButton={isMobile}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
         />
         <div className="px-4 py-0">
           {/* Search and Filter Section*/}

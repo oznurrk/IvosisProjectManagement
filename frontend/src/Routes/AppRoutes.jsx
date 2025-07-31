@@ -11,6 +11,7 @@ import TaskAdd from "../components/Tasks/TaskAdd";
 import Dashboard from "../pages/Dashboard";
 import PersonnelListPage from "../pages/PersonnelListPage";
 import PersonnelAddPage from "../pages/PersonnelAddPage";
+import StockManagement from "../pages/StockManagement";
 
 
 const AppRoutes = () => {
@@ -26,6 +27,7 @@ const AppRoutes = () => {
                     <Route path="/projectTasks" element={<ProjectTasks />} />
                     <Route path="/my-tasks" element={<MyTasks />} />
                     <Route path="/processes" element={<Processes />} />
+                    <Route path="/stock-management" element={<StockManagement />} />
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/users" element={<PersonnelListPage  />} />

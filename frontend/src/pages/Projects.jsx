@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
 import { Text, Badge, Card, Group, Stack, Divider, LoadingOverlay, ActionIcon, Tooltip, Pagination } from "@mantine/core";
 import { IconCalendar, IconMapPin, IconBolt, IconSolarPanel, IconCpu, IconPlus, IconInfoCircle,  IconSunElectricity, } from "@tabler/icons-react";
@@ -11,6 +12,7 @@ import TaskChatWidget from "../components/TaskChat/TaskChat";
 
 
 const Projects = () => {
+  const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [projects, setProjects] = useState([]);
   const [cities, setCities] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -313,6 +315,8 @@ const Projects = () => {
         totalCount={projects.length}
         stats={calculateProjectStats()}
         showStats={true}
+        showMenuButton={isMobile}
+        onMenuClick={() => setIsMobileMenuOpen(true)}
       />
 
       {/* Filtreleme alanı */}

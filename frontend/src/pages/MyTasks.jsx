@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
 import { Select, Textarea, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Modal, Card, ActionIcon, Tooltip } from "@mantine/core";
 import { IconUser, IconCalendarUser, IconFile, IconX, IconDownload, IconEye, IconMessage } from '@tabler/icons-react';
@@ -24,6 +25,7 @@ if (typeof window !== 'undefined') {
 }
 
 const MyTasks = () => {
+  const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [myTasks, setMyTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -555,6 +557,8 @@ const MyTasks = () => {
           stats={myTasksStats}
           showStats={true}
           statsTitle="Görev Durumu İstatistikleri"
+          showMenuButton={isMobile}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
         />
 
         <div className="px-4">

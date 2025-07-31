@@ -12,10 +12,11 @@ import {
   IconCalendarUser,
   IconUserCircle,
   IconUsers,
+  IconPackage,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
@@ -48,6 +49,7 @@ const Sidebar = () => {
       ],
     },
     { name: "Süreçler", url: "/processes", icon: <IconLoader size={20} /> },
+    { name: "Stok Yönetimi", url: "/stock-management", icon: <IconPackage size={20} /> },
     { name: "Belgeler", url: "/documents", icon: <IconClipboardText size={20} /> },
     { name: "Ayarlar", url: "/settings", icon: <IconSettings size={20} /> },
     { name: "Çıkış Yap", url: "/#", icon: <IconLogout size={20} /> }
@@ -79,9 +81,9 @@ const Sidebar = () => {
       setIsMobile(mobile);
       setIsDesktop(desktop);
       
-      // Mobilde otomatik olarak collapse et, desktop'ta durumu koru
-      if (mobile && !collapsed) {
-        setCollapsed(true);
+      // Mobile'da sidebar'ı gizle
+      if (mobile) {
+        setCollapsed(false); // Mobile'da collapsed state kullanmayacağız
       }
     };
 
@@ -89,7 +91,7 @@ const Sidebar = () => {
     window.addEventListener('resize', checkScreenSize);
     
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, []); // collapsed dependency'sini kaldırdık
+  }, []);
 
   const toggleSidebar = () => {
     setCollapsed(prev => !prev);
@@ -104,13 +106,18 @@ const Sidebar = () => {
 
   // Mobile overlay click handler
   const handleOverlayClick = () => {
-    if (isMobile) {
-      setCollapsed(true);
+    if (isMobile && setIsMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
     }
   };
 
-  // Collapsed sidebar
-  if (collapsed) {
+  // Mobile'da sidebar gizli olacak
+  if (isMobile && !isMobileMenuOpen) {
+    return null;
+  }
+
+  // Collapsed sidebar (sadece desktop için)
+  if (collapsed && !isMobile) {
     return (
       <div
         onDoubleClick={handleDoubleClick}
@@ -199,7 +206,7 @@ const Sidebar = () => {
   return (
     <>
       {/* Mobile overlay - sadece mobilde ve sidebar açıkken göster */}
-      {isMobile && !collapsed && (
+      {isMobile && (
         <div
           className="fixed inset-0 bg-black/50 z-40"
           onClick={handleOverlayClick}
@@ -207,7 +214,7 @@ const Sidebar = () => {
       )}
 
       <div
-        onDoubleClick={handleDoubleClick}
+        onDoubleClick={!isMobile ? handleDoubleClick : undefined}
         className={`
           min-h-screen bg-ivosis-950 flex flex-col justify-between
           ${isMobile 
@@ -223,13 +230,24 @@ const Sidebar = () => {
       >
         {/* Header */}
         <div className="flex flex-col gap-4 py-4 overflow-y-auto flex-1">
-          {/* Logo */}
-          <div className="w-full flex justify-center px-4">
+          {/* Mobile Close Button & Logo */}
+          <div className="w-full flex justify-between items-center px-4">
             <img 
               src="ivosislogo4.webp" 
               alt="logo" 
               className="w-32 sm:w-40 object-contain" 
             />
+            {isMobile && (
+              <Button
+                variant="subtle"
+                color="gray"
+                size="xs"
+                onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
+                className="hover:bg-white/10"
+              >
+                <IconArrowBarLeft size={18} />
+              </Button>
+            )}
           </div>
 
           {/* User Info */}
@@ -262,8 +280,8 @@ const Sidebar = () => {
                   }
                   onClick={() => {
                     // Mobilde link tıklandığında sidebar'ı kapat
-                    if (isMobile) {
-                      setCollapsed(true);
+                    if (isMobile && setIsMobileMenuOpen) {
+                      setIsMobileMenuOpen(false);
                     }
                   }}
                 >
@@ -287,8 +305,8 @@ const Sidebar = () => {
                         }
                         onClick={() => {
                           // Mobilde link tıklandığında sidebar'ı kapat
-                          if (isMobile) {
-                            setCollapsed(true);
+                          if (isMobile && setIsMobileMenuOpen) {
+                            setIsMobileMenuOpen(false);
                           }
                         }}
                       >
@@ -303,18 +321,20 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Footer - Collapse Button */}
-        <div className="flex justify-center py-4 border-t border-white/10">
-          <Button
-            variant="light"
-            size="xs"
-            color="gray"
-            onClick={toggleSidebar}
-            className="hover:bg-white/20"
-          >
-            <IconArrowBarLeft size={18} />
-          </Button>
-        </div>
+        {/* Footer - Collapse Button (sadece desktop'ta göster) */}
+        {!isMobile && (
+          <div className="flex justify-center py-4 border-t border-white/10">
+            <Button
+              variant="light"
+              size="xs"
+              color="gray"
+              onClick={toggleSidebar}
+              className="hover:bg-white/10"
+            >
+              <IconArrowBarLeft size={16} />
+            </Button>
+          </div>
+        )}
       </div>
     </>
   );
