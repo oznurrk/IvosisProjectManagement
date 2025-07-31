@@ -70,5 +70,19 @@ namespace IvosisProjectManagement.API.Services
             };
         }
 
+        public Task<DashboardStatsDto> GetDashboardStatsAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<StockAlertDto>> GetRecentAlertsAsync(int take = 5)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<RecentMovementDto>> GetRecentMovementsAsync(int take = 10)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

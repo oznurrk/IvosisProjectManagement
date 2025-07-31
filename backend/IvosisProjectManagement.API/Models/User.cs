@@ -23,6 +23,10 @@ namespace IvosisProjectManagement.API.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
+
+          // Navigation properties
+        public virtual ICollection<StockItem> CreatedStockItems { get; set; }
+        public virtual ICollection<StockMovement> StockMovements { get; set; }
     }
 
 }

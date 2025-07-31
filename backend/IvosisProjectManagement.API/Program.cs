@@ -9,6 +9,9 @@ using IvosisProjectManagement.API.DTOs.Common;
 using IvosisProjectManagement.API.Middlewares;
 using IvosisProjectManagement.API.Services.Interfaces;
 using Serilog;
+using IvosisProjectManagement.API.Repositories.Implementations;
+using IvosisProjectManagement.API.Services.Implementations;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +29,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // ⬇️ Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// AutoMapper Configuration
+builder.Services.AddAutoMapper(typeof(Program));
 
 // ⬇️ Servis Katmanı
 builder.Services.AddScoped<IUserService, UserService>();
@@ -46,6 +52,24 @@ builder.Services.AddScoped<IProjectAddressService, ProjectAddressService>();
 builder.Services.AddScoped<IPersonnelService, PersonnelService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSignalR();
+// Repository Registration
+builder.Services.AddScoped<IStockItemRepository, StockItemRepository>();
+builder.Services.AddScoped<IStockMovementRepository, StockMovementRepository>();
+builder.Services.AddScoped<IStockBalanceRepository, StockBalanceRepository>();
+builder.Services.AddScoped<IStockAlertRepository, StockAlertRepository>();
+builder.Services.AddScoped<IStockCategoryRepository, StockCategoryRepository>();
+builder.Services.AddScoped<IStockLocationRepository, StockLocationRepository>();
+builder.Services.AddScoped<IUnitRepository, UnitRepository>();
+builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+
+// Service Registration
+builder.Services.AddScoped<IStockItemService, StockItemService>();
+builder.Services.AddScoped<IStockMovementService, StockMovementService>();
+builder.Services.AddScoped<IStockBalanceService, StockBalanceService>();
+builder.Services.AddScoped<IStockAlertService, StockAlertService>();
+builder.Services.AddScoped<IDashboardStockService, DashboardStockService>();
+
 
 
 // ⬇️ JWT Authentication
@@ -62,6 +86,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(key)
+            //ClockSkew = TimeSpan.Zero
         };
         options.Events = new JwtBearerEvents
         {
