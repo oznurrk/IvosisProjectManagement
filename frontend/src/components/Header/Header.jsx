@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Text, Progress } from "@mantine/core";
+import { Card, Text, Progress, Button } from "@mantine/core";
+import { IconMenu2 } from "@tabler/icons-react";
 
 const Header = ({ 
   title, 
@@ -10,7 +11,9 @@ const Header = ({
   stats, 
   showStats = false,
   statsTitle = "İstatistikler",
-  gradient = 'linear-gradient(135deg, #24809c 0%, #112d3b 100%)'
+  gradient = 'linear-gradient(135deg, #24809c 0%, #112d3b 100%)',
+  onMenuClick,
+  showMenuButton = false
 }) => {
   const StatusBar = ({ stats, size = "md", showLabels = true }) => (
     <div style={{ width: '100%' }}>
@@ -54,19 +57,34 @@ const Header = ({
       style={{ background: gradient }}
     >
       <div className="flex justify-between items-center flex-wrap gap-6">
-        <div>
-          <Text size="xl" weight={700} className="text-white mb-2">
-            {Icon && <Icon size={20} style={{ marginRight: 8, display: 'inline' }} />}
-            {title}
-          </Text>
-          <Text size="sm" className="text-white text-opacity-80">
-            {userName && `${userName} - `}{subtitle}
-          </Text>
-          {totalCount !== undefined && (
-            <Text size="xs" className="text-white text-opacity-70 mt-1">
-              📊 Toplam {totalCount} kayıt
-            </Text>
+        <div className="flex items-center gap-3">
+          {/* Mobile Menu Button */}
+          {showMenuButton && (
+            <Button
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={onMenuClick}
+              className="md:hidden hover:bg-white/10"
+            >
+              <IconMenu2 size={20} className="text-white" />
+            </Button>
           )}
+          
+          <div>
+            <Text size="xl" weight={700} className="text-white mb-2">
+              {Icon && <Icon size={20} style={{ marginRight: 8, display: 'inline' }} />}
+              {title}
+            </Text>
+            <Text size="sm" className="text-white text-opacity-80">
+              {userName && `${userName} - `}{subtitle}
+            </Text>
+            {totalCount !== undefined && (
+              <Text size="xs" className="text-white text-opacity-70 mt-1">
+                📊 Toplam {totalCount} kayıt
+              </Text>
+            )}
+          </div>
         </div>
         
         {showStats && stats && (

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import Header from "../components/Header/Header";
 import { IconPlus, IconUsers } from "@tabler/icons-react";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 import PersonnelEditModal from "../components/Personel/PersonnelEditModal";
-import { useNavigate } from "react-router-dom";
 
 
 const PersonnelListPage = () => {
+  const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [personnel, setPersonnel] = useState([]);
   const [selectedPersonnel, setSelectedPersonnel] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -147,7 +148,13 @@ const PersonnelListPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        <Header title="İnsan Kaynakları" subtitle="Personel Listesi" icon={IconUsers} />
+        <Header 
+          title="İnsan Kaynakları" 
+          subtitle="Personel Listesi" 
+          icon={IconUsers}
+          showMenuButton={isMobile}
+          onMenuClick={() => setIsMobileMenuOpen(true)}
+        />
         <div className="flex justify-center items-center h-64">
           <div className="text-lg text-gray-600">Yükleniyor...</div>
         </div>
@@ -163,6 +170,8 @@ const PersonnelListPage = () => {
         subtitle="Personel Listesi"
         icon={IconUsers}
         totalCount={` ${visiblePersonnel.length} personel (${personnel.filter(p => p.workStatus === 'Aktif').length} aktif)`}
+        showMenuButton={isMobile}
+        onMenuClick={() => setIsMobileMenuOpen(true)}
       />
 
 
@@ -212,34 +221,34 @@ const PersonnelListPage = () => {
       <div className="px-4">
         <div className="bg-blue rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead className="bg-blue">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-24 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Sicil No
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-48 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Ad Soyad
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-32 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Ünvan
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-40 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Departman
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-40 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Firma
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-36 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Giriş Tarihi
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-56 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     E-posta
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-28 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     Durum
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                  <th className="w-36 px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                     İşlemler
                   </th>
                 </tr>
@@ -247,10 +256,10 @@ const PersonnelListPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentPersonnel.map((person) => (
                   <tr key={person.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 py-4 text-sm font-medium text-gray-900">
                       {person.sicilNo}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4">
                       <div className="flex items-center">
                         {person.photo && (
                           <img
@@ -265,25 +274,25 @@ const PersonnelListPage = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 text-sm text-gray-900">
                       {person.title || "-"}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 text-sm text-gray-900">
                       {person.department || "-"}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 text-sm text-gray-900">
                       {person.section || "-"}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 text-sm text-gray-900">
                       {formatDate(person.startDate)}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 text-sm text-gray-900">
                       {person.email || "-"}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${person.workStatus === 'Aktif'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
                         }`}>
                         {person.workStatus}
                       </span>
@@ -301,14 +310,13 @@ const PersonnelListPage = () => {
                       >
                         Düzenle
                       </button>
-                      {/*
+                      {/* 
                       <button
-                        onClick={() => handleDelete(person.id)}
-                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
-                        
+                     onClick={() => handleDelete(person.id)}
+                      className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
                       >
-                        Sil
-                      </button>
+                      Sil
+                     </button>
                       */}
                     </td>
                   </tr>
@@ -316,6 +324,7 @@ const PersonnelListPage = () => {
               </tbody>
             </table>
           </div>
+
 
 
           {/* Pagination */}
@@ -361,8 +370,8 @@ const PersonnelListPage = () => {
                           key={pageNumber}
                           onClick={() => setCurrentPage(pageNumber)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNumber
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                             }`}
                         >
                           {pageNumber}
@@ -441,8 +450,8 @@ const PersonnelListPage = () => {
                     </p>
                     <div className="flex items-center mt-2">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${selectedPersonnel.workStatus === 'Aktif'
-                          ? 'bg-green-200 bg-opacity-20 text-white border border-green-300'
-                          : 'bg-red-200 bg-opacity-20 text-red-100 border border-red-300'
+                        ? 'bg-green-200 bg-opacity-20 text-white border border-green-300'
+                        : 'bg-red-200 bg-opacity-20 text-red-100 border border-red-300'
                         }`}>
                         <span className={`w-1 h-1 rounded-full mr-1.5 ${selectedPersonnel.workStatus === 'Aktif' ? 'bg-green-300' : 'bg-red-300'
                           }`}></span>

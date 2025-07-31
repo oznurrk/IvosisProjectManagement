@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import { Card, CardContent } from "../components/ui/Card";
 import { 
@@ -8,12 +9,13 @@ import {
 } from 'recharts';
 import { 
   Users, FolderOpen, CheckCircle, Clock, TrendingUp, Calendar,
-  Activity, Target, Award, Briefcase
+  Activity, Target, Award, Briefcase, Package
 } from 'lucide-react';
 import Header from "../components/Header/Header";
 import { IconLayoutGrid } from "@tabler/icons-react";
 
 const Dashboard = () => {
+  const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [summary, setSummary] = useState(null);
   const [details, setDetails] = useState(null);
 
@@ -93,6 +95,8 @@ const Dashboard = () => {
                 title="Dashboard"
                 subtitle="Yönetim Paneli"
                 icon={IconLayoutGrid}
+                showMenuButton={isMobile}
+                onMenuClick={() => setIsMobileMenuOpen(true)}
               />
             </div>
             <div className="flex justify-end items-center space-x-4 px-4">
@@ -159,6 +163,52 @@ const Dashboard = () => {
             change="+25%"
             changeType="positive"
           />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <Activity className="h-5 w-5 mr-2 text-blue-600" />
+            Hızlı İşlemler
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <QuickActionCard
+              title="Yeni Proje"
+              icon={<FolderOpen className="h-6 w-6" />}
+              link="/projectCreated"
+              color="blue"
+            />
+            <QuickActionCard
+              title="Görevlerim"
+              icon={<CheckCircle className="h-6 w-6" />}
+              link="/my-tasks"
+              color="green"
+            />
+            <QuickActionCard
+              title="Süreçler"
+              icon={<Target className="h-6 w-6" />}
+              link="/processes"
+              color="purple"
+            />
+            <QuickActionCard
+              title="Stok Yönetimi"
+              icon={<Package className="h-6 w-6" />}
+              link="/stock-management"
+              color="orange"
+            />
+            <QuickActionCard
+              title="Personel"
+              icon={<Users className="h-6 w-6" />}
+              link="/users"
+              color="indigo"
+            />
+            <QuickActionCard
+              title="Projeler"
+              icon={<Briefcase className="h-6 w-6" />}
+              link="/projects"
+              color="cyan"
+            />
+          </div>
         </div>
 
         {/* Main Charts Row */}
@@ -345,6 +395,32 @@ const UserStatCard = ({ user, gradient }) => {
       </CardContent>
     </Card>
     
+  );
+};
+
+// Quick Action Card Component
+const QuickActionCard = ({ title, icon, link, color }) => {
+  const colorVariants = {
+    blue: "from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
+    green: "from-green-500 to-green-600 hover:from-green-600 hover:to-green-700",
+    purple: "from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700",
+    orange: "from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700",
+    indigo: "from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700",
+    cyan: "from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
+  };
+
+  return (
+    <Link
+      to={link}
+      className={`block p-4 rounded-lg bg-gradient-to-r ${colorVariants[color]} text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105`}
+    >
+      <div className="text-center">
+        <div className="flex justify-center mb-2">
+          {icon}
+        </div>
+        <h4 className="text-sm font-medium">{title}</h4>
+      </div>
+    </Link>
   );
 };
 
