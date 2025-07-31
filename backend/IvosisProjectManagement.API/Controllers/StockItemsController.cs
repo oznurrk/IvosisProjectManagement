@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using IvosisProjectManagement.API.Controllers;
 using IvosisProjectManagement.API.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class StockItemsController : ControllerBase
+    public class StockItemsController : BaseController
     {
         private readonly IStockItemService _stockItemService;
 
@@ -14,13 +14,6 @@ using Microsoft.AspNetCore.Mvc;
         {
             _stockItemService = stockItemService;
         }
-
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out int userId) ? userId : 0;
-        }
-
         [HttpGet]
         public async Task<ActionResult<object>> GetStockItems([FromQuery] StockItemFilterDto filter)
         {
@@ -205,3 +198,9 @@ using Microsoft.AspNetCore.Mvc;
             }
         }
     }
+//GET    /api/stockitems              - Filtrelenmiş ürün listesi
+//GET    /api/stockitems/{id}         - Ürün detayı
+//POST   /api/stockitems              - Yeni ürün oluştur
+//PUT    /api/stockitems/{id}         - Ürün güncelle
+//DELETE /api/stockitems/{id}         - Ürün sil
+//

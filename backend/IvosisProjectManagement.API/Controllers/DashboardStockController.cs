@@ -56,3 +56,7 @@ using Microsoft.AspNetCore.Mvc;
             }
         }
     }
+
+//GET    /api/dashboard/stats         - Dashboard istatistikleri
+//GET    /api/dashboard/recent-movements - Son hareketler
+//GET    /api/dashboard/recent-alerts - Son uyarılar

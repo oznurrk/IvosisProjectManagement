@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using IvosisProjectManagement.API.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -176,3 +175,8 @@ using Microsoft.AspNetCore.Mvc;
             }
         }
     }
+
+//POST   /api/stockmovements/stock-in   - Stok girişi
+//POST   /api/stockmovements/stock-out  - Stok çıkışı
+//POST   /api/stockmovements/transfer   - Stok transferi
+//POST   /api/stockmovements/adjustment - Stok düzeltmesi
