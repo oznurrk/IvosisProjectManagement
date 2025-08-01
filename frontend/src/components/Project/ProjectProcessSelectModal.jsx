@@ -94,7 +94,7 @@ const ProjectProcessSelectModal = ({ opened, onClose, projectId }) => {
           assignedUserId: parseInt(userId),
           status: "NotStarted",
           startDate: new Date().toISOString(),
-          endDate: null,
+          endDate: new Date().toISOString(),
           description: task.description || "",
           filePath: null,
           createdAt: new Date().toISOString(),

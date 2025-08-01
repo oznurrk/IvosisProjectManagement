@@ -1,12 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
-import { Select, Textarea, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Modal, Card, ActionIcon, Tooltip } from "@mantine/core";
-import { IconUser, IconCalendarUser, IconFile, IconX, IconDownload, IconEye, IconMessage } from '@tabler/icons-react';
+import { Select, Textarea, Text, Group, Stack, Badge, Button,  Grid, Paper, Modal, Card, ActionIcon, Tooltip } from "@mantine/core";
+import { IconUser, IconCalendarUser, IconX, IconDownload } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
-// TaskChatWidget import'unu kaldırıyoruz çünkü eksik
-// import TaskChatWidget from "../components/TaskChat/TaskChat";
+import PaginationComponent from "../Layout/PaginationComponent";
 
 // ResizeObserver hatası için global error handler
 if (typeof window !== 'undefined') {
@@ -34,10 +33,7 @@ const MyTasks = () => {
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [uploadingFiles, setUploadingFiles] = useState({});
-  
-  // Chat için state'ler
-  const [activeChatTaskId, setActiveChatTaskId] = useState(null);
-  const [showGlobalChat, setShowGlobalChat] = useState(false);
+  const [pageSize, setPageSize] = useState(6); // Varsayılan sayfa boyutu
   
   const [searchFilters, setSearchFilters] = useState({
     projectName: "",
@@ -48,9 +44,19 @@ const MyTasks = () => {
     endDate: ""
   });
 
-  const ITEMS_PER_PAGE = 6;
   const CARD_HEIGHT = 650;
 
+  // Sayfa değişikliği handler'ı
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+  }, []);
+
+  // Sayfa boyutu değişikliği handler'ı
+  const handlePageSizeChange = useCallback((newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Sayfa boyutu değiştiğinde ilk sayfaya dön
+  }, []);
+  
   // Auth bilgileri
   const token = localStorage.getItem("token");
   const userObj = useMemo(() => {
@@ -369,12 +375,12 @@ const MyTasks = () => {
     });
   }, [myTasks, searchFilters]);
 
-  // Sayfalama
-  const { totalPages, paginatedTasks } = useMemo(() => {
-    const total = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
-    const paginated = filteredTasks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  // Sayfalama - pageSize kullanarak dinamik
+  const {  paginatedTasks } = useMemo(() => {
+    const total = Math.ceil(filteredTasks.length / pageSize);
+    const paginated = filteredTasks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     return { totalPages: total, paginatedTasks: paginated };
-  }, [filteredTasks, currentPage]);
+  }, [filteredTasks, currentPage, pageSize]);
 
   // İstatistikler
   const myTasksStats = useMemo(() => {
@@ -399,7 +405,7 @@ const MyTasks = () => {
   // Event handlers
   const handleFilterChange = useCallback((key, value) => {
     setSearchFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
+    setCurrentPage(1); // Filtre değiştiğinde ilk sayfaya dön
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -471,15 +477,6 @@ const MyTasks = () => {
       console.error("API HATASI:", err);
     }
   }, [taskToReassign, token, userObj]);
-
-  // Chat için yardımcı fonksiyonlar
-  const handleOpenTaskChat = useCallback((taskId) => {
-    setActiveChatTaskId(taskId);
-  }, []);
-
-  const handleCloseChat = useCallback(() => {
-    setActiveChatTaskId(null);
-  }, []);
 
   // Utility functions
   const getStatusLabel = (status) => {
@@ -587,18 +584,6 @@ const MyTasks = () => {
             ]}
           />
 
-          {/* Chat Toggle Button - Geçici olarak devre dışı */}
-          {/* <div className="mb-4 flex justify-end">
-            <Button
-              leftIcon={<IconMessage size={16} />}
-              onClick={() => setShowGlobalChat(!showGlobalChat)}
-              variant={showGlobalChat ? "filled" : "outline"}
-              color="blue"
-            >
-              {showGlobalChat ? "Chat'i Gizle" : "Genel Chat"}
-            </Button>
-          </div> */}
-
           <Grid gutter="lg">
             {paginatedTasks.map((task) => (
               <Grid.Col key={task.id} span={{ base: 12, sm: 6, lg: 4 }}>
@@ -619,16 +604,6 @@ const MyTasks = () => {
                         <Badge style={{ backgroundColor: getStatusColor(task.status), color: 'white' }} size="sm">
                           {getStatusLabel(task.status)}
                         </Badge>
-                        {/* Task-specific chat button - Geçici olarak devre dışı */}
-                        {/* <Tooltip label="Görev Chat">
-                          <ActionIcon
-                            color="blue"
-                            variant={activeChatTaskId === task.id ? "filled" : "light"}
-                            onClick={() => handleOpenTaskChat(task.id)}
-                          >
-                            <IconMessage size={16} />
-                          </ActionIcon>
-                        </Tooltip> */}
                       </div>
                     </Group>
                     
@@ -784,22 +759,30 @@ const MyTasks = () => {
           </Grid>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-8">
-            <Pagination value={currentPage} onChange={setCurrentPage} total={totalPages} size="md" color="#007bff" />
-          </div>
-        )}
+        {/* İyileştirilmiş Pagination Component Entegrasyonu */}
+        <PaginationComponent
+          totalItems={filteredTasks.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[6, 9, 12, 15, 18, 24]}
+          itemName="görev"
+        />
 
         {filteredTasks.length === 0 && !loading && (
-          <Paper shadow="md" padding="xl" className="text-center mt-8">
-            <Text size="lg" color="#007bff" weight={500}>
-              {myTasks.length === 0 ? "Size atanmış görev bulunmamaktadır." : "Arama kriterlerinize uygun görev bulunamadı."}
-            </Text>
-            {myTasks.length > 0 && (
-              <Button variant="light" color="#007bff" onClick={clearFilters} className="mt-4">
-                Filtreleri Temizle
-              </Button>
-            )}
+          <Paper shadow="md" padding="xl" className="text-center mt-8 mx-4">
+            <Stack align="center" spacing="md">
+              <IconCalendarUser size={64} color="#6c757d" />
+              <Text size="lg" color="#007bff" weight={500}>
+                {myTasks.length === 0 ? "Size atanmış görev bulunmamaktadır." : "Arama kriterlerinize uygun görev bulunamadı."}
+              </Text>
+              {myTasks.length > 0 && (
+                <Button variant="light" color="#007bff" onClick={clearFilters} className="mt-4">
+                  Filtreleri Temizle
+                </Button>
+              )}
+            </Stack>
           </Paper>
         )}
       </div>
@@ -833,41 +816,13 @@ const MyTasks = () => {
               onClick={() => selectedUserId && handleReassign(selectedUserId)}
               disabled={!selectedUserId}
               fullWidth
-              color="ivosis.6"
+              color="blue"
             >
               Atamayı Kaydet
             </Button>
           </Stack>
         )}
       </Modal>
-
-      {/* Chat Widgets - Geçici olarak devre dışı bırakıldı */}
-      {/* TaskChatWidget bileşeni mevcut değilse bu kısımları comment out ediyoruz */}
-      
-      {/* Global Chat - Genel görüşmeler için */}
-      {/* {showGlobalChat && (
-        <TaskChatWidget
-          taskId="global"
-          userId={currentUserId}
-          userName={userObj?.name || 'Kullanıcı'}
-          apiBaseUrl="http://localhost:5000"
-          authToken={token}
-          position="bottom-left"
-        />
-      )} */}
-
-      {/* Task-specific Chat - Belirli görev için */}
-      {/* {activeChatTaskId && (
-        <TaskChatWidget
-          taskId={activeChatTaskId}
-          userId={currentUserId}
-          userName={userObj?.name || 'Kullanıcı'}
-          apiBaseUrl="http://localhost:5000"
-          authToken={token}
-          position="bottom-right"
-          onClose={handleCloseChat}
-        />
-      )} */}
     </div>
   );
 };

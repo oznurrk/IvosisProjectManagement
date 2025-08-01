@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
-import { Text, Badge, Card, Group, Stack, Divider, LoadingOverlay, ActionIcon, Tooltip, Pagination } from "@mantine/core";
-import { IconCalendar, IconMapPin, IconBolt, IconSolarPanel, IconCpu, IconPlus, IconInfoCircle,  IconSunElectricity, } from "@tabler/icons-react";
+import { Text, Badge, Card, Group, Stack, Divider, LoadingOverlay, ActionIcon, Tooltip } from "@mantine/core";
+import { IconCalendar, IconMapPin, IconBolt, IconSolarPanel, IconCpu, IconPlus, IconInfoCircle, IconSunElectricity } from "@tabler/icons-react";
 import ProjectCartSelectModal from "../components/Project/ProjectCartSelectModal";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header/Header";
 import ProjectProcessSelectModal from "../components/Project/ProjectProcessSelectModal";
 import FilterAndSearch from "../Layout/FilterAndSearch";
-import TaskChatWidget from "../components/TaskChat/TaskChat";
 import ProjectUpdateModal from "../components/Project/ProjectUpdateModal";
-
+import PaginationComponent from "../Layout/PaginationComponent";
 
 const Projects = () => {
   const { isMobile, setIsMobileMenuOpen } = useOutletContext();
@@ -26,13 +25,16 @@ const Projects = () => {
     description: "",
     status: "", // NotStarted, InProgress, Completed, Cancelled veya boş
   });
+  
+  // Pagination state'leri
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(4); // Varsayılan sayfa boyutu
+  
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const navigate = useNavigate();
-  const pageSize = 4;
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -97,8 +99,7 @@ const Projects = () => {
       return true;
     });
 
-  // Pagination için
-  const totalPages = Math.ceil(filteredProjects.length / pageSize);
+  // Pagination için güncellenmiş hesaplamalar
   const pagedProjects = filteredProjects.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -131,6 +132,7 @@ const Projects = () => {
     return [];
   };
 
+  /*
   // Adres bilgilerini formatla
   const formatAddresses = (project) => {
     const addresses = getProjectAddresses(project);
@@ -175,7 +177,7 @@ const Projects = () => {
     }
     return "-";
   };
-
+*/
   // Çoklu adres detaylarını gösteren bileşen
   const AddressDetails = ({ project }) => {
     const addresses = getProjectAddresses(project);
@@ -225,7 +227,7 @@ const Projects = () => {
         <Text size="xs" fw={600} c="natural.9" mb="xs">
           Adres Bilgileri ({addresses.length} Adres)
         </Text>
-        <Stack >
+        <Stack>
           {addresses.slice(0, 3).map((addr, index) => {
             const cityName = addr.cityName || getCityName(addr.cityId);
             const districtName = addr.districtName || getDistrictName(addr.districtId);
@@ -287,6 +289,16 @@ const Projects = () => {
     setModalOpen(true);
   };
 
+  // Pagination handler'ları
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Sayfa boyutu değişince ilk sayfaya dön
+  };
+
   // UI için küçük yardımcı bileşenler
   const InfoItem = ({ icon: Icon, label, value, color = "gray" }) => (
     <Group gap="xs" wrap="wrap">
@@ -344,7 +356,7 @@ const Projects = () => {
   };
 
   return (
-    <div className=" bg-[#f8f9fa] p-0 m-0">
+    <div className="bg-[#f8f9fa] p-0 m-0">
       <Header
         title="Projeler"
         subtitle="Tüm Projeler"
@@ -535,16 +547,16 @@ const Projects = () => {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-10">
-          <Pagination total={totalPages} page={currentPage} onChange={setCurrentPage} />
-        </div>
-      )}
-
-      <Text size="sm" c="dimmed" mt="md">
-        Toplam Sayfa: {totalPages} | Bu sayfada gösterilen proje sayısı: {pagedProjects.length}
-      </Text>
+      {/* Yeni Pagination Component'i kullan */}
+      <PaginationComponent
+        totalItems={filteredProjects.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeOptions={[4, 8, 12, 16, 20]}
+        itemName="proje"
+      />
 
       {/* Modal'lar */}
       <ProjectCartSelectModal

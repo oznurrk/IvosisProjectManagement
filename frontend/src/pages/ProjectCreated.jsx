@@ -1,4 +1,4 @@
-import { Button, Checkbox, Divider, Select, Textarea, TextInput, Modal } from '@mantine/core';
+import { Button, Checkbox, Divider, Select, Textarea, TextInput, Modal, MultiSelect } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 import 'dayjs/locale/tr';
 import axios from 'axios';
@@ -372,24 +372,24 @@ const ProjectCreated = () => {
                   />
                 </div>
                 {/* Proje Tipi */}
-                <div>
-                  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
-                    <span className="text-red-500">*</span> Proje Tipi
-                  </label>
-                  <Select
-                    placeholder="Proje Tipi Seçin"
-                    searchable
-                    clearable
-                    className="w-full"
-                    data={[
-                      { value: "arazi", label: "Arazi" },
-                      { value: "cati", label: "Çatı" },
-                      { value: "cephe", label: "Cephe" },
-                    ]}
-                    value={formData.status ? formData.status.toString() : null}
-                    onChange={(e) => setFormData({ ...formData, status: e })}
-                  />
-                </div>
+               <div>
+  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+    <span className="text-red-500">*</span> Proje Tipi
+  </label>
+  <MultiSelect
+    
+    searchable
+    clearable
+    className="w-full"
+    data={[
+      { value: "arazi", label: "Arazi" },
+      { value: "cati", label: "Çatı" },
+      { value: "cephe", label: "Cephe" },
+    ]}
+    value={formData.projectTypes || []} // çoklu seçim için array
+    onChange={(e) => setFormData({ ...formData, projectTypes: e })}
+  />
+</div>
               </div>
 
               {/* Select Alanları - Responsive grid */}
@@ -556,6 +556,17 @@ const ProjectCreated = () => {
                   <TextInput
                     value={address.parsel}
                     onChange={(e) => updateAddress(index, 'parsel', e.currentTarget.value)}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+                <div>
+                  <label className='text-natural-800 font-semibold block mb-1 text-sm'>
+                    <span className='text-red-500'>*</span> Adres
+                  </label>
+                  <Textarea
+                    className='w-96'
+                    rows={3}
                   />
                 </div>
               </div>

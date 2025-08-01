@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Modal, TextInput, Textarea, Select, Button, Group, Stack, Alert } from "@mantine/core";
-import { IconAlertCircle, IconPlus, IconX } from '@tabler/icons-react';
+import { useState, useEffect, useRef } from "react";
+import { Modal, TextInput, Textarea,  Button, Group, Stack, Alert } from "@mantine/core";
+import { IconAlertCircle, IconPlus} from '@tabler/icons-react';
 import axios from "axios";
 
 const ProcessAddModal = ({ opened, onClose, onProcessAdded, processes = [] }) => {
@@ -11,6 +11,7 @@ const ProcessAddModal = ({ opened, onClose, onProcessAdded, processes = [] }) =>
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const nameInputRef = useRef(null);
 
   const token = localStorage.getItem("token");
 
@@ -23,9 +24,12 @@ const ProcessAddModal = ({ opened, onClose, onProcessAdded, processes = [] }) =>
         parentProcessId: ""
       });
       setError(null);
+      setTimeout(() => {
+        nameInputRef.current?.focus(); // Süreç adı input'una odaklan
+      }, 100); // 100ms gecikme ile odaklan
     }
   }, [opened]);
-
+/*
   // Ana süreçleri select için hazırla
   const parentProcessOptions = processes
     .filter(process => process.isMainProcess) // Sadece ana süreçler
@@ -35,11 +39,12 @@ const ProcessAddModal = ({ opened, onClose, onProcessAdded, processes = [] }) =>
     }));
 
   // "Ana Süreç" seçeneğini başa ekle
+  
   const allProcessOptions = [
     { value: "", label: "Ana Süreç (Üst süreç yok)" },
     ...parentProcessOptions
   ];
-
+    */
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -159,6 +164,7 @@ const ProcessAddModal = ({ opened, onClose, onProcessAdded, processes = [] }) =>
               Süreç Adı <span className="text-red-500">*</span>
             </label>
             <TextInput
+            ref={nameInputRef}
               placeholder="Süreç adını giriniz..."
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
@@ -184,7 +190,7 @@ const ProcessAddModal = ({ opened, onClose, onProcessAdded, processes = [] }) =>
             />
           </div>
 
-          {/* Üst Süreç Seçimi */}
+          {/* Üst Süreç Seçimi 
           <div className="space-y-1">
             <label className="block text-sm font-medium text-[#2d3748] mb-1">
               Üst Süreç
@@ -201,6 +207,7 @@ const ProcessAddModal = ({ opened, onClose, onProcessAdded, processes = [] }) =>
               nothingFoundMessage="Süreç bulunamadı"
             />
           </div>
+          */}
 
           {/* Bilgilendirme */}
           <div className="bg-[#f0f4f8] border-l-4 border-ivosis-600 p-3 rounded-md">
