@@ -25,15 +25,16 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     LocationName = x.Location.Name,
                     CurrentQuantity = x.CurrentQuantity,
                     ReservedQuantity = x.ReservedQuantity,
-                    AvailableQuantity = x.AvailableQuantity,
+                    AvailableQuantity = x.CurrentQuantity - x.ReservedQuantity,
                     LastMovementDate = x.LastMovementDate,
                     LastUpdateDate = x.LastUpdateDate,
                     CategoryName = x.StockItem.Category.Name,
                     UnitName = x.StockItem.Unit.Name,
                     MinimumStock = x.StockItem.MinimumStock,
                     MaximumStock = x.StockItem.MaximumStock,
-                    StockStatus = x.AvailableQuantity <= x.StockItem.MinimumStock ? "LOW_STOCK" :
-                                 x.CurrentQuantity >= x.StockItem.MaximumStock ? "OVERSTOCK" : "NORMAL"
+                    StockStatus = (x.CurrentQuantity - x.ReservedQuantity) <= x.StockItem.MinimumStock ? "LOW_STOCK" :
+                    x.CurrentQuantity >= x.StockItem.MaximumStock ? "OVERSTOCK" : "NORMAL"
+
                 })
                 .ToListAsync();
         }
@@ -53,7 +54,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     LocationName = x.Location.Name,
                     CurrentQuantity = x.CurrentQuantity,
                     ReservedQuantity = x.ReservedQuantity,
-                    AvailableQuantity = x.AvailableQuantity
+                    AvailableQuantity = x.CurrentQuantity - x.ReservedQuantity
                 })
                 .FirstOrDefaultAsync();
         }
@@ -69,7 +70,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     ItemCode = x.StockItem.ItemCode,
                     ItemName = x.StockItem.Name,
                     CurrentQuantity = x.CurrentQuantity,
-                    AvailableQuantity = x.AvailableQuantity
+                    AvailableQuantity = x.CurrentQuantity - x.ReservedQuantity
                 })
                 .ToListAsync();
         }
@@ -84,7 +85,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     LocationId = x.LocationId,
                     LocationName = x.Location.Name,
                     CurrentQuantity = x.CurrentQuantity,
-                    AvailableQuantity = x.AvailableQuantity
+                    AvailableQuantity = x.CurrentQuantity - x.ReservedQuantity
                 })
                 .ToListAsync();
         }

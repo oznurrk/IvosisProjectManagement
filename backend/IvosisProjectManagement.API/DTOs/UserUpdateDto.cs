@@ -18,6 +18,10 @@ namespace IvosisProjectManagement.API.DTOs
         public string Role { get; set; }
 
         public string? NewPassword { get; set; }
+
+        public int? CompanyId { get; set; }
+        public int? DepartmentId { get; set; }
+        public List<int>? RoleIds { get; set; }
     }
 
 }

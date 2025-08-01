@@ -6,7 +6,8 @@ public class StockItemDto : BaseDto
         public int CategoryId { get; set; }
         public string CategoryName { get; set; }= "";
         public int UnitId { get; set; }
-        public string UnitName { get; set; }= "";
+        public int? CompanyId { get; set; }
+        public string UnitName { get; set; } = "";
         public decimal MinimumStock { get; set; }
         public decimal MaximumStock { get; set; }
         public decimal ReorderLevel { get; set; }

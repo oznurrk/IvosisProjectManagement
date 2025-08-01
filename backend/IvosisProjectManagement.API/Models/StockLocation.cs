@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using IvosisProjectManagement.API.Models;
 
 public class StockLocation : BaseEntity
     {
@@ -37,8 +38,12 @@ public class StockLocation : BaseEntity
         public string CapacityUnit { get; set; }
         
         public bool IsActive { get; set; } = true;
+          public int CreatedByUserId { get; set; }
+
+        [ForeignKey("CreatedByUserId")]
+        public User CreatedByUser { get; set; }
 
         // Navigation properties
-        public virtual ICollection<StockBalance> StockBalances { get; set; }
+    public virtual ICollection<StockBalance> StockBalances { get; set; }
         public virtual ICollection<StockMovement> StockMovements { get; set; }
     }

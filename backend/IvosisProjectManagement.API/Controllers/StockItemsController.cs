@@ -9,51 +9,83 @@ using Microsoft.AspNetCore.Mvc;
     public class StockItemsController : BaseController
     {
         private readonly IStockItemService _stockItemService;
+        private readonly IAuthorizationService _authService;
 
-        public StockItemsController(IStockItemService stockItemService)
+    public StockItemsController(IStockItemService stockItemService, IAuthorizationService authService)
+    {
+        _stockItemService = stockItemService;
+         _authService = authService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<object>> GetStockItems([FromQuery] StockItemFilterDto filter)
+    {
+        try
         {
-            _stockItemService = stockItemService;
-        }
-        [HttpGet]
-        public async Task<ActionResult<object>> GetStockItems([FromQuery] StockItemFilterDto filter)
-        {
-            try
+            var userId = GetCurrentUserId();
+            
+            // Grup seviyesi erişimi olanlar (İK, Satınalma) tüm stokları görebilir
+            if (HasGroupAccess() || GetCurrentUserRoles().Any(r => r.Contains("PURCHASE")))
             {
-                var (items, totalCount) = await _stockItemService.GetFilteredAsync(filter);
-                
+                var (allItems, totalCount) = await _stockItemService.GetFilteredAsync(filter);
                 return Ok(new
                 {
                     success = true,
-                    data = items,
+                    data = allItems,
                     totalCount = totalCount,
                     page = filter.Page,
                     pageSize = filter.PageSize
                 });
             }
-            catch (Exception ex)
+            
+            // Diğerleri sadece erişebildikleri firmaların stoklarını görebilir
+            var accessibleCompanies = await _authService.GetUserAccessibleCompaniesAsync(userId);
+            filter.CompanyIds = accessibleCompanies; // Filter'a firma kısıtlaması ekle
+            
+            var (items, count) = await _stockItemService.GetFilteredAsync(filter);
+            
+            return Ok(new
             {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+                success = true,
+                data = items,
+                totalCount = count,
+                page = filter.Page,
+                pageSize = filter.PageSize
+            });
         }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<object>> GetStockItem(int id)
+        catch (Exception ex)
         {
-            try
-            {
-                var item = await _stockItemService.GetByIdAsync(id);
-                if (item == null)
-                    return NotFound(new { success = false, message = "Stock item not found" });
-
-                return Ok(new { success = true, data = item });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            return BadRequest(new { success = false, message = ex.Message });
         }
+    }
 
-        [HttpGet("code/{itemCode}")]
+    [HttpGet("{id}")]
+    public async Task<ActionResult<object>> GetStockItem(int id)
+    {
+        try
+        {
+            var item = await _stockItemService.GetByIdAsync(id);
+            if (item == null)
+                return NotFound(new { success = false, message = "Stock item not found" });
+
+            var userId = GetCurrentUserId();
+            
+            // Yetki kontrolü
+            if (!HasGroupAccess() && item.CompanyId.HasValue)
+            {
+                if (!await _authService.CanUserAccessCompanyAsync(userId, item.CompanyId.Value))
+                    return Forbid("Bu stok kalemine erişim yetkiniz yok.");
+            }
+
+            return Ok(new { success = true, data = item });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+       
+     [HttpGet("code/{itemCode}")]
         public async Task<ActionResult<object>> GetStockItemByCode(string itemCode)
         {
             try
@@ -71,26 +103,41 @@ using Microsoft.AspNetCore.Mvc;
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
-        public async Task<ActionResult<object>> CreateStockItem([FromBody] StockItemDtoCreate dto)
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<object>> CreateStockItem([FromBody] StockItemDtoCreate dto)
+    {
+        try
         {
-            try
+            var userId = GetCurrentUserId();
+            
+            // CompanyId kontrolü
+            if (!dto.CompanyId.HasValue)
             {
-                var userId = GetCurrentUserId();
-                var item = await _stockItemService.CreateAsync(dto, userId);
-                
-                return CreatedAtAction(nameof(GetStockItem), new { id = item.Id }, 
-                    new { success = true, data = item, message = "Stock item created successfully" });
+                dto.CompanyId = GetCurrentCompanyId();
             }
-            catch (InvalidOperationException ex)
+            
+            // Yetki kontrolü
+            if (dto.CompanyId.HasValue && !HasGroupAccess())
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
+                    return Forbid("Bu firmaya stok kalemi ekleme yetkiniz yok.");
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while creating the stock item" });
-            }
+            
+            var item = await _stockItemService.CreateAsync(dto, userId);
+            
+            return CreatedAtAction(nameof(GetStockItem), new { id = item.Id }, 
+                new { success = true, data = item, message = "Stock item created successfully" });
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "An error occurred while creating the stock item" });
+        }
+    }
+
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin,Manager")]

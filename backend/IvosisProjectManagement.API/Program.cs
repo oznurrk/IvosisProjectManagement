@@ -69,8 +69,11 @@ builder.Services.AddScoped<IStockMovementService, StockMovementService>();
 builder.Services.AddScoped<IStockBalanceService, StockBalanceService>();
 builder.Services.AddScoped<IStockAlertService, StockAlertService>();
 builder.Services.AddScoped<IDashboardStockService, DashboardStockService>();
+builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
-
+builder.Services.AddMemoryCache();
+builder.Services.AddAuthorization();
+builder.Services.AddControllers();
 
 // ⬇️ JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

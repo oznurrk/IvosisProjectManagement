@@ -14,11 +14,13 @@ namespace IvosisProjectManagement.API.Controllers
     {
         private readonly IPersonnelService _personnelService;
         private readonly IUserActivityService _activityService;
+        private readonly IAuthorizationService _authService;
 
-        public PersonnelController(IPersonnelService personnelService, IUserActivityService activityService)
+        public PersonnelController(IPersonnelService personnelService, IUserActivityService activityService, IAuthorizationService authService)
         {
             _personnelService = personnelService;
             _activityService = activityService;
+            _authService = authService;
         }
 
         [Authorize]
@@ -26,7 +28,31 @@ namespace IvosisProjectManagement.API.Controllers
         [LogActivity(ActivityType.View, "Personnel")]
         public async Task<IActionResult> GetAll()
         {
-            var personnel = await _personnelService.GetAllPersonnelAsync();
+            var userId = GetCurrentUserId();
+            
+            // İK Müdürü tüm personeli görebilir
+            if (HasGroupAccess() || GetCurrentUserRoles().Contains("HR_MANAGER"))
+            {
+                var allPersonnel = await _personnelService.GetAllPersonnelAsync();
+                return Ok(allPersonnel);
+            }
+            
+            // Diğer kullanıcılar sadece erişebildikleri firmaların personelini görebilir
+            var accessibleCompanies = await _authService.GetUserAccessibleCompaniesAsync(userId);
+            var personnel = await _personnelService.GetPersonnelByCompaniesAsync(accessibleCompanies);
+            
+            return Ok(personnel);
+        }
+
+        [HttpGet("my-department")]
+        [LogActivity(ActivityType.View, "Personnel/MyDepartment")]
+        public async Task<IActionResult> GetMyDepartmentPersonnel()
+        {
+            var departmentId = GetCurrentDepartmentId();
+            if (!departmentId.HasValue)
+                return BadRequest("Departman bilgisi bulunamadı.");
+
+            var personnel = await _personnelService.GetPersonnelByDepartmentAsync(departmentId.Value);
             return Ok(personnel);
         }
 
@@ -38,6 +64,15 @@ namespace IvosisProjectManagement.API.Controllers
             var personnel = await _personnelService.GetByIdAsync(id);
             if (personnel == null)
                 return NotFound();
+
+            var userId = GetCurrentUserId();
+            
+            // Yetki kontrolü
+            if (!HasGroupAccess() && personnel.CompanyId.HasValue)
+            {
+                if (!await _authService.CanUserAccessCompanyAsync(userId, personnel.CompanyId.Value))
+                    return Forbid("Bu personel bilgisine erişim yetkiniz yok.");
+            }
 
             return Ok(personnel);
         }
@@ -51,6 +86,14 @@ namespace IvosisProjectManagement.API.Controllers
             if (personnel == null)
                 return NotFound();
 
+            var userId = GetCurrentUserId();
+
+            if(!HasGroupAccess() && personnel.CompanyId.HasValue)
+            {
+                if (!await _authService.CanUserAccessCompanyAsync(userId, personnel.CompanyId.Value))
+                    return Forbid("Bu personel bilgisine erişim yetkiniz yok.");
+            }
+
             return Ok(personnel);
         }
 
@@ -58,6 +101,19 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(PersonnelCreateDto dto)
         {
+            var userId = GetCurrentUserId();
+             // CompanyId kontrolü - eğer belirtilmemişse kullanıcının firmasını kullan
+            if (!dto.CompanyId.HasValue)
+            {
+                dto.CompanyId = GetCurrentCompanyId();
+            }
+            
+            // Yetki kontrolü
+            if (dto.CompanyId.HasValue && !HasGroupAccess())
+            {
+                if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
+                    return Forbid("Bu firmaya personel ekleme yetkiniz yok.");
+            }
             // Validations
             if (await _personnelService.SicilNoExistsAsync(dto.SicilNo))
                 return BadRequest("Bu sicil numarası zaten kullanılıyor.");
@@ -84,6 +140,19 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, PersonnelUpdateDto dto)
         {
+            var userId = GetCurrentUserId();
+             // CompanyId kontrolü - eğer belirtilmemişse kullanıcının firmasını kullan
+            if (!dto.CompanyId.HasValue)
+            {
+                dto.CompanyId = GetCurrentCompanyId();
+            }
+            
+            // Yetki kontrolü
+            if (dto.CompanyId.HasValue && !HasGroupAccess())
+            {
+                if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
+                    return Forbid("Bu firmaya personel ekleme yetkiniz yok.");
+            }
             var oldPersonnel = await _personnelService.GetByIdAsync(id);
             if (oldPersonnel == null)
                 return NotFound();

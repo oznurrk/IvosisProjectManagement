@@ -8,6 +8,7 @@ namespace IvosisProjectManagement.API.DTOs
         public DateTime? EndDate { get; set; }
         public string Priority { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public int? CompanyId { get; set; }
         public int? PanelCount { get; set; }
         public decimal? PanelPower { get; set; }
         public int? PanelBrandId { get; set; }

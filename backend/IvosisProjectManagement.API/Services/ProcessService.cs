@@ -72,7 +72,7 @@ namespace IvosisProjectManagement.API.Services
 
             process.Name = dto.Name;
             process.Description = dto.Description ?? string.Empty;
-            process.UpdatedAt = DateTime.Now; 
+            process.UpdatedAt = DateTime.Now;
             process.UpdatedByUserId = dto.UpdatedByUserId;
 
             _context.Processes.Update(process);
@@ -86,6 +86,34 @@ namespace IvosisProjectManagement.API.Services
 
             _context.Processes.Remove(process);
             return await _context.SaveChangesAsync() > 0;
+        }
+        public async Task<List<ProcessDto>> GetProcessesByCompaniesAsync(List<int> companyIds)
+        {
+            if (!companyIds.Any()) return new List<ProcessDto>();
+
+            var processes = await _context.Processes
+                .Where(p => companyIds.Contains(p.CompanyId ?? 0) || p.CompanyId == null) // null olanlar ortak süreçler
+                .Include(p => p.ParentProcess)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
+                .Select(p => new ProcessDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    ParentProcessId = p.ParentProcessId,
+                    ParentProcessName = p.ParentProcess != null ? p.ParentProcess.Name : null,
+                    CompanyId = p.CompanyId,
+                    CreatedAt = p.CreatedAt,
+                    CreatedByUserId = p.CreatedByUserId,
+                    CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
+                    UpdatedAt = p.UpdatedAt,
+                    UpdatedByUserId = p.UpdatedByUserId,
+                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null
+                })
+                .ToListAsync();
+
+            return processes;
         }
     }
 }

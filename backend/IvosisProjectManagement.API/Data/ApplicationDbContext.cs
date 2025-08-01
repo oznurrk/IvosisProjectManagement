@@ -31,7 +31,11 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<StockMovement> StockMovements { get; set; }
         public DbSet<StockBalance> StockBalances { get; set; }
         public DbSet<StockAlert> StockAlerts { get; set; }
-
+        public DbSet<Company> Companies { get; set; }
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<SupplierCompany> SupplierCompanies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -138,9 +142,9 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(e => e.CreatedByUser)
-                      .WithMany()
-                      .HasForeignKey(e => e.CreatedBy)
-                      .OnDelete(DeleteBehavior.Restrict);
+                    .WithMany(u => u.CreatedStockLocations)
+                    .HasForeignKey(e => e.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Supplier Configuration
@@ -152,9 +156,14 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(e => e.CreatedByUser)
-                      .WithMany()
-                      .HasForeignKey(e => e.CreatedBy)
-                      .OnDelete(DeleteBehavior.Restrict);
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.UpdatedByUser)
+                   .WithMany()
+                   .HasForeignKey(e => e.UpdatedBy)
+                   .OnDelete(DeleteBehavior.Restrict); ;
             });
 
             // Unit Configuration
@@ -259,9 +268,9 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 // Check constraints
-                entity.HasCheckConstraint("CK_StockAlerts_AlertType", 
+                entity.HasCheckConstraint("CK_StockAlerts_AlertType",
                     "AlertType IN ('LOW_STOCK', 'OVERSTOCK', 'EXPIRED', 'QUALITY_ISSUE')");
-                entity.HasCheckConstraint("CK_StockAlerts_AlertLevel", 
+                entity.HasCheckConstraint("CK_StockAlerts_AlertLevel",
                     "AlertLevel IN ('INFO', 'WARNING', 'CRITICAL')");
 
                 // Relationships
@@ -283,6 +292,245 @@ namespace IvosisProjectManagement.API.Data
                 // Indexes
                 entity.HasIndex(e => e.IsActive);
                 entity.HasIndex(e => new { e.AlertType, e.AlertLevel });
+
+            });
+            // Company konfigürasyonu
+            modelBuilder.Entity<Company>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(10);
+                entity.HasIndex(e => e.Code).IsUnique();
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            });
+
+            // Department konfigürasyonu
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(d => d.Company)
+                    .WithMany(c => c.Departments)
+                    .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.Code, e.CompanyId }).IsUnique();
+            });
+
+            // Role konfigürasyonu
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Scope).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasIndex(e => e.Code).IsUnique();
+
+                entity.HasCheckConstraint("CK_Roles_Scope",
+                    "[Scope] IN ('GROUP', 'COMPANY', 'DEPARTMENT')");
+            });
+
+            // UserRole konfigürasyonu
+            modelBuilder.Entity<UserRole>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(ur => ur.User)
+                    .WithMany(u => u.UserRoles)
+                    .HasForeignKey(ur => ur.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ur => ur.Role)
+                    .WithMany(r => r.UserRoles)
+                    .HasForeignKey(ur => ur.RoleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(ur => ur.Company)
+                    .WithMany()
+                    .HasForeignKey(ur => ur.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(ur => ur.Department)
+                    .WithMany(d => d.UserRoles)
+                    .HasForeignKey(ur => ur.DepartmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.UserId, e.RoleId, e.CompanyId, e.DepartmentId }).IsUnique();
+            });
+
+            // SupplierCompany konfigürasyonu
+            modelBuilder.Entity<SupplierCompany>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(sc => sc.Supplier)
+                    .WithMany(s => s.SupplierCompanies)
+                    .HasForeignKey(sc => sc.SupplierId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(sc => sc.Company)
+                    .WithMany()
+                    .HasForeignKey(sc => sc.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.SupplierId, e.CompanyId }).IsUnique();
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(100);
+                entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.Password).HasMaxLength(500);
+                entity.Property(e => e.Role).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasIndex(e => e.Email).IsUnique();
+
+                entity.HasOne(u => u.Company)
+                    .WithMany(c => c.Users)
+                    .HasForeignKey(u => u.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(u => u.Department)
+                    .WithMany(d => d.Users)
+                    .HasForeignKey(u => u.DepartmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(u => u.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(u => u.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(u => u.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(u => u.UpdatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Project tablosu konfigürasyonu (güncelleme)
+            modelBuilder.Entity<Project>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.Priority).HasMaxLength(50);
+                entity.Property(e => e.Status).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(p => p.Company)
+                    .WithMany(c => c.Projects)
+                    .HasForeignKey(p => p.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.PanelBrand)
+                    .WithMany()
+                    .HasForeignKey(p => p.PanelBrandId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.InverterBrand)
+                    .WithMany()
+                    .HasForeignKey(p => p.InverterBrandId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.ProjectType)
+                    .WithMany()
+                    .HasForeignKey(p => p.ProjectTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.UpdatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Personnel tablosu konfigürasyonu (güncelleme)
+            modelBuilder.Entity<Personnel>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SicilNo).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Surname).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.WorkStatus).HasMaxLength(20).HasDefaultValue("Aktif");
+                entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UpdatedDate).HasDefaultValueSql("GETDATE()");
+
+                entity.HasIndex(e => e.SicilNo).IsUnique();
+                entity.HasIndex(e => e.TCKimlikNo).IsUnique()
+                    .HasFilter("[TCKimlikNo] IS NOT NULL");
+                entity.HasIndex(e => e.Email).IsUnique()
+                    .HasFilter("[Email] IS NOT NULL");
+
+                entity.HasOne(p => p.Company)
+                    .WithMany(c => c.Personnel)
+                    .HasForeignKey(p => p.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Process tablosu konfigürasyonu (güncelleme)
+            modelBuilder.Entity<Process>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(p => p.ParentProcess)
+                    .WithMany()
+                    .HasForeignKey(p => p.ParentProcessId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.UpdatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<TaskItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(e => e.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.UpdatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Company)
+                    .WithMany()
+                    .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
         }
