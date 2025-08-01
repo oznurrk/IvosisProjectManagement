@@ -82,7 +82,7 @@ email - text
 salary - text
 IBAN - text
 photo - file
-workstatus - select (aktif pasif çalışma durumu)
+workstatus - select (aktif pasif çalışma durumu) 
 
 
 
@@ -101,4 +101,16 @@ Proje düzenleme ekranı tasarlanacak
 TaskListModal'da düzenle ve silme işlemleri çalışmıyor
 TaskAddModal ekleme işlemi çalışmıyor.
 
-Personel Düzenle modalinde düzenle butonu çalışmıyor.
+Personel Düzenle modalinde düzenle butonu çalışmıyor. (backende update fonksiyonundaki alan kontrolleri tc ve email kontrol edilecek)
+
+proje kartına adres detayı eklenecek
+proje eklerken proje tipi eklenecek
+süreç ekleme modalı açıldığında imleç texte odaklanacak
+sayfalardaki görüntüleme sayısı seçilebilir olmalı
+dosya ekleme sayısının kontrolü
+dosya yüklenince sıralama yapılacak
+süreçlerde ve taskta bitiş tarihi de atanacak
+task düzenlede tüm değişkenler düzenlenecek
+süreç kartı düzenlenecek(çok yazı olunca kayma oluyor)
+görevlerde dosya alanı boşsa tamamlandı olamaz şekilde ayarlanacak
+

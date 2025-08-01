@@ -9,6 +9,7 @@ import Header from "../components/Header/Header";
 import ProjectProcessSelectModal from "../components/Project/ProjectProcessSelectModal";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 import TaskChatWidget from "../components/TaskChat/TaskChat";
+import ProjectUpdateModal from "../components/Project/ProjectUpdateModal";
 
 
 const Projects = () => {
@@ -29,6 +30,7 @@ const Projects = () => {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const navigate = useNavigate();
   const pageSize = 4;
   const token = localStorage.getItem("token");
@@ -114,16 +116,34 @@ const Projects = () => {
   const getProjectTypeName = (id) =>
     projectTypes.find((p) => p.id === id)?.name || `Tür ID: ${id}`;
 
+  // Adres bilgilerini al - API'den address olarak geliyor
+  const getProjectAddresses = (project) => {
+    // Önce address array'ini kontrol et
+    if (project.address && Array.isArray(project.address) && project.address.length > 0) {
+      return project.address;
+    }
+    
+    // Eğer addresses varsa onu kullan (eski yapı için uyumluluk)
+    if (project.addresses && Array.isArray(project.addresses) && project.addresses.length > 0) {
+      return project.addresses;
+    }
+    
+    return [];
+  };
+
   // Adres bilgilerini formatla
-  const formatAddresses = (addresses) => {
-    if (!addresses || !Array.isArray(addresses) || addresses.length === 0) {
-      // Eğer addresses dizisi yoksa, eski yapıyı kontrol et
+  const formatAddresses = (project) => {
+    const addresses = getProjectAddresses(project);
+    
+    if (addresses.length === 0) {
       return "Adres bilgisi yok";
     }
 
     if (addresses.length === 1) {
       const addr = addresses[0];
-      return `${getCityName(addr.cityId)} / ${getDistrictName(addr.districtId)}`;
+      const cityName = addr.cityName || getCityName(addr.cityId);
+      const districtName = addr.districtName || getDistrictName(addr.districtId);
+      return `${cityName} / ${districtName}`;
     }
 
     // Birden fazla adres varsa
@@ -131,8 +151,10 @@ const Projects = () => {
   };
 
   // Ada/Parsel bilgilerini formatla
-  const formatAdaParsels = (addresses) => {
-    if (!addresses || !Array.isArray(addresses) || addresses.length === 0) {
+  const formatAdaParsels = (project) => {
+    const addresses = getProjectAddresses(project);
+    
+    if (addresses.length === 0) {
       return "-";
     }
 
@@ -155,8 +177,10 @@ const Projects = () => {
   };
 
   // Çoklu adres detaylarını gösteren bileşen
-  const AddressDetails = ({ addresses }) => {
-    if (!addresses || !Array.isArray(addresses) || addresses.length === 0) {
+  const AddressDetails = ({ project }) => {
+    const addresses = getProjectAddresses(project);
+    
+    if (addresses.length === 0) {
       return (
         <InfoItem
           icon={IconMapPin}
@@ -169,12 +193,15 @@ const Projects = () => {
 
     if (addresses.length === 1) {
       const addr = addresses[0];
+      const cityName = addr.cityName || getCityName(addr.cityId);
+      const districtName = addr.districtName || getDistrictName(addr.districtId);
+      
       return (
         <>
           <InfoItem
             icon={IconMapPin}
             label="Lokasyon"
-            value={`${getCityName(addr.cityId)} / ${getDistrictName(addr.districtId)}`}
+            value={`${cityName} / ${districtName}`}
             color="teal"
           />
           <InfoItem
@@ -183,27 +210,38 @@ const Projects = () => {
             value={`${addr.ada || "-"} / ${addr.parsel || "-"}`}
             color="gray"
           />
+          {addr.neighborhoodName && (
+            <Text size="xs" c="dimmed">
+              Mahalle: {addr.neighborhoodName}
+            </Text>
+          )}
         </>
       );
     }
 
     // Birden fazla adres varsa
     return (
-      <Card withBorder padding="sm" radius="md" bg="teal.0">
-        <Text size="xs" fw={600} c="teal" mb="xs">
-          LOKASYON BİLGİLERİ ({addresses.length} Adres)
+      <Card>
+        <Text size="xs" fw={600} c="natural.9" mb="xs">
+          Adres Bilgileri ({addresses.length} Adres)
         </Text>
-        <Stack gap="xs">
-          {addresses.slice(0, 3).map((addr, index) => (
-            <Group key={index} justify="space-between" wrap="wrap">
-              <Text size="xs" c="teal">
-                {index + 1}. {getCityName(addr.cityId)} / {getDistrictName(addr.districtId)}
-              </Text>
-              <Text size="xs" c="dimmed">
-                {addr.ada || "-"}/{addr.parsel || "-"}
-              </Text>
-            </Group>
-          ))}
+        <Stack >
+          {addresses.slice(0, 3).map((addr, index) => {
+            const cityName = addr.cityName || getCityName(addr.cityId);
+            const districtName = addr.districtName || getDistrictName(addr.districtId);
+            
+            return (
+              <Group key={index} justify="space-between" wrap="wrap">
+                <Text size="xs" c="natural.9">
+                  {index + 1}. {cityName} / {districtName}
+                  {addr.neighborhoodName && ` (${addr.neighborhoodName})`}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {addr.ada || "-"}/{addr.parsel || "-"}
+                </Text>
+              </Group>
+            );
+          })}
           {addresses.length > 3 && (
             <Text size="xs" c="dimmed" fs="italic">
               +{addresses.length - 3} adres daha...
@@ -345,13 +383,7 @@ const Projects = () => {
           ]}
         />
       </div>
-      <TaskChatWidget
-        taskId="your-task-id"
-        userName="Kullanıcı Adı"
-        apiBaseUrl="http://localhost:5000"
-        position="bottom-right" // bottom-left, top-right, top-left
-      />
-
+    
       {/* yeni proje butonu */}
       <div className="flex justify-end mb-5 px-4">
         <button
@@ -405,7 +437,7 @@ const Projects = () => {
                   </Tooltip>
                 </Group>
               </Card.Section>
-
+              
               <Stack gap="md" mt="md">
                 <Group justify="space-between">
                   <Badge
@@ -491,7 +523,7 @@ const Projects = () => {
 
                 {/* Güncellenmiş adres gösterimi */}
                 <Stack gap="xs">
-                  <AddressDetails addresses={project.addresses || project.address ? [project.address] : []} />
+                  <AddressDetails project={project} />
                 </Stack>
 
                 <Text size="xs" c="dimmed" ta="right" fs="italic">
@@ -529,7 +561,11 @@ const Projects = () => {
         onClose={() => setDetailsModalOpen(false)}
         projectId={selectedProjectId}
       />
-      
+      <ProjectUpdateModal
+        opened={updateModalOpen}
+        onClose={() => setUpdateModalOpen(false)}
+        projectId={selectedProjectId}
+      />
     </div>
   );
 };
