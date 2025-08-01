@@ -19,6 +19,8 @@ namespace IvosisProjectManagement.API.DTOs
         [Required]
         public int UnitId { get; set; }
         
+        public int? CompanyId { get; set; }
+        
         public decimal MinimumStock { get; set; } = 0;
         public decimal MaximumStock { get; set; } = 0;
         public decimal ReorderLevel { get; set; } = 0;

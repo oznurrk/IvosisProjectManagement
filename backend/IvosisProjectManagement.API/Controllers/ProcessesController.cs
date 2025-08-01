@@ -12,10 +12,12 @@ namespace IvosisProjectManagement.API.Controllers
     public class ProcessesController : BaseController
     {
         private readonly IProcessService _service;
+         private readonly IAuthorizationService _authService;
 
-        public ProcessesController(IProcessService service)
+        public ProcessesController(IProcessService service, IAuthorizationService authService)
         {
             _service = service;
+            _authService = authService;
         }
 
         [Authorize]
@@ -23,8 +25,20 @@ namespace IvosisProjectManagement.API.Controllers
         [LogActivity(ActivityType.View, "Processes")]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _service.GetAllAsync();
-            return Ok(data);
+            var userId = GetCurrentUserId();
+            
+            // Grup erişimi olanlar tüm süreçleri görebilir
+            if (HasGroupAccess())
+            {
+                var allProcesses = await _service.GetAllAsync();
+                return Ok(allProcesses);
+            }
+            
+            // Diğerleri sadece erişebildikleri firmaların süreçlerini görebilir
+            var accessibleCompanies = await _authService.GetUserAccessibleCompaniesAsync(userId);
+            var processes = await _service.GetProcessesByCompaniesAsync(accessibleCompanies);
+            
+            return Ok(processes);
         }
 
         [Authorize]
@@ -42,7 +56,22 @@ namespace IvosisProjectManagement.API.Controllers
         [LogActivity(ActivityType.Create, "Processes")]
         public async Task<IActionResult> Create(ProcessCreateDto dto)
         {
-            dto.CreatedByUserId = GetCurrentUserId();
+            var userId = GetCurrentUserId();
+            dto.CreatedByUserId = userId;
+            
+            // CompanyId kontrolü
+            if (!dto.CompanyId.HasValue)
+            {
+                dto.CompanyId = GetCurrentCompanyId();
+            }
+            
+            // Yetki kontrolü
+            if (dto.CompanyId.HasValue && !HasGroupAccess())
+            {
+                if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
+                    return Forbid("Bu firmaya süreç ekleme yetkiniz yok.");
+            }
+            
             var created = await _service.CreateAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }

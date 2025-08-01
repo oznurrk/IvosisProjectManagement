@@ -28,8 +28,8 @@ namespace IvosisProjectManagement.API.Services
                     EndDate = p.EndDate,
                     Priority = p.Priority,
                     Status = p.Status,
-                    ACValue = p.ACValue,
-                    DCValue = p.DCValue,
+                    AcValue = p.AcValue,
+                    DcValue = p.DcValue,
                     Address = p.Address.Select(a => new ProjectAddressDto
                     {
                         CityId = a.CityId,
@@ -72,8 +72,8 @@ namespace IvosisProjectManagement.API.Services
                 EndDate = project.EndDate,
                 Priority = project.Priority,
                 Status = project.Status,
-                ACValue = project.ACValue,
-                DCValue = project.DCValue,
+                AcValue = project.AcValue,
+                DcValue = project.DcValue,
                 Address = project.Address.Select(a => new ProjectAddressDto
                 {
                     CityId = a.CityId,
@@ -106,13 +106,13 @@ namespace IvosisProjectManagement.API.Services
                 Name = dto.Name,
                 Description = dto.Description,
                 StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
+                EndDate = dto.EndDate ?? DateTime.Now.AddDays(15), 
                 Priority = dto.Priority,
                 Status = dto.Status,
                 CreatedByUserId = dto.CreatedByUserId,
                 CreatedAt = DateTime.UtcNow,
-                ACValue = dto.ACValue,
-                DCValue = dto.DCValue,
+                AcValue = dto.ACValue,
+                DcValue = dto.DCValue,
                 ProjectTypeId = dto.ProjectTypeId,
                 PanelCount = dto.PanelCount,
                 PanelPower = dto.PanelPower,
@@ -123,7 +123,7 @@ namespace IvosisProjectManagement.API.Services
                 HasAdditionalStructure = dto.HasAdditionalStructure ?? false,
                 AdditionalPanelCount = dto.AdditionalPanelCount,
                 AdditionalInverterCount = dto.AdditionalInverterCount,
-                AdditionalPanelPower = dto.AdditionalPanelPower,
+                AdditionalPanelPower = dto.AdditionalPanelPower ?? 0,
                 Address = dto.Address.Select(a => new ProjectAddress
                 {
                     CityId = a.CityId,
@@ -143,11 +143,11 @@ namespace IvosisProjectManagement.API.Services
                 Name = project.Name,
                 Description = project.Description,
                 StartDate = project.StartDate,
-                EndDate = project.EndDate,
+                EndDate = project.EndDate ,
                 Priority = project.Priority,
                 Status = project.Status,
-                ACValue = project.ACValue,
-                DCValue = project.DCValue,
+                AcValue = project.AcValue,
+                DcValue = project.DcValue,
                 ProjectTypeId = project.ProjectTypeId,
                 Address = project.Address.Select(a => new ProjectAddressDto
                 {
@@ -168,7 +168,7 @@ namespace IvosisProjectManagement.API.Services
                 AdditionalInverterCount = project.AdditionalInverterCount,
                 AdditionalPanelPower = project.AdditionalPanelPower,
                 CreatedAt = project.CreatedAt,
-                CreatedByUserId = project.CreatedByUserId
+                CreatedByUserId = project.CreatedByUserId ?? 0
             };
         }
 
@@ -183,11 +183,11 @@ namespace IvosisProjectManagement.API.Services
             project.Name = dto.Name;
             project.Description = dto.Description;
             project.StartDate = dto.StartDate;
-            project.EndDate = dto.EndDate;
+            project.EndDate =  dto.EndDate ?? DateTime.Now.AddDays(15);
             project.Priority = dto.Priority;
             project.Status = dto.Status;
-            project.ACValue = dto.ACValue;
-            project.DCValue = dto.DCValue;
+            project.AcValue = dto.ACValue;
+            project.DcValue = dto.DCValue;
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedByUserId = dto.UpdatedByUserId;
             project.PanelCount = dto.PanelCount;
@@ -199,7 +199,7 @@ namespace IvosisProjectManagement.API.Services
             project.HasAdditionalStructure = dto.HasAdditionalStructure ?? false;
             project.AdditionalPanelCount = dto.AdditionalPanelCount;
             project.AdditionalInverterCount = dto.AdditionalInverterCount;
-            project.AdditionalPanelPower = dto.AdditionalPanelPower;
+            project.AdditionalPanelPower = dto.AdditionalPanelPower ?? 0;
 
             project.Address.Clear();
             foreach (var a in dto.Address)
@@ -225,6 +225,113 @@ namespace IvosisProjectManagement.API.Services
 
             _context.Projects.Remove(project);
             return await _context.SaveChangesAsync() > 0;
+        }
+
+         public async Task<List<ProjectDto>> GetProjectsByCompaniesAsync(List<int> companyIds)
+        {
+            if (!companyIds.Any()) return new List<ProjectDto>();
+
+            var projects = await _context.Projects
+                .Where(p => companyIds.Contains(p.CompanyId ?? 0))
+                .Include(p => p.Company)
+                .Include(p => p.PanelBrand)
+                .Include(p => p.InverterBrand)
+                .Include(p => p.ProjectType)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
+                .Select(p => new ProjectDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    StartDate = p.StartDate,
+                    EndDate = p.EndDate,
+                    Priority = p.Priority,
+                    Status = p.Status,
+                    CompanyId = p.CompanyId,
+                    CompanyName = p.Company != null ? p.Company.Name : null,
+                    PanelCount = p.PanelCount,
+                    PanelPower = p.PanelPower,
+                    PanelBrandId = p.PanelBrandId,
+                    PanelBrandName = p.PanelBrand != null ? p.PanelBrand.Name : null,
+                    InverterCount = p.InverterCount,
+                    InverterPower = p.InverterPower,
+                    InverterBrandId = p.InverterBrandId,
+                    InverterBrandName = p.InverterBrand != null ? p.InverterBrand.Name : null,
+                    HasAdditionalStructure = p.HasAdditionalStructure,
+                    AdditionalPanelCount = p.AdditionalPanelCount,
+                    AdditionalInverterCount = p.AdditionalInverterCount,
+                    AdditionalPanelPower = p.AdditionalPanelPower,
+                    AcValue = p.AcValue,
+                    DcValue = p.DcValue,
+                    ProjectTypeId = p.ProjectTypeId,
+                    ProjectTypeName = p.ProjectType != null ? p.ProjectType.Name : null,
+                    CreatedAt = p.CreatedAt,
+                    CreatedByUserId = p.CreatedByUserId,
+                    CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
+                    UpdatedAt = p.UpdatedAt,
+                    UpdatedByUserId = p.UpdatedByUserId,
+                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null
+                })
+                .ToListAsync();
+
+            return projects;
+        }
+
+        public async Task<List<ProjectDto>> GetProjectsByCompanyAsync(int companyId)
+        {
+            return await GetProjectsByCompaniesAsync(new List<int> { companyId });
+        }
+
+        public async Task<List<ProjectDto>> GetProductionProjectsAsync(int companyId)
+        {
+            var projects = await _context.Projects
+                .Where(p => p.CompanyId == companyId && 
+                           (p.Status == "Üretim" || p.Status == "Production" || 
+                            p.Name!.Contains("Üretim") || p.Name.Contains("Production")))
+                .Include(p => p.Company)
+                .Include(p => p.PanelBrand)
+                .Include(p => p.InverterBrand)
+                .Include(p => p.ProjectType)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
+                .Select(p => new ProjectDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    StartDate = p.StartDate,
+                    EndDate = p.EndDate,
+                    Priority = p.Priority,
+                    Status = p.Status,
+                    CompanyId = p.CompanyId,
+                    CompanyName = p.Company != null ? p.Company.Name : null,
+                    PanelCount = p.PanelCount,
+                    PanelPower = p.PanelPower,
+                    PanelBrandId = p.PanelBrandId,
+                    PanelBrandName = p.PanelBrand != null ? p.PanelBrand.Name : null,
+                    InverterCount = p.InverterCount,
+                    InverterPower = p.InverterPower,
+                    InverterBrandId = p.InverterBrandId,
+                    InverterBrandName = p.InverterBrand != null ? p.InverterBrand.Name : null,
+                    HasAdditionalStructure = p.HasAdditionalStructure,
+                    AdditionalPanelCount = p.AdditionalPanelCount,
+                    AdditionalInverterCount = p.AdditionalInverterCount,
+                    AdditionalPanelPower = p.AdditionalPanelPower,
+                    AcValue = p.AcValue,
+                    DcValue = p.DcValue,
+                    ProjectTypeId = p.ProjectTypeId,
+                    ProjectTypeName = p.ProjectType != null ? p.ProjectType.Name : null,
+                    CreatedAt = p.CreatedAt,
+                    CreatedByUserId = p.CreatedByUserId,
+                    CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
+                    UpdatedAt = p.UpdatedAt,
+                    UpdatedByUserId = p.UpdatedByUserId,
+                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null
+                })
+                .ToListAsync();
+
+            return projects;
         }
     }
 }

@@ -26,27 +26,41 @@ namespace IvosisProjectManagement.API.Middlewares
             {
                 _logger.LogError(ex, $"[EXCEPTION] {ex.Message}");
 
-                context.Response.ContentType = "application/json";
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-                // 👉 Buraya ekleyeceksin
-                string message = ex switch
+                int statusCode = ex switch
                 {
-                    ArgumentNullException => "Eksik parametre gönderildi.",
-                    UnauthorizedAccessException => "Yetkisiz erişim.",
-                    _ => _env.IsDevelopment() ? ex.Message : "Sunucu hatası oluştu."
+                    ArgumentNullException => (int)HttpStatusCode.BadRequest,
+                    UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
+                    KeyNotFoundException => (int)HttpStatusCode.NotFound,
+                    _ => (int)HttpStatusCode.InternalServerError
                 };
 
-                var response = new
+                context.Response.ContentType = "application/problem+json";
+                context.Response.StatusCode = statusCode;
+
+                var problemDetails = new
                 {
-                    success = false,
-                    message = message,
-                    data = (object?)null
+                    type = statusCode switch
+                    {
+                        400 => "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                        401 => "https://tools.ietf.org/html/rfc7235#section-3.1",
+                        404 => "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                        _ => "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+                    },
+                    title = ex switch
+                    {
+                        ArgumentNullException => "Eksik parametre gönderildi.",
+                        UnauthorizedAccessException => "Yetkisiz erişim.",
+                        KeyNotFoundException => "Kayıt bulunamadı.",
+                        _ => "Sunucu hatası oluştu."
+                    },
+                    status = statusCode,
+                    detail = _env.IsDevelopment() ? ex.ToString() : null,
+                    instance = context.Request.Path
                 };
 
                 var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
+                await context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, options));
             }
         }
     }

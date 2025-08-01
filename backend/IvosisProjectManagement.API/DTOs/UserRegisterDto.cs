@@ -19,6 +19,10 @@ namespace IvosisProjectManagement.API.DTOs
 
         [MaxLength(100)]
         public string Role { get; set; }
+
+        public int? CompanyId { get; set; }
+        public int? DepartmentId { get; set; }
+        public List<int>? RoleIds { get; set; }
     }
 
 }

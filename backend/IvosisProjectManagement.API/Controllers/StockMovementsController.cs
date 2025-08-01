@@ -57,122 +57,77 @@ using Microsoft.AspNetCore.Mvc;
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<ActionResult<object>> CreateStockIn([FromBody] CreateStockMovementDto dto)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var movement = await _stockMovementService.CreateStockInAsync(dto, userId);
-                
-                return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id }, 
-                    new { success = true, data = movement, message = "Stock in created successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            if (!ModelState.IsValid)
+                throw new ArgumentNullException("Eksik veya hatalı veri gönderildi.");
+
+            var userId = GetCurrentUserId();
+            var movement = await _stockMovementService.CreateStockInAsync(dto, userId);
+
+            return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id },
+                new { success = true, data = movement, message = "Stock in created successfully" });
         }
 
         [HttpPost("stock-out")]
         [Authorize(Roles = "Admin,Manager,User")]
         public async Task<ActionResult<object>> CreateStockOut([FromBody] CreateStockMovementDto dto)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var movement = await _stockMovementService.CreateStockOutAsync(dto, userId);
-                
-                return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id }, 
-                    new { success = true, data = movement, message = "Stock out created successfully" });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while creating stock out" });
-            }
+            if (!ModelState.IsValid)
+                throw new ArgumentNullException("Eksik veya hatalı veri gönderildi.");
+
+            var userId = GetCurrentUserId();
+            var movement = await _stockMovementService.CreateStockOutAsync(dto, userId);
+
+            return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id },
+                new { success = true, data = movement, message = "Stock out created successfully" });
         }
 
         [HttpPost("transfer")]
         [Authorize(Roles = "Admin,Manager")]
         public async Task<ActionResult<object>> CreateTransfer([FromQuery] int fromLocationId, [FromQuery] int toLocationId, [FromBody] CreateStockMovementDto dto)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var movement = await _stockMovementService.CreateTransferAsync(fromLocationId, toLocationId, dto, userId);
-                
-                return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id }, 
-                    new { success = true, data = movement, message = "Stock transfer created successfully" });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while creating transfer" });
-            }
+            if (!ModelState.IsValid)
+                throw new ArgumentNullException("Eksik veya hatalı veri gönderildi.");
+
+            var userId = GetCurrentUserId();
+            var movement = await _stockMovementService.CreateTransferAsync(fromLocationId, toLocationId, dto, userId);
+
+            return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id },
+                new { success = true, data = movement, message = "Stock transfer created successfully" });
         }
 
         [HttpPost("adjustment")]
         [Authorize(Roles = "Admin,Manager")]
         public async Task<ActionResult<object>> CreateAdjustment([FromBody] CreateStockMovementDto dto)
         {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var movement = await _stockMovementService.CreateAdjustmentAsync(dto, userId);
-                
-                return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id }, 
-                    new { success = true, data = movement, message = "Stock adjustment created successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            if (!ModelState.IsValid)
+                throw new ArgumentNullException("Eksik veya hatalı veri gönderildi.");
+
+            var userId = GetCurrentUserId();
+            var movement = await _stockMovementService.CreateAdjustmentAsync(dto, userId);
+
+            return CreatedAtAction(nameof(GetStockMovement), new { id = movement.Id },
+                new { success = true, data = movement, message = "Stock adjustment created successfully" });
         }
 
         [HttpGet("recent")]
         public async Task<ActionResult<object>> GetRecentMovements([FromQuery] int take = 10)
         {
-            try
-            {
-                var movements = await _stockMovementService.GetRecentMovementsAsync(take);
-                return Ok(new { success = true, data = movements });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            var movements = await _stockMovementService.GetRecentMovementsAsync(take);
+            return Ok(new { success = true, data = movements });
         }
 
         [HttpGet("monthly-turnover")]
         public async Task<ActionResult<object>> GetMonthlyTurnover([FromQuery] DateTime? month = null)
         {
-            try
-            {
-                var turnover = await _stockMovementService.GetMonthlyTurnoverAsync(month);
-                return Ok(new { success = true, data = new { turnover, month = month ?? DateTime.Now } });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            var turnover = await _stockMovementService.GetMonthlyTurnoverAsync(month);
+            return Ok(new { success = true, data = new { turnover, month = month ?? DateTime.Now } });
         }
 
         [HttpGet("by-item/{stockItemId}")]
         public async Task<ActionResult<object>> GetMovementsByStockItem(int stockItemId, [FromQuery] int take = 10)
         {
-            try
-            {
-                var movements = await _stockMovementService.GetByStockItemAsync(stockItemId, take);
-                return Ok(new { success = true, data = movements });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            var movements = await _stockMovementService.GetByStockItemAsync(stockItemId, take);
+            return Ok(new { success = true, data = movements });
         }
     }
 

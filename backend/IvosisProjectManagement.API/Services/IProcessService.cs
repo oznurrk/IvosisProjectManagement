@@ -1,4 +1,5 @@
 using IvosisProjectManagement.API.DTOs;
+using IvosisProjectManagement.API.Models;
 
 namespace IvosisProjectManagement.API.Services
 {
@@ -9,5 +10,6 @@ namespace IvosisProjectManagement.API.Services
         Task<ProcessDto> CreateAsync(ProcessCreateDto dto);
         Task<bool> UpdateAsync(int id, ProcessUpdateDto dto);
         Task<bool> DeleteAsync(int id);
+        Task<List<ProcessDto>> GetProcessesByCompaniesAsync(List<int> companyIds);
     }
 }

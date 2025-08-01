@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace IvosisProjectManagement.API.Models
 {
     public class Process
@@ -10,5 +12,18 @@ namespace IvosisProjectManagement.API.Models
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedByUserId { get; set; }
+        [ForeignKey("ParentProcessId")]
+        public virtual Process? ParentProcess { get; set; }
+
+        [ForeignKey("CreatedByUserId")]
+        public virtual User? CreatedByUser { get; set; }
+
+        [ForeignKey("UpdatedByUserId")]
+        public virtual User? UpdatedByUser { get; set; }
+
+        public int? CompanyId { get; set; }
+
+        [ForeignKey("CompanyId")]
+        public virtual Company? Company { get; set; }
     }
 }

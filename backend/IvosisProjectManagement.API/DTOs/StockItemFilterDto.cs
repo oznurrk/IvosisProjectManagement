@@ -12,4 +12,5 @@ public class StockItemFilterDto
         public int PageSize { get; set; } = 50;
         public string SortBy { get; set; } = "Name";
         public string SortDirection { get; set; } = "ASC";
+        public List<int>? CompanyIds { get; set; }
     }

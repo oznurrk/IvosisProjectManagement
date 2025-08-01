@@ -133,6 +133,8 @@ namespace IvosisProjectManagement.API.Services
                 Badge = dto.Badge,
                 Department = dto.Department,
                 Section = dto.Section,
+                CompanyId = dto.CompanyId,
+                DepartmentId = dto.DepartmentId, 
                 StartDate = dto.StartDate,
                 BirthPlace = dto.BirthPlace,
                 BirthDate = dto.BirthDate,
@@ -166,6 +168,10 @@ namespace IvosisProjectManagement.API.Services
                 Badge = personnel.Badge,
                 Department = personnel.Department,
                 Section = personnel.Section,
+                
+                CompanyId = personnel.CompanyId,
+                DepartmentId = personnel.DepartmentId, 
+                
                 StartDate = personnel.StartDate,
                 BirthPlace = personnel.BirthPlace,
                 BirthDate = personnel.BirthDate,
@@ -245,6 +251,78 @@ namespace IvosisProjectManagement.API.Services
         {
             if (string.IsNullOrWhiteSpace(email)) return false;
             return await _context.Personnel.AnyAsync(p => p.Email == email);
+        }
+
+        public async Task<List<PersonnelDto>> GetPersonnelByCompaniesAsync(List<int> companyIds)
+        {
+            return await _context.Personnel
+                .Where(p => p.CompanyId.HasValue && companyIds.Contains(p.CompanyId.Value))
+                .Select(p => new PersonnelDto
+                {
+                    Id = p.Id,
+                    SicilNo = p.SicilNo,
+                    Name = p.Name,
+                    Surname = p.Surname,
+                    Title = p.Title,
+                    Badge = p.Badge,
+                    Department = p.Department,
+                    Section = p.Section,
+                    StartDate = p.StartDate,
+                    BirthPlace = p.BirthPlace,
+                    BirthDate = p.BirthDate,
+                    TCKimlikNo = p.TCKimlikNo,
+                    EducationLevel = p.EducationLevel,
+                    Gender = p.Gender,
+                    Nationality = p.Nationality,
+                    City = p.City,
+                    District = p.District,
+                    Address = p.Address,
+                    MobilePhone = p.MobilePhone,
+                    Email = p.Email,
+                    Salary = p.Salary,
+                    IBAN = p.IBAN,
+                    Photo = p.Photo,
+                    WorkStatus = p.WorkStatus,
+                    CreatedDate = p.CreatedDate,
+                    UpdatedDate = p.UpdatedDate
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<PersonnelDto>> GetPersonnelByDepartmentAsync(int departmentId)
+        {
+            return await _context.Personnel
+                .Where(p => p.DepartmentId == departmentId)
+                .Select(p => new PersonnelDto
+                {
+                    Id = p.Id,
+                    SicilNo = p.SicilNo,
+                    Name = p.Name,
+                    Surname = p.Surname,
+                    Title = p.Title,
+                    Badge = p.Badge,
+                    Department = p.Department,
+                    Section = p.Section,
+                    StartDate = p.StartDate,
+                    BirthPlace = p.BirthPlace,
+                    BirthDate = p.BirthDate,
+                    TCKimlikNo = p.TCKimlikNo,
+                    EducationLevel = p.EducationLevel,
+                    Gender = p.Gender,
+                    Nationality = p.Nationality,
+                    City = p.City,
+                    District = p.District,
+                    Address = p.Address,
+                    MobilePhone = p.MobilePhone,
+                    Email = p.Email,
+                    Salary = p.Salary,
+                    IBAN = p.IBAN,
+                    Photo = p.Photo,
+                    WorkStatus = p.WorkStatus,
+                    CreatedDate = p.CreatedDate,
+                    UpdatedDate = p.UpdatedDate
+                })
+                .ToListAsync();
         }
     }
 }

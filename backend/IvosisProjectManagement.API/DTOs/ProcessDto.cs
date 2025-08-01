@@ -6,6 +6,10 @@ namespace IvosisProjectManagement.API.DTOs
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int? ParentProcessId { get; set; }
+        public string? ParentProcessName { get; set; }
+        public int? CompanyId { get; set; }
+        public string? CreatedByUserName { get; set; }
+        public string? UpdatedByUserName { get; set; }
         public DateTime CreatedAt { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }

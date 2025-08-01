@@ -13,5 +13,7 @@ namespace IvosisProjectManagement.API.Services.Interfaces
         Task<bool> SicilNoExistsAsync(string sicilNo);
         Task<bool> TCKimlikNoExistsAsync(string tcKimlikNo);
         Task<bool> EmailExistsAsync(string email);
+        Task<List<PersonnelDto>> GetPersonnelByCompaniesAsync(List<int> companyIds);
+        Task<List<PersonnelDto>> GetPersonnelByDepartmentAsync(int departmentId);
     }
 }
