@@ -433,7 +433,7 @@ const Projects = () => {
                   </Tooltip>
                 </Group>
               </Card.Section>
-
+              
               <Stack gap="md" mt="md">
                 <Group justify="space-between">
                   <Badge

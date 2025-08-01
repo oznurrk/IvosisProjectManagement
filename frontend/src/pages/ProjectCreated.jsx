@@ -317,7 +317,7 @@ const ProjectCreated = () => {
               {/* Proje Adı */}
               <div>
                 <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
-                  Proje Adı <span className="text-red-500">*</span>
+                  <span className="text-red-500">*</span> Proje Adı 
                 </label>
                 <TextInput
                   className="w-full"
@@ -345,11 +345,11 @@ const ProjectCreated = () => {
             <div className="space-y-4 sm:space-y-6">
               
               {/* Tarih Alanları - Mobilde dikey, tablette yatay */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                 {/* Başlangıç Tarihi */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
-                    Başlangıç Tarihi <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Başlangıç Tarihi
                   </label>
                   <input
                     type="date"
@@ -362,13 +362,32 @@ const ProjectCreated = () => {
                 {/* Bitiş Tarihi */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
-                    Bitiş Tarihi <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Bitiş Tarihi
                   </label>
                   <input
                     type="date"
                     className="border rounded-md px-3 py-2 w-full text-sm sm:text-base"
                     value={formData.endDate.split("T")[0]}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  />
+                </div>
+                {/* Proje Tipi */}
+                <div>
+                  <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
+                    <span className="text-red-500">*</span> Proje Tipi
+                  </label>
+                  <Select
+                    placeholder="Proje Tipi Seçin"
+                    searchable
+                    clearable
+                    className="w-full"
+                    data={[
+                      { value: "arazi", label: "Arazi" },
+                      { value: "cati", label: "Çatı" },
+                      { value: "cephe", label: "Cephe" },
+                    ]}
+                    value={formData.status ? formData.status.toString() : null}
+                    onChange={(e) => setFormData({ ...formData, status: e })}
                   />
                 </div>
               </div>
@@ -378,7 +397,7 @@ const ProjectCreated = () => {
                 {/* Durum */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
-                    Durum <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Durum
                   </label>
                   <Select
                     placeholder="Durum Seçin"
@@ -399,7 +418,7 @@ const ProjectCreated = () => {
                 {/* Önem */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
-                    Önem <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Önem
                   </label>
                   <Select
                     placeholder="Önem Seçin"
@@ -420,7 +439,7 @@ const ProjectCreated = () => {
                 {/* Proje Türü */}
                 <div className="sm:col-span-2 lg:col-span-1">
                   <label className="text-natural-800 font-semibold block mb-1 text-sm sm:text-base">
-                    Proje Türü <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Proje Türü 
                   </label>
                   <Select
                     placeholder="Proje Türü Seçin"
@@ -476,7 +495,7 @@ const ProjectCreated = () => {
                 {/* Şehir */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                    Şehir <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Şehir 
                   </label>
                   <Select
                     placeholder="Şehir Seçin"
@@ -491,7 +510,7 @@ const ProjectCreated = () => {
                 {/* İlçe */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                    İlçe <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> İlçe
                   </label>
                   <Select
                     placeholder="İlçe Seçin"
@@ -506,7 +525,7 @@ const ProjectCreated = () => {
                 {/* Mahalle */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                    Mahalle <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Mahalle
                   </label>
                   <Select
                     placeholder="Mahalle Seçin"
@@ -521,7 +540,7 @@ const ProjectCreated = () => {
                 {/* Ada */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                    Ada <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Ada 
                   </label>
                   <TextInput
                     value={address.ada}
@@ -532,7 +551,7 @@ const ProjectCreated = () => {
                 {/* Parsel */}
                 <div>
                   <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                    Parsel <span className="text-red-500">*</span>
+                    <span className="text-red-500">*</span> Parsel 
                   </label>
                   <TextInput
                     value={address.parsel}
@@ -556,7 +575,7 @@ const ProjectCreated = () => {
             {/* Panel Sayısı */}
             <div className="sm:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                Panel Sayısı <span className="text-red-500">*</span>
+                <span className="text-red-500">*</span> Panel Sayısı 
               </label>
               <TextInput
                 className="w-full"
@@ -570,7 +589,7 @@ const ProjectCreated = () => {
             {/* Panel Gücü */}
             <div className="sm:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                Panel Gücü <span className="text-red-500">*</span>
+                <span className="text-red-500">*</span> Panel Gücü 
               </label>
               <TextInput
                 className="w-full"
@@ -584,7 +603,7 @@ const ProjectCreated = () => {
             {/* Panel Markası */}
             <div className="sm:col-span-2 md:col-span-1 lg:col-span-1 xl:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                Panel Markası <span className="text-red-500">*</span>
+                <span className="text-red-500">*</span> Panel Markası 
               </label>
               <Select
                 placeholder="Panel Markası Seçin"
@@ -602,7 +621,7 @@ const ProjectCreated = () => {
             {/* DC (kWp) */}
             <div className="sm:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                DC (kWp) <span className="text-red-500">*</span>
+               <span className="text-red-500">*</span> DC (kWp) 
               </label>
               <TextInput className="w-full" value={formData.dcValue} readOnly />
             </div>
@@ -610,7 +629,7 @@ const ProjectCreated = () => {
             {/* İnvertör Sayısı */}
             <div className="sm:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                İnvertör Sayısı <span className="text-red-500">*</span>
+                 <span className="text-red-500">*</span> İnvertör Sayısı
               </label>
               <TextInput
                 className="w-full"
@@ -624,7 +643,7 @@ const ProjectCreated = () => {
             {/* İnvertör Gücü */}
             <div className="sm:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                İnvertör Gücü <span className="text-red-500">*</span>
+                <span className="text-red-500">*</span> İnvertör Gücü 
               </label>
               <TextInput
                 className="w-full"
@@ -638,7 +657,7 @@ const ProjectCreated = () => {
             {/* İnvertör Markası */}
             <div className="sm:col-span-2 md:col-span-1 lg:col-span-1 xl:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                İnvertör Markası <span className="text-red-500">*</span>
+                <span className="text-red-500">*</span> İnvertör Markası 
               </label>
               <Select
                 placeholder="İnvertör Markası Seçin"
@@ -656,7 +675,7 @@ const ProjectCreated = () => {
             {/* AC (kWe) */}
             <div className="sm:col-span-1">
               <label className="text-natural-800 font-semibold block mb-1 text-sm">
-                AC (kWe) <span className="text-red-500">*</span>
+                <span className="text-red-500">*</span> AC (kWe) 
               </label>
               <TextInput
                 className="w-full"
