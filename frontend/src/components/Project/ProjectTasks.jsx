@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import { 
   Select, Textarea, Card, Text, Group, Stack, Badge, Button, 
-  Progress, Pagination, Grid, Paper, Title, Divider, 
+  Progress, Grid, Paper, Title, Divider, 
   Modal, ActionIcon, Tooltip
 } from "@mantine/core";
 import { IconCalendar, IconArrowLeft, IconUsers, IconClock, IconEdit, IconDownload, IconX } from '@tabler/icons-react';
 import Header from "../Header/Header";
 import FilterAndSearch from "../../Layout/FilterAndSearch";
+import PaginationComponent from "../../Layout/PaginationComponent";
 
 // ResizeObserver hatası için global error handler
 if (typeof window !== 'undefined') {
@@ -30,6 +31,7 @@ const ProjectTasks = () => {
   const [projectProcesses, setProjectProcesses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6); // Yeni state
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [processToReassign, setProcessToReassign] = useState(null);
@@ -46,7 +48,6 @@ const ProjectTasks = () => {
     endDate: ""
   });
 
-  const ITEMS_PER_PAGE = 6;
   const CARD_HEIGHT = 600;
   
   // Cache edilmiş veriler
@@ -54,6 +55,12 @@ const ProjectTasks = () => {
   const currentUserId = user?.id || 1;
   const projectId = localStorage.getItem("selectedProjectId");
   const token = localStorage.getItem("token");
+
+  // Sayfa boyutu değiştiğinde sayfa numarasını sıfırla
+  const handlePageSizeChange = useCallback((newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  }, []);
 
   // Status helper functions - memoized
   const statusConfig = useMemo(() => ({
@@ -713,99 +720,59 @@ const ProjectTasks = () => {
           />
 
           <Grid gutter="xl">
-            {filteredProcesses.map((process) => {
-              const processStats = calculateStatusStats(process.tasks);
-              const completedTasks = process.tasks.filter(t => t.status === 'Completed').length;
-              const totalTasks = process.tasks.length;
-              const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            {filteredProcesses
+              .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+              .map((process) => {
+                const processStats = calculateStatusStats(process.tasks);
+                const completedTasks = process.tasks.filter(t => t.status === 'Completed').length;
+                const totalTasks = process.tasks.length;
+                const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-              return (
-                <Grid.Col key={process.processId} span={{ base: 12, sm: 6, lg: 4 }}>
-                  <Card
-                    withBorder
-                    padding="lg"
-                    radius="xl"
-                    className="cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-white border-gray-200 "
-                    style={{ 
-                      height: 360,
-                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                    }}
-                    onClick={() => setSelectedProcess(process)}
-                  >
-                    <Stack spacing="md" style={{ height: '100%' }}>
-                      {/* Header Section */}
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <Title order={3} className="text-[#1e293b] mb-2 font-bold">
-                            {process.processName}
-                          </Title>
-                          <Badge 
-                            size="lg" 
-                            variant="light" 
-                            color="blue"
-                            className="mb-3"
-                          >
-                            {completionPercentage}% Tamamlandı
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <Divider color="gray.3" />
-
-                      {/* Info Section */}
-                      <Stack spacing="sm">
-                        <Paper 
-                          padding="sm" 
-                          radius="md" 
-                          className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100"
-                        >
-                          <Group spacing="xs" align="center">
-                            <IconCalendar size={16}  />
-                            <Text size="sm" color="ivosis.6" weight={500}>
-                              Oluşturulma: {formatDate(process.processCreatedDate)}
-                            </Text>
-                          </Group>
-                        </Paper>
-
-                        <Paper 
-                          padding="sm" 
-                          radius="md" 
-                        >
-                          <Group spacing="xs" align="center" position="apart">
-                            <Group spacing="xs">
-                              <IconUsers size={16}  />
-                              <Text size="sm" weight={500}>
-                                Atanan: {process.assignedUser}
-                              </Text>
-                            </Group>
-                            <Button
-                              size="xs"
-                              variant="outline"
-                              leftIcon={<IconEdit size={12} />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setProcessToReassign(process);
-                                setProcessAssignModalOpen(true);
-                              }}
+                return (
+                  <Grid.Col key={process.processId} span={{ base: 12, sm: 6, lg: 4 }}>
+                    <Card
+                      withBorder
+                      padding="lg"
+                      radius="xl"
+                      className="cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-white border-gray-200 "
+                      style={{ 
+                        height: 400,
+                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                      }}
+                      onClick={() => setSelectedProcess(process)}
+                    >
+                      <Stack spacing="md" style={{ height: '100%' }}>
+                        {/* Header Section */}
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <Title order={3} className="text-[#1e293b] mb-2 font-bold">
+                              {process.processName}
+                            </Title>
+                            <Badge 
+                              size="lg" 
+                              variant="light" 
+                              color="blue"
+                              className="mb-3"
                             >
-                              Değiştir
-                            </Button>
-                          </Group>
-                        </Paper>
+                              {completionPercentage}% Tamamlandı
+                            </Badge>
+                          </div>
+                        </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <Divider color="gray.3" />
+
+                        {/* Info Section */}
+                        <Stack spacing="sm">
                           <Paper 
                             padding="sm" 
                             radius="md" 
-                            className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100"
+                            className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100"
                           >
                             <Group spacing="xs" align="center">
-                              <Text size="lg" weight={700} color="#7c3aed">
-                                {totalTasks}
-                              </Text>
-                              <Text size="xs" color="#7c3aed">
-                                Toplam Görev
+                              <IconCalendar size={16}  />
+                              <Text size="sm" color="ivosis.6" weight={500}>
+                                Oluşturulma: {formatDate(process.processCreatedDate)}
                               </Text>
                             </Group>
                           </Paper>
@@ -813,35 +780,88 @@ const ProjectTasks = () => {
                           <Paper 
                             padding="sm" 
                             radius="md" 
-                            className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100"
                           >
-                            <Group spacing="xs" align="center">
-                              <IconClock size={16} color="#059669" />
-                              <Text size="sm" color="#059669" weight={500}>
-                                {completedTasks} Tamamlandı
-                              </Text>
+                            <Group spacing="xs" align="center" position="apart">
+                              <Group spacing="xs">
+                                <IconUsers size={16}  />
+                                <Text size="sm" weight={500}>
+                                  Atanan: {process.assignedUser}
+                                </Text>
+                              </Group>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                leftIcon={<IconEdit size={12} />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setProcessToReassign(process);
+                                  setProcessAssignModalOpen(true);
+                                }}
+                              >
+                                Değiştir
+                              </Button>
                             </Group>
                           </Paper>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <Paper 
+                              padding="sm" 
+                              radius="md" 
+                              className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100"
+                            >
+                              <Group spacing="xs" align="center">
+                                <Text size="lg" weight={700} color="#7c3aed">
+                                  {totalTasks}
+                                </Text>
+                                <Text size="xs" color="#7c3aed">
+                                  Toplam Görev
+                                </Text>
+                              </Group>
+                            </Paper>
+
+                            <Paper 
+                              padding="sm" 
+                              radius="md" 
+                              className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100"
+                            >
+                              <Group spacing="xs" align="center">
+                                <IconClock size={16} color="#059669" />
+                                <Text size="sm" color="#059669" weight={500}>
+                                  {completedTasks} Tamamlandı
+                                </Text>
+                              </Group>
+                            </Paper>
+                          </div>
+                        </Stack>
+
+                        {/* Progress Section */}
+                        <div className="mt-auto">
+                          <Text size="sm" weight={600} color="#475569" className="mb-3">
+                            İlerleme Durumu
+                          </Text>
+                          <StatusBar stats={processStats} size="lg" showLabels={false} />
+                          <div className="flex justify-between mt-2">
+                            <Text size="xs" color="#64748b">Başlangıç</Text>
+                            <Text size="xs" color="#64748b">Tamamlanma</Text>
+                          </div>
                         </div>
                       </Stack>
-
-                      {/* Progress Section */}
-                      <div className="mt-auto">
-                        <Text size="sm" weight={600} color="#475569" className="mb-3">
-                          İlerleme Durumu
-                        </Text>
-                        <StatusBar stats={processStats} size="lg" showLabels={false} />
-                        <div className="flex justify-between mt-2">
-                          <Text size="xs" color="#64748b">Başlangıç</Text>
-                          <Text size="xs" color="#64748b">Tamamlanma</Text>
-                        </div>
-                      </div>
-                    </Stack>
-                  </Card>
-                </Grid.Col>
-              );
-            })}
+                    </Card>
+                  </Grid.Col>
+                );
+              })}
           </Grid>
+
+          {/* Pagination Component for Process Cards */}
+          <PaginationComponent
+            totalItems={filteredProcesses.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[3, 6, 9, 12]}
+            itemName="süreç"
+          />
 
           {filteredProcesses.length === 0 && (
             <Paper 
@@ -942,10 +962,9 @@ const ProjectTasks = () => {
   if (!currentProcess) return null;
 
   const processStats = calculateStatusStats(currentProcess.tasks);
-  const totalPages = Math.ceil(currentProcess.tasks.length / ITEMS_PER_PAGE);
   const paginatedTasks = currentProcess.tasks.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE, 
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * pageSize, 
+    currentPage * pageSize
   );
 
   return (
@@ -1170,11 +1189,16 @@ const ProjectTasks = () => {
             ))}
         </Grid>
 
-         {totalPages > 1 && (
-          <div className="flex justify-center mt-8">
-            <Pagination value={currentPage} onChange={setCurrentPage} total={totalPages} size="md" color="ivosis.6" />
-          </div>
-        )}
+        {/* Pagination Component for Tasks */}
+        <PaginationComponent
+          totalItems={currentProcess.tasks.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[3, 6, 9, 12, 15]}
+          itemName="görev"
+        />
 
         {/* Task Listeleri Boşsa */}
         {paginatedTasks.length === 0 && !loading && (

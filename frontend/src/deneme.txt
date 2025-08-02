@@ -103,10 +103,10 @@ TaskAddModal ekleme işlemi çalışmıyor.
 
 Personel Düzenle modalinde düzenle butonu çalışmıyor. (backende update fonksiyonundaki alan kontrolleri tc ve email kontrol edilecek)
 
-proje kartına adres detayı eklenecek
-proje eklerken proje tipi eklenecek
-süreç ekleme modalı açıldığında imleç texte odaklanacak
-sayfalardaki görüntüleme sayısı seçilebilir olmalı
+proje kartına adres detayı eklenecek + (veritabanı düzenlemesi bekleniyor)
+proje eklerken proje tipi eklenecek + (veritabanı bağlantısı bekleniyor)
+süreç ekleme modalı açıldığında imleç texte odaklanacak + (TAMAMLANDI)
+sayfalardaki görüntüleme sayısı seçilebilir olmalı + (TÜM SAYFALARDA GÖRÜNTÜLENDİ)
 dosya ekleme sayısının kontrolü
 dosya yüklenince sıralama yapılacak
 süreçlerde ve taskta bitiş tarihi de atanacak

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
 import { Card, Text, Group, Stack, Badge, Button, Pagination, Grid, Paper, Divider } from "@mantine/core";
@@ -7,6 +7,7 @@ import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 import ProcessAddModal from "../components/Process/ProcessAddModal";
 import TaskListModal from "../components/Tasks/TaskListModal";
+import PaginationComponent from "../Layout/PaginationComponent";
 
 const Processes = () => {
   const { isMobile, setIsMobileMenuOpen } = useOutletContext();
@@ -17,6 +18,7 @@ const Processes = () => {
   const [modalOpened, setModalOpened] = useState(false);
   const [taskModalOpened, setTaskModalOpened] = useState(false);
   const [selectedProcess, setSelectedProcess] = useState(null);
+  const [pageSize, setPageSize] = useState(9); // Varsayılan sayfa boyutu
   const [searchFilters, setSearchFilters] = useState({
     name: "",
     description: "",
@@ -25,6 +27,18 @@ const Processes = () => {
 
   const ITEMS_PER_PAGE = 9;
   const token = localStorage.getItem("token");
+
+   // Sayfa değişikliği handler'ı
+    const handlePageChange = useCallback((page) => {
+      setCurrentPage(page);
+    }, []);
+  
+    // Sayfa boyutu değişikliği handler'ı
+    const handlePageSizeChange = useCallback((newPageSize) => {
+      setPageSize(newPageSize);
+      setCurrentPage(1); // Sayfa boyutu değiştiğinde ilk sayfaya dön
+    }, []);
+    
 
   const fetchProcesses = async () => {
     setLoading(true);
@@ -182,11 +196,17 @@ const Processes = () => {
   };
 
   // Pagination
-  const totalPages = Math.ceil(filteredProcesses.length / ITEMS_PER_PAGE);
+  /*
   const paginatedProcesses = filteredProcesses.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+*/
+  const {paginatedProcesses} = useMemo(() => {
+    const total = Math.ceil(filteredProcesses.length / pageSize);
+    const paginated = filteredProcesses.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    return {totalPages: total, paginatedProcesses: paginated};
+  }, [filteredProcesses, currentPage, pageSize]);
 
   if (loading) {
     return (
@@ -340,17 +360,15 @@ const Processes = () => {
           </Grid>
         </div>
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-8">
-            <Pagination
-              value={currentPage}
-              onChange={setCurrentPage}
-              total={totalPages}
-              size="md"
-              color="ivosis.6"
-            />
-          </div>
-        )}
+        <PaginationComponent
+          totalItems={filteredProcesses.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[6, 9, 12, 15, 18, 24]}
+          itemName="görev"
+        />
 
         {/* No Results */}
         {filteredProcesses.length === 0 && !loading && (
