@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { IconX, IconCheck, IconSearch, IconPackage } from "@tabler/icons-react";
 
 const StockInModal = ({ isOpen, onClose, onSave }) => {
@@ -26,15 +27,18 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
 
   const fetchData = async () => {
     try {
+      const token = localStorage.getItem("token");
+
       const [itemsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/StockItems')
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
       ]);
 
-      if (itemsRes.ok) {
-        const items = await itemsRes.json();
-        setStockItems(items);
-      }
+      const items = itemsRes.data;
+      setStockItems(items);
 
+      // Static suppliers data
       setSuppliers([
         "ABC Çelik San. Tic. Ltd. Şti.",
         "XYZ Metal San. A.Ş.", 
@@ -95,6 +99,8 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
     setLoading(true);
     
     try {
+      const token = localStorage.getItem("token");
+      
       const stockInData = {
         stockItemId: parseInt(form.itemId),
         quantity: parseFloat(form.quantity),
@@ -105,27 +111,18 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
         notes: form.notes
       };
       
-      const response = await fetch('http://localhost:5000/api/StockMovements/stock-in', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(stockInData)
+      const response = await axios.post("http://localhost:5000/api/StockMovements/stock-in", stockInData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        resetForm();
-        onClose();
-        alert('Stok giriş işlemi başarıyla tamamlandı!');
-        if (onSave) onSave();
-      } else {
-        const errorData = await response.json();
-        alert('Hata: ' + (errorData.message || 'Stok giriş işlemi başarısız'));
-      }
+      resetForm();
+      onClose();
+      alert('Stok giriş işlemi başarıyla tamamlandı!');
+      if (onSave) onSave();
       
     } catch (error) {
       console.error("Stok giriş hatası:", error);
-      alert('Bağlantı hatası: ' + error.message);
+      alert('Hata: ' + (error.response?.data?.message || 'Stok giriş işlemi başarısız'));
     } finally {
       setLoading(false);
     }
@@ -177,7 +174,7 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
                   <option value="">Malzeme Seçiniz</option>
                   {stockItems.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.itemCode} - {item.name} (Mevcut: {item.currentStock} {item.unit})
+                      {item.itemCode} - {item.itemName} (Mevcut: {item.currentStock} {item.unit})
                     </option>
                   ))}
                 </select>
@@ -191,7 +188,7 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
                   <h4 className="font-medium text-blue-800 mb-2">Seçilen Malzeme</h4>
                   <div className="text-sm text-blue-700">
                     <p><strong>Kod:</strong> {selectedItem.itemCode}</p>
-                    <p><strong>Ad:</strong> {selectedItem.name}</p>
+                    <p><strong>Ad:</strong> {selectedItem.itemName}</p>
                     <p><strong>Kategori:</strong> {selectedItem.category}</p>
                     <p><strong>Mevcut Stok:</strong> {selectedItem.currentStock} {selectedItem.unit}</p>
                   </div>

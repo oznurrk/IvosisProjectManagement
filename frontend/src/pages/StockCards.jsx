@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import axios from "axios";
 import Header from "../components/Header/Header";
 import { 
   IconCards, 
@@ -40,73 +41,41 @@ const StockCards = () => {
   });
 
   useEffect(() => {
-    fetchStockItems();
-    fetchCategories();
-    fetchUnits();
+    fetchAllData();
   }, []);
 
-  const fetchStockItems = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       
-      const response = await fetch('http://localhost:5000/api/StockItems', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setStockItems(data);
-      }
+      const [stockItemsRes, categoriesRes, unitsRes] = await Promise.all([
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      // StockItems verilerini set et
+      setStockItems(stockItemsRes.data);
+
+      // Categories verilerini çıkar ve set et
+      const uniqueCategories = [...new Set(categoriesRes.data.map(item => item.category).filter(Boolean))];
+      setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
+
+      // Units verilerini çıkar ve set et
+      const uniqueUnits = [...new Set(unitsRes.data.map(item => item.unit).filter(Boolean))];
+      setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
+
     } catch (error) {
-      console.error('Stok kartları yüklenirken hata:', error);
+      console.error('Veriler yüklenirken hata:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch('http://localhost:5000/api/StockItems', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const items = await response.json();
-        const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
-        setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
-      }
-    } catch (error) {
-      console.error('Kategoriler yüklenirken hata:', error);
-    }
-  };
-
-  const fetchUnits = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch('http://localhost:5000/api/StockItems', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const items = await response.json();
-        const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
-        setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
-      }
-    } catch (error) {
-      console.error('Units yüklenirken hata:', error);
     }
   };
 
@@ -115,38 +84,24 @@ const StockCards = () => {
       console.log('API\'ye gönderilen veri:', newStockCard);
       const token = localStorage.getItem("token");
       
-      const response = await fetch('http://localhost:5000/api/StockItems', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newStockCard)
+      const response = await axios.post("http://localhost:5000/api/StockItems", newStockCard, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log('API Response Status:', response.status);
-
-      if (response.ok) {
-        const addedItem = await response.json();
-        setStockItems(prev => [addedItem, ...prev]);
-        setShowAddModal(false);
-        alert('Stok kartı başarıyla eklendi!');
-      } else {
-        const errorData = await response.json().catch(() => null);
-        console.error('API Error Response:', errorData);
-        
-        let errorMessage = 'Stok kartı eklenirken hata oluştu!';
-        if (errorData && errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData && errorData.errors) {
-          errorMessage = Object.values(errorData.errors).join(', ');
-        }
-        
-        alert('Hata: ' + errorMessage);
-      }
+      setStockItems(prev => [response.data, ...prev]);
+      setShowAddModal(false);
+      alert('Stok kartı başarıyla eklendi!');
     } catch (error) {
       console.error('Stok kartı eklenirken hata:', error);
-      alert('Bağlantı hatası: ' + error.message);
+      
+      let errorMessage = 'Stok kartı eklenirken hata oluştu!';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        errorMessage = Object.values(error.response.data.errors).join(', ');
+      }
+      
+      alert('Hata: ' + errorMessage);
     }
   };
 
@@ -154,7 +109,6 @@ const StockCards = () => {
     try {
       const token = localStorage.getItem("token");
       
-      // PUT işlemi için backend'in beklediği format
       const updateData = {
         itemCode: updatedStockCard.itemCode,
         name: updatedStockCard.name,
@@ -179,30 +133,19 @@ const StockCards = () => {
         isDiscontinued: updatedStockCard.isDiscontinued || false
       };
 
-      const response = await fetch(`http://localhost:5000/api/StockItems/${updatedStockCard.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateData)
+      const response = await axios.put(`http://localhost:5000/api/StockItems/${updatedStockCard.id}`, updateData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        const updatedItem = await response.json();
-        setStockItems(prev => prev.map(item => 
-          item.id === updatedItem.id ? updatedItem : item
-        ));
-        setShowEditModal(false);
-        setSelectedItem(null);
-        alert('Stok kartı başarıyla güncellendi!');
-      } else {
-        const errorData = await response.json().catch(() => null);
-        alert('Güncelleme hatası: ' + (errorData?.message || 'Stok kartı güncellenemedi'));
-      }
+      setStockItems(prev => prev.map(item => 
+        item.id === response.data.id ? response.data : item
+      ));
+      setShowEditModal(false);
+      setSelectedItem(null);
+      alert('Stok kartı başarıyla güncellendi!');
     } catch (error) {
       console.error('Stok kartı güncellenirken hata:', error);
-      alert('Güncelleme hatası: ' + error.message);
+      alert('Güncelleme hatası: ' + (error.response?.data?.message || 'Stok kartı güncellenemedi'));
     }
   };
 
@@ -216,24 +159,15 @@ const StockCards = () => {
     try {
       const token = localStorage.getItem("token");
       
-      const response = await fetch(`http://localhost:5000/api/StockItems/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      await axios.delete(`http://localhost:5000/api/StockItems/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        setStockItems(prev => prev.filter(item => item.id !== id));
-        alert('Stok kartı başarıyla silindi!');
-      } else {
-        const errorData = await response.json();
-        alert('Silme hatası: ' + (errorData.message || 'Stok kartı silinemedi'));
-      }
+      setStockItems(prev => prev.filter(item => item.id !== id));
+      alert('Stok kartı başarıyla silindi!');
     } catch (error) {
       console.error('Stok kartı silinirken hata:', error);
-      alert('Bağlantı hatası: ' + error.message);
+      alert('Silme hatası: ' + (error.response?.data?.message || 'Stok kartı silinemedi'));
     }
   };
 

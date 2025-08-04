@@ -1,29 +1,28 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { IconX, IconPlus, IconCheck, IconSearch, IconRefresh } from "@tabler/icons-react";
 
 const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const [form, setForm] = useState({
     itemCode: "",
-    itemName: "",
-    categoryId: "",
-    currentStock: "",
-    maxStock: "",
-    minStock: "",
-    criticalStock: "",
-    unitId: "",
-    unitPrice: "",
-    salePrice: "",
-    location: "",
+    name: "",
     description: "",
-    supplier: "",
-    barcode: "",
+    categoryId: "",
+    unitId: "",
+    minimumStock: "",
+    maximumStock: "",
+    reorderLevel: "",
+    purchasePrice: "",
+    salePrice: "",
+    currency: "TRY",
     brand: "",
     model: "",
     specifications: "",
     qualityStandards: "",
     certificateNumbers: "",
     storageConditions: "",
-    shelfLife: ""
+    shelfLife: "",
+    isCriticalItem: false
   });
 
   const [errors, setErrors] = useState({});
@@ -65,28 +64,21 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
       const token = localStorage.getItem("token");
 
       const [itemsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/StockItems', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
         })
       ]);
 
-      if (itemsRes.ok) {
-        const items = await itemsRes.json();
-        setExistingItems(items);
-        
-        // StockItems'dan categories çıkar
-        const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
-        setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
-        
-        // StockItems'dan units çıkar
-        const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
-        setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
-      } else {
-        console.error("Modal verileri yetkisiz erişim:", itemsRes.status);
-      }
+      const items = itemsRes.data;
+      setExistingItems(items);
+      
+      // StockItems'dan categories çıkar
+      const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
+      setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
+      
+      // StockItems'dan units çıkar
+      const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
+      setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
 
       // Suppliers ve locations için API endpoint varsa buraya ekle
       setSuppliers([]);
@@ -112,7 +104,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
     
-    if (field === "itemName") {
+    if (field === "name") {
       setSearchTerm(value);
     }
     
@@ -124,10 +116,10 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const selectExistingItem = (item) => {
     setForm(prev => ({
       ...prev,
-      itemName: item.name,
+      name: item.name,
       categoryId: item.categoryId?.toString() || "",
       unitId: item.unitId?.toString() || "",
-      unitPrice: item.purchasePrice?.toString() || "",
+      purchasePrice: item.purchasePrice?.toString() || "",
       salePrice: item.salePrice?.toString() || "",
       description: item.description || "",
       brand: item.brand || "",
@@ -140,18 +132,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const handleQuickFill = () => {
     const sampleData = {
       itemCode: generateItemCode(),
-      itemName: "Örnek Malzeme",
+      name: "Örnek Malzeme",
       categoryId: categories[0]?.id?.toString() || "1",
-      currentStock: "100",
-      maxStock: "500",
-      minStock: "20",
-      criticalStock: "5",
+      minimumStock: "20",
+      maximumStock: "500",
+      reorderLevel: "5",
       unitId: units[0]?.id?.toString() || "1",
-      unitPrice: "10.50",
+      purchasePrice: "10.50",
       salePrice: "12.60",
-      location: locations[0] || "DEPO-A-01",
-      supplier: suppliers[0] || "",
-      barcode: generateBarcode().toString(),
+      currency: "TRY",
       brand: "Örnek Marka",
       model: "M-001",
       description: "Örnek açıklama",
@@ -159,7 +148,8 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
       qualityStandards: "ISO 9001",
       certificateNumbers: "CERT-001",
       storageConditions: "Kuru ortam",
-      shelfLife: "365"
+      shelfLife: "365",
+      isCriticalItem: false
     };
     setForm(prev => ({ ...prev, ...sampleData }));
   };
@@ -167,16 +157,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!form.itemName.trim()) newErrors.itemName = "Malzeme adı zorunludur";
+    if (!form.name.trim()) newErrors.name = "Malzeme adı zorunludur";
     if (!form.categoryId) newErrors.categoryId = "Kategori zorunludur";
     if (!form.unitId) newErrors.unitId = "Birim zorunludur";
-    if (!form.currentStock || parseFloat(form.currentStock) < 0) newErrors.currentStock = "Geçerli bir stok miktarı giriniz";
-    if (!form.minStock || parseFloat(form.minStock) < 0) newErrors.minStock = "Geçerli bir minimum stok giriniz";
-    if (!form.criticalStock || parseFloat(form.criticalStock) < 0) newErrors.criticalStock = "Geçerli bir kritik stok giriniz";
-    if (!form.unitPrice || parseFloat(form.unitPrice) <= 0) newErrors.unitPrice = "Geçerli bir birim fiyat giriniz";
+    if (!form.minimumStock || parseFloat(form.minimumStock) < 0) newErrors.minimumStock = "Geçerli bir minimum stok giriniz";
+    if (!form.reorderLevel || parseFloat(form.reorderLevel) < 0) newErrors.reorderLevel = "Geçerli bir kritik stok giriniz";
+    if (!form.purchasePrice || parseFloat(form.purchasePrice) <= 0) newErrors.purchasePrice = "Geçerli bir alış fiyatı giriniz";
 
-    if (parseFloat(form.criticalStock) >= parseFloat(form.minStock)) {
-      newErrors.criticalStock = "Kritik stok, minimum stoktan küçük olmalıdır";
+    if (parseFloat(form.reorderLevel) >= parseFloat(form.minimumStock)) {
+      newErrors.reorderLevel = "Kritik stok, minimum stoktan küçük olmalıdır";
     }
 
     setErrors(newErrors);
@@ -193,16 +182,16 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     try {
       const stockData = {
         itemCode: form.itemCode || generateItemCode(),
-        name: form.itemName,
+        name: form.name,
         description: form.description || "",
         categoryId: parseInt(form.categoryId),
         unitId: parseInt(form.unitId),
-        minimumStock: parseFloat(form.minStock),
-        maximumStock: parseFloat(form.maxStock) || parseFloat(form.currentStock) * 5,
-        reorderLevel: parseFloat(form.criticalStock),
-        purchasePrice: parseFloat(form.unitPrice),
-        salePrice: parseFloat(form.salePrice) || parseFloat(form.unitPrice) * 1.2,
-        currency: "TRY",
+        minimumStock: parseFloat(form.minimumStock),
+        maximumStock: parseFloat(form.maximumStock) || parseFloat(form.minimumStock) * 5,
+        reorderLevel: parseFloat(form.reorderLevel),
+        purchasePrice: parseFloat(form.purchasePrice),
+        salePrice: parseFloat(form.salePrice) || parseFloat(form.purchasePrice) * 1.2,
+        currency: form.currency,
         brand: form.brand || "",
         model: form.model || "",
         specifications: form.specifications || "",
@@ -210,7 +199,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         certificateNumbers: form.certificateNumbers || "",
         storageConditions: form.storageConditions || "",
         shelfLife: parseInt(form.shelfLife) || 0,
-        isCriticalItem: parseFloat(form.currentStock) <= parseFloat(form.criticalStock)
+        isCriticalItem: form.isCriticalItem
       };
       
       console.log('Gönderilen veri:', stockData);
@@ -219,26 +208,24 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
       
       setForm({
         itemCode: "",
-        itemName: "",
-        categoryId: "",
-        currentStock: "",
-        maxStock: "",
-        minStock: "",
-        criticalStock: "",
-        unitId: "",
-        unitPrice: "",
-        salePrice: "",
-        location: "",
+        name: "",
         description: "",
-        supplier: "",
-        barcode: "",
+        categoryId: "",
+        unitId: "",
+        minimumStock: "",
+        maximumStock: "",
+        reorderLevel: "",
+        purchasePrice: "",
+        salePrice: "",
+        currency: "TRY",
         brand: "",
         model: "",
         specifications: "",
         qualityStandards: "",
         certificateNumbers: "",
         storageConditions: "",
-        shelfLife: ""
+        shelfLife: "",
+        isCriticalItem: false
       });
       setSearchTerm("");
       
@@ -322,15 +309,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     </label>
                     <input
                       type="text"
-                      value={form.itemName}
-                      onChange={(e) => handleChange("itemName", e.target.value)}
+                      value={form.name}
+                      onChange={(e) => handleChange("name", e.target.value)}
                       placeholder="Malzeme adını giriniz veya arayın"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.itemName ? 'border-red-500' : 'border-gray-300'
+                        errors.name ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
-                    {errors.itemName && (
-                      <p className="text-red-500 text-xs mt-1">{errors.itemName}</p>
+                    {errors.name && (
+                      <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                     )}
                     
                     {/* Malzeme önerileri */}
@@ -424,25 +411,25 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Stok Bilgileri
-                  <span className="text-sm font-normal text-gray-600 ml-2">(Kritik &lt; Min &lt; Mevcut)</span>
+                  <span className="text-sm font-normal text-gray-600 ml-2">(Kritik &lt; Min &lt; Max)</span>
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mevcut Stok *
+                      Minimum Stok *
                     </label>
                     <input
                       type="number"
                       step="0.1"
-                      value={form.currentStock}
-                      onChange={(e) => handleChange("currentStock", e.target.value)}
+                      value={form.minimumStock}
+                      onChange={(e) => handleChange("minimumStock", e.target.value)}
                       placeholder="0.0"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.currentStock ? 'border-red-500' : 'border-gray-300'
+                        errors.minimumStock ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
-                    {errors.currentStock && (
-                      <p className="text-red-500 text-xs mt-1">{errors.currentStock}</p>
+                    {errors.minimumStock && (
+                      <p className="text-red-500 text-xs mt-1">{errors.minimumStock}</p>
                     )}
                   </div>
 
@@ -453,30 +440,11 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     <input
                       type="number"
                       step="0.1"
-                      value={form.maxStock}
-                      onChange={(e) => handleChange("maxStock", e.target.value)}
+                      value={form.maximumStock}
+                      onChange={(e) => handleChange("maximumStock", e.target.value)}
                       placeholder="0.0"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Minimum Stok *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form.minStock}
-                      onChange={(e) => handleChange("minStock", e.target.value)}
-                      placeholder="0.0"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.minStock ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.minStock && (
-                      <p className="text-red-500 text-xs mt-1">{errors.minStock}</p>
-                    )}
                   </div>
 
                   <div>
@@ -486,78 +454,24 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     <input
                       type="number"
                       step="0.1"
-                      value={form.criticalStock}
-                      onChange={(e) => handleChange("criticalStock", e.target.value)}
+                      value={form.reorderLevel}
+                      onChange={(e) => handleChange("reorderLevel", e.target.value)}
                       placeholder="0.0"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.criticalStock ? 'border-red-500' : 'border-gray-300'
+                        errors.reorderLevel ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
-                    {errors.criticalStock && (
-                      <p className="text-red-500 text-xs mt-1">{errors.criticalStock}</p>
+                    {errors.reorderLevel && (
+                      <p className="text-red-500 text-xs mt-1">{errors.reorderLevel}</p>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Tedarikçi ve Lokasyon */}
+              {/* Fiyat Bilgileri */}
               <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Tedarikçi ve Lokasyon</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Fiyat Bilgileri</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tedarikçi
-                    </label>
-                    <select
-                      value={form.supplier}
-                      onChange={(e) => handleChange("supplier", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                    >
-                      <option value="">Tedarikçi Seçiniz</option>
-                      {suppliers.map((supplier) => (
-                        <option key={supplier} value={supplier}>{supplier}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lokasyon
-                    </label>
-                    <select
-                      value={form.location}
-                      onChange={(e) => handleChange("location", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                    >
-                      <option value="">Lokasyon Seçiniz</option>
-                      {locations.map((location) => (
-                        <option key={location} value={location}>{location}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Barkod
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={form.barcode}
-                        onChange={(e) => handleChange("barcode", e.target.value)}
-                        placeholder="Barkod numarası"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleChange("barcode", generateBarcode().toString())}
-                        className="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-                      >
-                        <IconPlus size={16} />
-                      </button>
-                    </div>
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Alış Fiyatı (₺) *
@@ -565,15 +479,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     <input
                       type="number"
                       step="0.01"
-                      value={form.unitPrice}
-                      onChange={(e) => handleChange("unitPrice", e.target.value)}
+                      value={form.purchasePrice}
+                      onChange={(e) => handleChange("purchasePrice", e.target.value)}
                       placeholder="0.00"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.unitPrice ? 'border-red-500' : 'border-gray-300'
+                        errors.purchasePrice ? 'border-red-500' : 'border-gray-300'
                       }`}
                     />
-                    {errors.unitPrice && (
-                      <p className="text-red-500 text-xs mt-1">{errors.unitPrice}</p>
+                    {errors.purchasePrice && (
+                      <p className="text-red-500 text-xs mt-1">{errors.purchasePrice}</p>
                     )}
                   </div>
 
@@ -589,6 +503,21 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                       placeholder="0.00"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Para Birimi
+                    </label>
+                    <select
+                      value={form.currency}
+                      onChange={(e) => handleChange("currency", e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    >
+                      <option value="TRY">TRY</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -661,6 +590,20 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Durum Bilgileri */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Durum Bilgileri</h3>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.isCriticalItem}
+                    onChange={(e) => handleChange("isCriticalItem", e.target.checked)}
+                    className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 text-sm text-gray-700">Kritik Malzeme</label>
                 </div>
               </div>
 
