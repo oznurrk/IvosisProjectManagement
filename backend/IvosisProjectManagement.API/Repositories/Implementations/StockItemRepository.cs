@@ -8,96 +8,125 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
 
     public async Task<(IEnumerable<StockItemDto> Items, int TotalCount)> GetFilteredAsync(StockItemFilterDto filter)
     {
-        var query = _context.StockItems
-            .Include(x => x.Category)
-            .Include(x => x.Unit)
-            .Include(x => x.CreatedByUser)
-            .Include(x => x.StockBalances)
-            .AsQueryable();
-
-        // Apply filters
-        if (!string.IsNullOrEmpty(filter.Search))
+        try
         {
-            query = query.Where(x => x.Name.Contains(filter.Search) ||
-                                    x.ItemCode.Contains(filter.Search) ||
-                                    x.Brand.Contains(filter.Search));
+            // İlişkili tabloları include edin
+            var query = _context.StockItems
+                .Include(x => x.Category)
+                .Include(x => x.Unit)
+                .Include(x => x.CreatedByUser)
+                .Include(x => x.StockBalances)
+                .AsQueryable();
+
+            // Apply filters (güvenli şekilde)
+            if (!string.IsNullOrEmpty(filter.Search))
+            {
+                query = query.Where(x => (x.Name ?? "").Contains(filter.Search) ||
+                                        (x.ItemCode ?? "").Contains(filter.Search) ||
+                                        (x.Brand ?? "").Contains(filter.Search));
+            }
+
+            if (filter.CategoryId.HasValue)
+            {
+                query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
+            }
+
+            if (filter.IsActive.HasValue)
+            {
+                query = query.Where(x => x.IsActive == filter.IsActive.Value);
+            }
+
+            if (filter.IsCritical.HasValue)
+            {
+                query = query.Where(x => x.IsCriticalItem == filter.IsCritical.Value);
+            }
+
+            if (filter.CreatedFrom.HasValue)
+            {
+                query = query.Where(x => x.CreatedAt >= filter.CreatedFrom.Value);
+            }
+
+            if (filter.CreatedTo.HasValue)
+            {
+                query = query.Where(x => x.CreatedAt <= filter.CreatedTo.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            // Apply sorting (güvenli şekilde) - SortDirection null olabilir
+            query = (!string.IsNullOrEmpty(filter.SortDirection) && filter.SortDirection.ToUpper() == "DESC")
+                ? query.OrderByDescending(GetSortExpression(filter.SortBy))
+                : query.OrderBy(GetSortExpression(filter.SortBy));
+
+            // Apply pagination
+            query = query.Skip((filter.Page - 1) * filter.PageSize)
+                        .Take(filter.PageSize);
+
+           
+            var items = await query.Select(x => new StockItemDto
+            {
+                Id = x.Id,
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",
+                CategoryId = x.CategoryId,
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                MinimumStock = x.MinimumStock,
+                MaximumStock = x.MaximumStock,
+                ReorderLevel = x.ReorderLevel,
+                PurchasePrice = x.PurchasePrice,
+                SalePrice = x.SalePrice,
+                Currency = x.Currency ?? "",
+                Brand = x.Brand ?? "",
+                Model = x.Model ?? "",
+                Specifications = x.Specifications ?? "",
+                QualityStandards = x.QualityStandards ?? "",
+                CertificateNumbers = x.CertificateNumbers ?? "",
+                StorageConditions = x.StorageConditions ?? "",
+                ShelfLife = x.ShelfLife,
+                IsActive = x.IsActive,
+                IsDiscontinued = x.IsDiscontinued,
+                IsCriticalItem = x.IsCriticalItem,
+                CreatedAt = x.CreatedAt,
+                CreatedBy = x.CreatedBy,
+                CreatedByName = x.CreatedByUser != null ? (x.CreatedByUser.Name ?? "") : "",
+                UpdatedAt = x.UpdatedAt,
+                UpdatedBy = x.UpdatedBy,
+                
+                // StockBalances null safe hesaplaması  
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
+                StockStatus = DetermineStockStatusSafe(
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
+               
+          
+            }).ToListAsync();
+
+            return (items, totalCount);
         }
-
-        if (filter.CategoryId.HasValue)
+        catch (Exception ex)
         {
-            query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
-        }
-
-        if (filter.IsActive.HasValue)
-        {
-            query = query.Where(x => x.IsActive == filter.IsActive.Value);
-        }
-
-        if (filter.IsCritical.HasValue)
-        {
-            query = query.Where(x => x.IsCriticalItem == filter.IsCritical.Value);
-        }
-
-        if (filter.CreatedFrom.HasValue)
-        {
-            query = query.Where(x => x.CreatedAt >= filter.CreatedFrom.Value);
-        }
-
-        if (filter.CreatedTo.HasValue)
-        {
-            query = query.Where(x => x.CreatedAt <= filter.CreatedTo.Value);
-        }
-
-        var totalCount = await query.CountAsync();
-
-        // Apply sorting
-        query = filter.SortDirection.ToUpper() == "DESC"
-            ? query.OrderByDescending(GetSortExpression(filter.SortBy))
-            : query.OrderBy(GetSortExpression(filter.SortBy));
-
-        // Apply pagination
-        query = query.Skip((filter.Page - 1) * filter.PageSize)
-                     .Take(filter.PageSize);
-
-        var items = await query.Select(x => new StockItemDto
-        {
-            Id = x.Id,
-            ItemCode = x.ItemCode,
-            Name = x.Name,
-            Description = x.Description,
-            CategoryId = x.CategoryId,
-            CategoryName = x.Category.Name,
-            UnitId = x.UnitId,
-            UnitName = x.Unit.Name,
-            MinimumStock = x.MinimumStock,
-            MaximumStock = x.MaximumStock,
-            ReorderLevel = x.ReorderLevel,
-            PurchasePrice = x.PurchasePrice,
-            SalePrice = x.SalePrice,
-            Currency = x.Currency,
-            Brand = x.Brand,
-            Model = x.Model,
-            Specifications = x.Specifications,
-            QualityStandards = x.QualityStandards,
-            CertificateNumbers = x.CertificateNumbers,
-            StorageConditions = x.StorageConditions,
-            ShelfLife = x.ShelfLife,
-            IsActive = x.IsActive,
-            IsDiscontinued = x.IsDiscontinued,
-            IsCriticalItem = x.IsCriticalItem,
-            CreatedAt = x.CreatedAt,
-            CreatedBy = x.CreatedBy,
-            CreatedByName = x.CreatedByUser.Name,
-            UpdatedAt = x.UpdatedAt,
-            UpdatedBy = x.UpdatedBy,
-            CurrentStock = x.StockBalances.Sum(b => b.CurrentQuantity),
-            AvailableStock = x.StockBalances.Sum(b => b.AvailableQuantity),
-            ReservedStock = x.StockBalances.Sum(b => b.ReservedQuantity),
-            StockStatus = x.StockBalances.Sum(b => b.AvailableQuantity) <= x.MinimumStock ? "LOW_STOCK" :
-                         x.StockBalances.Sum(b => b.CurrentQuantity) >= x.MaximumStock ? "OVERSTOCK" : "NORMAL"
-        }).ToListAsync();
-
-        return (items, totalCount);
+            throw new Exception($"Repository GetFilteredAsync Error: {ex.Message} - Inner: {ex.InnerException?.Message}", ex);
+        }   
+        
+    }
+    // Stock status'u hesaplayan yardımcı method - NULL SAFE
+    private static string DetermineStockStatusSafe(decimal availableStock, decimal currentStock, decimal minimumStock, decimal maximumStock)
+    {
+        if (currentStock <= 0)
+            return "OUT_OF_STOCK";
+        else if (availableStock <= minimumStock)
+            return "LOW_STOCK";
+        else if (currentStock >= maximumStock)
+            return "OVERSTOCK";
+        else
+          return "NORMAL";
     }
 
     public async Task<StockItemDto> GetByIdWithDetailsAsync(int id)

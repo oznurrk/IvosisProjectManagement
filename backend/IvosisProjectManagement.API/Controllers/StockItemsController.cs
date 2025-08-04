@@ -102,7 +102,7 @@ using Microsoft.AspNetCore.Mvc;
             }
         }
 
-        [HttpPost]
+    [HttpPost]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<ActionResult<object>> CreateStockItem([FromBody] StockItemDtoCreate dto)
     {

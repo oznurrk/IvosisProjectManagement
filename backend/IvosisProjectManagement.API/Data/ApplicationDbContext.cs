@@ -490,18 +490,44 @@ namespace IvosisProjectManagement.API.Data
             modelBuilder.Entity<StockBalance>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.LastUpdateDate).HasDefaultValueSql("GETDATE()");
-                entity.HasIndex(e => new { e.StockItemId, e.LocationId }).IsUnique();
-
+                
+                entity.Property(e => e.StockItemId)
+                    .IsRequired();
+                    
+                entity.Property(e => e.LocationId)
+                    .IsRequired();
+                    
+                entity.Property(e => e.CurrentQuantity)
+                    .HasColumnType("decimal(18,2)")
+                    .HasDefaultValue(0);
+                    
+                entity.Property(e => e.ReservedQuantity)
+                    .HasColumnType("decimal(18,2)")
+                    .HasDefaultValue(0);
+                    
+                // AvailableQuantity'yi veritabanı kolonu olarak tanımla
+                entity.Property(e => e.AvailableQuantity)
+                    .HasColumnType("decimal(18,2)")
+                    .HasDefaultValue(0);
+                
+                entity.Property(e => e.LastUpdateDate)
+                    .HasDefaultValueSql("GETDATE()");
+                    
+                // Foreign Key relationships
                 entity.HasOne(e => e.StockItem)
-                    .WithMany(e => e.StockBalances)
+                    .WithMany(s => s.StockBalances)
                     .HasForeignKey(e => e.StockItemId)
                     .OnDelete(DeleteBehavior.Restrict);
-
+                    
                 entity.HasOne(e => e.Location)
-                    .WithMany(e => e.StockBalances)
+                    .WithMany(l => l.StockBalances)
                     .HasForeignKey(e => e.LocationId)
                     .OnDelete(DeleteBehavior.Restrict);
+                    
+                // Index'ler
+                entity.HasIndex(e => new { e.StockItemId, e.LocationId })
+                    .IsUnique()
+                    .HasDatabaseName("IX_StockBalance_StockItem_Location");
             });
 
             // StockAlert Configuration
