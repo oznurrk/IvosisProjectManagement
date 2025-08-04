@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace IvosisProjectManagement.API.Models
 {
     public class TaskItem
@@ -14,17 +12,10 @@ namespace IvosisProjectManagement.API.Models
         public int? UpdatedByUserId { get; set; }
         public int? CompanyId { get; set; }
 
-        // Navigation Properties - BUNLAR DA EKSİK OLABİLİR
-        [ForeignKey("ProcessId")]
+        // Navigation Properties - ForeignKey attribute'ları KALDıRıLDı
         public virtual Process? Process { get; set; }
-        
-        [ForeignKey("CreatedByUserId")]
         public virtual User? CreatedByUser { get; set; }
-        
-        [ForeignKey("UpdatedByUserId")]
         public virtual User? UpdatedByUser { get; set; }
-        
-        [ForeignKey("CompanyId")]
         public virtual Company? Company { get; set; }
     }
 }

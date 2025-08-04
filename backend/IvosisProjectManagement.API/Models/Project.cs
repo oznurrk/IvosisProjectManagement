@@ -53,22 +53,11 @@ namespace IvosisProjectManagement.API.Models
         public int? UpdatedByUserId { get; set; }
 
         // Navigation Properties
-        [ForeignKey("CompanyId")]
         public virtual Company? Company { get; set; }
-        
-        [ForeignKey("PanelBrandId")]
         public virtual PanelBrand? PanelBrand { get; set; }
-        
-        [ForeignKey("InverterBrandId")]
         public virtual InverterBrand? InverterBrand { get; set; }
-        
-        [ForeignKey("ProjectTypeId")]
         public virtual ProjectType? ProjectType { get; set; }
-        
-        [ForeignKey("CreatedByUserId")]
         public virtual User? CreatedByUser { get; set; }
-        
-        [ForeignKey("UpdatedByUserId")]
         public virtual User? UpdatedByUser { get; set; }
         
         public virtual ICollection<ProjectTask> ProjectTasks { get; set; } = new List<ProjectTask>();

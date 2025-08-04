@@ -12,18 +12,12 @@ namespace IvosisProjectManagement.API.Models
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int? UpdatedByUserId { get; set; }
-        [ForeignKey("ParentProcessId")]
-        public virtual Process? ParentProcess { get; set; }
-
-        [ForeignKey("CreatedByUserId")]
-        public virtual User? CreatedByUser { get; set; }
-
-        [ForeignKey("UpdatedByUserId")]
-        public virtual User? UpdatedByUser { get; set; }
-
         public int? CompanyId { get; set; }
-
-        [ForeignKey("CompanyId")]
+        
+        // Navigation Properties - ForeignKey attribute'ları KALDıRıLDı
+        public virtual Process? ParentProcess { get; set; }
+        public virtual User? CreatedByUser { get; set; }
+        public virtual User? UpdatedByUser { get; set; }
         public virtual Company? Company { get; set; }
     }
 }

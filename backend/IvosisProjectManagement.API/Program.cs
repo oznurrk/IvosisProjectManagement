@@ -71,6 +71,7 @@ builder.Services.AddScoped<IStockAlertService, StockAlertService>();
 builder.Services.AddScoped<IDashboardStockService, DashboardStockService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
+builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
