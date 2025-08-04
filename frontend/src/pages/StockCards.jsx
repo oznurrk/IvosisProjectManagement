@@ -70,13 +70,6 @@ const StockCards = () => {
       }
     } catch (error) {
       console.error('Kategoriler yüklenirken hata:', error);
-      setCategories([
-        { id: 1, name: "Elektrik Malzemeleri" },
-        { id: 2, name: "Mekanik Parçalar" },
-        { id: 3, name: "Elektronik Bileşenler" },
-        { id: 4, name: "Güvenlik Ekipmanları" },
-        { id: 5, name: "Diğer" }
-      ]);
     }
   };
 
@@ -89,19 +82,14 @@ const StockCards = () => {
         setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
       }
     } catch (error) {
-      console.error('Birimler yüklenirken hata:', error);
-      setUnits([
-        { id: 1, name: "Adet" },
-        { id: 2, name: "Kg" },
-        { id: 3, name: "Lt" },
-        { id: 4, name: "M" },
-        { id: 5, name: "M²" }
-      ]);
+      console.error('Units yüklenirken hata:', error);
     }
   };
 
   const handleAddStockCard = async (newStockCard) => {
     try {
+      console.log('API\'ye gönderilen veri:', newStockCard); // Debug için
+      
       const response = await fetch('http://localhost:5000/api/StockItems', {
         method: 'POST',
         headers: {
@@ -110,14 +98,26 @@ const StockCards = () => {
         body: JSON.stringify(newStockCard)
       });
 
+      console.log('API Response Status:', response.status); // Debug için
+
       if (response.ok) {
         const addedItem = await response.json();
         setStockItems(prev => [addedItem, ...prev]);
         setShowAddModal(false);
         alert('Stok kartı başarıyla eklendi!');
       } else {
-        console.error('API hatası:', response.statusText);
-        alert('Stok kartı eklenirken hata oluştu!');
+        // Detaylı hata bilgisi al
+        const errorData = await response.json().catch(() => null);
+        console.error('API Error Response:', errorData);
+        
+        let errorMessage = 'Stok kartı eklenirken hata oluştu!';
+        if (errorData && errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData && errorData.errors) {
+          errorMessage = Object.values(errorData.errors).join(', ');
+        }
+        
+        alert('Hata: ' + errorMessage);
       }
     } catch (error) {
       console.error('Stok kartı eklenirken hata:', error);
@@ -127,12 +127,37 @@ const StockCards = () => {
 
   const handleEditStockCard = async (updatedStockCard) => {
     try {
+      // PUT işlemi için backend'in beklediği format
+      const updateData = {
+        itemCode: updatedStockCard.itemCode,
+        name: updatedStockCard.name,
+        description: updatedStockCard.description || "",
+        categoryId: updatedStockCard.categoryId,
+        unitId: updatedStockCard.unitId,
+        minimumStock: updatedStockCard.minimumStock,
+        maximumStock: updatedStockCard.maximumStock || updatedStockCard.minimumStock * 5,
+        reorderLevel: updatedStockCard.reorderLevel,
+        purchasePrice: updatedStockCard.purchasePrice,
+        salePrice: updatedStockCard.salePrice,
+        currency: updatedStockCard.currency || "TRY",
+        brand: updatedStockCard.brand || "",
+        model: updatedStockCard.model || "",
+        specifications: updatedStockCard.specifications || "",
+        qualityStandards: updatedStockCard.qualityStandards || "",
+        certificateNumbers: updatedStockCard.certificateNumbers || "",
+        storageConditions: updatedStockCard.storageConditions || "",
+        shelfLife: updatedStockCard.shelfLife || 0,
+        isCriticalItem: updatedStockCard.isCriticalItem,
+        isActive: updatedStockCard.isActive !== false,
+        isDiscontinued: updatedStockCard.isDiscontinued || false
+      };
+
       const response = await fetch(`http://localhost:5000/api/StockItems/${updatedStockCard.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updatedStockCard)
+        body: JSON.stringify(updateData)
       });
 
       if (response.ok) {
@@ -143,6 +168,9 @@ const StockCards = () => {
         setShowEditModal(false);
         setSelectedItem(null);
         alert('Stok kartı başarıyla güncellendi!');
+      } else {
+        const errorData = await response.json().catch(() => null);
+        alert('Güncelleme hatası: ' + (errorData?.message || 'Stok kartı güncellenemedi'));
       }
     } catch (error) {
       console.error('Stok kartı güncellenirken hata:', error);
@@ -203,12 +231,14 @@ const StockCards = () => {
     setCurrentPage(1);
   };
 
-  const getCategoryName = (category) => {
-    return category || 'Bilinmiyor';
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : 'Bilinmiyor';
   };
 
-  const getUnitName = (unit) => {
-    return unit || 'Adet';
+  const getUnitName = (unitId) => {
+    const unit = units.find(u => u.id === unitId);
+    return unit ? unit.name : 'Adet';
   };
 
   const visibleItems = stockItems.filter((item) => {
@@ -347,7 +377,7 @@ const StockCards = () => {
                       <IconPackage className="h-8 w-8 text-ivosis-500" />
                       <div className="ml-3">
                         <h3 className="text-sm font-semibold text-gray-900">{item.itemCode}</h3>
-                        <p className="text-xs text-gray-500">{getCategoryName(item.category)}</p>
+                        <p className="text-xs text-gray-500">{getCategoryName(item.categoryId)}</p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end space-y-1">
@@ -390,19 +420,19 @@ const StockCards = () => {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Mevcut Stok:</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {item.currentStock || 0} {getUnitName(item.unit)}
+                        {item.currentStock || 0} {getUnitName(item.unitId)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Min. Stok:</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {item.minimumStock} {getUnitName(item.unit)}
+                        {item.minimumStock} {getUnitName(item.unitId)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Sipariş Seviyesi:</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {item.reorderLevel} {getUnitName(item.unit)}
+                        {item.reorderLevel} {getUnitName(item.unitId)}
                       </span>
                     </div>
                   </div>

@@ -11,14 +11,7 @@ import {
   IconFileText,
   IconArrowsExchange,
   IconAlertTriangle,
-  IconBoxSeam,
-  IconClipboardList,
-  IconWeight,
-  IconBuilding,
-  IconTool,
-  IconBolt,
-  IconTrendingUp,
-  IconCards
+  IconClipboardList
 } from "@tabler/icons-react";
 
 const StockManagement = () => {
@@ -26,57 +19,35 @@ const StockManagement = () => {
   const [stockStats, setStockStats] = useState(null);
   const [recentMovements, setRecentMovements] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
-  const [userDepartment, setUserDepartment] = useState(null);
+  const [criticalStockItems, setCriticalStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchUserDepartment();
     fetchStockData();
-  }, [userDepartment]);
-
-  const fetchUserDepartment = async () => {
-    try {
-      const response = await fetch('/api/auth/user-department', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUserDepartment(data.department);
-      }
-    } catch (error) {
-      console.error('Kullanıcı departmanı alınamadı:', error);
-      setUserDepartment('STEEL'); // Mock
-    }
-  };
+  }, []);
 
   const fetchStockData = async () => {
-    if (!userDepartment) return;
-    
     try {
       setLoading(true);
       
-      const [statsRes, movementsRes, lowStockRes] = await Promise.all([
-        fetch(`/api/DashboardStock/stats?department=${userDepartment}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        }),
-        fetch(`/api/DashboardStock/recent-movements?department=${userDepartment}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        }),
-        fetch(`/api/StockItems/low-stock?department=${userDepartment}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        })
+      const [lowStockRes, criticalStockRes, stockItemsRes, movementsRes] = await Promise.all([
+        fetch('http://localhost:5000/api/StockItems/low-stock'),
+        fetch('http://localhost:5000/api/StockItems/critical-stock'),
+        fetch('http://localhost:5000/api/StockItems'),
+        fetch('http://localhost:5000/api/StockMovements')
       ]);
 
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStockStats(statsData);
-      }
+      let totalItems = 0;
+      let totalValue = 0;
+      let inStockCount = 0;
+      let outOfStockCount = 0;
 
-      if (movementsRes.ok) {
-        const movementsData = await movementsRes.json();
-        setRecentMovements(movementsData);
+      if (stockItemsRes.ok) {
+        const stockItems = await stockItemsRes.json();
+        totalItems = stockItems.length;
+        totalValue = stockItems.reduce((sum, item) => sum + (item.currentStock * item.purchasePrice || 0), 0);
+        inStockCount = stockItems.filter(item => item.currentStock > 0).length;
+        outOfStockCount = stockItems.filter(item => item.currentStock <= 0).length;
       }
 
       if (lowStockRes.ok) {
@@ -84,40 +55,43 @@ const StockManagement = () => {
         setLowStockItems(lowStockData);
       }
 
+      if (criticalStockRes.ok) {
+        const criticalStockData = await criticalStockRes.json();
+        setCriticalStockItems(criticalStockData);
+      }
+
+      if (movementsRes.ok) {
+        const movementsData = await movementsRes.json();
+        setRecentMovements(movementsData);
+      }
+
+      setStockStats({
+        totalItems,
+        totalValue,
+        lowStockCount: lowStockItems.length,
+        criticalStockCount: criticalStockItems.length,
+        inStockCount,
+        outOfStockCount
+      });
+
     } catch (error) {
       console.error('Stok verileri yüklenirken hata:', error);
       
-      // Mock data - departmana göre
-      const mockStats = userDepartment === 'STEEL' ? {
+      // Mock data
+      setStockStats({
         totalItems: 145,
         totalValue: 2850000,
         lowStockCount: 8,
         criticalStockCount: 3,
         inStockCount: 134,
         outOfStockCount: 2
-      } : {
-        totalItems: 89,
-        totalValue: 1250000,
-        lowStockCount: 5,
-        criticalStockCount: 2,
-        inStockCount: 82,
-        outOfStockCount: 1
-      };
-      
-      setStockStats(mockStats);
+      });
       setRecentMovements([]);
       setLowStockItems([]);
+      setCriticalStockItems([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getDepartmentName = () => {
-    return userDepartment === 'STEEL' ? 'ÇELİK DEPARTMANI' : 'ENERJİ DEPARTMANI';
-  };
-
-  const getDepartmentIcon = () => {
-    return userDepartment === 'STEEL' ? IconTool : IconBolt;
   };
 
   const formatCurrency = (amount) => {
@@ -136,9 +110,9 @@ const StockManagement = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <Header 
-          title={`Stok Yönetimi - ${getDepartmentName()}`}
-          subtitle={`${getDepartmentName()} Stok Kontrol Merkezi`}
-          icon={getDepartmentIcon()}
+          title="Stok Yönetimi"
+          subtitle="Stok Kontrol Merkezi"
+          icon={IconPackage}
           showMenuButton={isMobile}
           onMenuClick={() => setIsMobileMenuOpen(true)}
         />
@@ -149,39 +123,24 @@ const StockManagement = () => {
     );
   }
 
-  const DepartmentIcon = getDepartmentIcon();
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Header
-        title={`Stok Yönetimi - ${getDepartmentName()}`}
-        subtitle={`${getDepartmentName()} Stok Kontrol Merkezi`}
-        icon={DepartmentIcon}
+        title="Stok Yönetimi"
+        subtitle="Stok Kontrol Merkezi"
+        icon={IconPackage}
         showMenuButton={isMobile}
         onMenuClick={() => setIsMobileMenuOpen(true)}
       />
 
       <div className="px-4 space-y-6">
-        {/* Departman Göstergesi */}
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-indigo-500">
-          <div className="flex items-center">
-            <DepartmentIcon className={`h-8 w-8 ${userDepartment === 'STEEL' ? 'text-gray-600' : 'text-yellow-600'}`} />
-            <div className="ml-4">
-              <p className="text-lg font-semibold text-gray-900">{getDepartmentName()}</p>
-              <p className="text-sm text-gray-600">
-                {userDepartment === 'STEEL' ? 'Sac, Bobin, Profil ve Çelik Malzemeler' : 'Kablo, Trafo, Panel ve Elektrik Malzemeleri'}
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* İstatistik Kartları */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
             <div className="flex items-center">
               <IconPackage className="h-8 w-8 text-blue-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Toplam {userDepartment === 'STEEL' ? 'Çelik' : 'Elektrik'} Stok</p>
+                <p className="text-sm font-medium text-gray-500">Toplam Stok</p>
                 <p className="text-2xl font-semibold text-gray-900">{stockStats?.totalItems || 0}</p>
               </div>
             </div>
@@ -212,7 +171,7 @@ const StockManagement = () => {
               <IconBarcode className="h-8 w-8 text-yellow-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Düşük Stok</p>
-                <p className="text-2xl font-semibold text-gray-900">{stockStats?.lowStockCount || 0}</p>
+                <p className="text-2xl font-semibold text-gray-900">{lowStockItems.length}</p>
               </div>
             </div>
           </div>
@@ -222,7 +181,7 @@ const StockManagement = () => {
               <IconAlertTriangle className="h-8 w-8 text-red-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Kritik Stok</p>
-                <p className="text-2xl font-semibold text-gray-900">{stockStats?.criticalStockCount || 0}</p>
+                <p className="text-2xl font-semibold text-gray-900">{criticalStockItems.length}</p>
               </div>
             </div>
           </div>
@@ -305,7 +264,7 @@ const StockManagement = () => {
                           movement.movementType === 'StockIn' ? 'bg-green-500' : 'bg-red-500'
                         }`}></div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{movement.stockItem?.itemName}</p>
+                          <p className="text-sm font-medium text-gray-900">{movement.stockItem?.name}</p>
                           <p className="text-xs text-gray-500">{movement.stockItem?.itemCode}</p>
                         </div>
                       </div>
@@ -350,13 +309,13 @@ const StockManagement = () => {
                       <div className="flex items-center">
                         <IconAlertTriangle className="h-4 w-4 text-red-500 mr-3" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{item.itemName}</p>
+                          <p className="text-sm font-medium text-gray-900">{item.name}</p>
                           <p className="text-xs text-gray-500">{item.itemCode}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium text-red-600">{item.currentStock} {item.unit}</p>
-                        <p className="text-xs text-gray-500">Min: {item.minStock}</p>
+                        <p className="text-xs text-gray-500">Min: {item.minimumStock}</p>
                       </div>
                     </div>
                   ))}
