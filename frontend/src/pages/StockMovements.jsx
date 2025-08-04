@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import axios from "axios";
 import Header from "../components/Header/Header";
 import { 
   IconArrowsExchange, 
@@ -17,7 +18,7 @@ import StockOutModal from "../components/Stock/StockOutModal";
 
 const StockMovements = () => {
   const { isMobile, setIsMobileMenuOpen } = useOutletContext();
-  const [movements, setMovements] = useState([]);
+  const [movements, setMovements] = useState([]); // Başlangıç değeri empty array
   const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,149 +36,103 @@ const StockMovements = () => {
   });
 
   useEffect(() => {
-    fetchMovements();
-    fetchStockItems();
+    fetchAllData();
   }, []);
 
-  const fetchMovements = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       
-      const response = await fetch('http://localhost:5000/api/StockMovements', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      
+      const [movementsRes, stockItemsRes] = await Promise.all([
+        axios.get("http://localhost:5000/api/StockMovements", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      // Movements verilerini set et - array olduğundan emin ol
+      let movementData = [];
+      if (Array.isArray(movementsRes.data)) {
+        movementData = movementsRes.data;
+      } else if (movementsRes.data && typeof movementsRes.data === 'object') {
+        // Eğer data bir object ise, içinde array olup olmadığını kontrol et
+        if (movementsRes.data.items && Array.isArray(movementsRes.data.items)) {
+          movementData = movementsRes.data.items;
+        } else if (movementsRes.data.data && Array.isArray(movementsRes.data.data)) {
+          movementData = movementsRes.data.data;
+        } else if (movementsRes.data.movements && Array.isArray(movementsRes.data.movements)) {
+          movementData = movementsRes.data.movements;
+        }
+      }
+      
+      setMovements(movementData);
+      
+      // StockItems verilerini set et - array olduğundan emin ol
+      let stockData = [];
+      if (Array.isArray(stockItemsRes.data)) {
+        stockData = stockItemsRes.data;
+      } else if (stockItemsRes.data && typeof stockItemsRes.data === 'object') {
+        if (stockItemsRes.data.items && Array.isArray(stockItemsRes.data.items)) {
+          stockData = stockItemsRes.data.items;
+        } else if (stockItemsRes.data.data && Array.isArray(stockItemsRes.data.data)) {
+          stockData = stockItemsRes.data.data;
+        } else if (stockItemsRes.data.stockItems && Array.isArray(stockItemsRes.data.stockItems)) {
+          stockData = stockItemsRes.data.stockItems;
+        }
+      }
+      
+      setStockItems(stockData);
+
+    } catch (error) {
+      console.error('Veriler yüklenirken hata:', error);
+      console.error('Error Details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setMovements(data);
-      } else {
-        console.error("Stok hareketleri yetkisiz erişim:", response.status);
-        // Mock data fallback
-        setMovements([
-          {
-            id: 1,
-            stockItemId: 1,
-            stockItem: { itemCode: 'ITM-001', name: 'Siyah Sac 2mm', unit: 'Ton' },
-            locationId: 1,
-            location: { name: 'DEPO-A-01' },
-            movementType: 'StockIn',
-            quantity: 25.5,
-            unitPrice: 150.00,
-            referenceType: 'Invoice',
-            referenceId: 1,
-            referenceNumber: 'INV-2024-001',
-            description: 'Tedarikçiden gelen mal',
-            notes: 'Kalite kontrolden geçti',
-            movementDate: '2024-01-15T14:30:00'
-          },
-          {
-            id: 2,
-            stockItemId: 2,
-            stockItem: { itemCode: 'ITM-002', name: 'Galvaniz Sac 1.5mm', unit: 'Ton' },
-            locationId: 2,
-            location: { name: 'DEPO-B-02' },
-            movementType: 'StockOut',
-            quantity: 18.2,
-            unitPrice: 180.00,
-            referenceType: 'Order',
-            referenceId: 2,
-            referenceNumber: 'ORD-2024-002',
-            description: 'Müşteri siparişi',
-            notes: 'Sevkiyat tamamlandı',
-            movementDate: '2024-01-15T15:45:00'
-          }
-        ]);
-      }
-    } catch (error) {
-      console.error('Stok hareketleri yüklenirken hata:', error);
-      // Mock data fallback
+      // Hata durumunda boş arrayler set et
       setMovements([]);
+      setStockItems([]);
     } finally {
       setLoading(false);
     }
   };
-  
-  const fetchStockItems = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch('http://localhost:5000/api/StockItems', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log(response);
-      
-      
-      if (response.ok) {
-        const data = await response.json();
-        setStockItems(data);
-      } else {
-        console.error("StockItems yetkisiz erişim:", response.status);
-      }
-    } catch (error) {
-      console.error('Stok kalemleri yüklenirken hata:', error);
-    }
-  };
-  
+
   const handleStockIn = async (stockInData) => {
     try {
       const token = localStorage.getItem("token");
       
-      const response = await fetch('http://localhost:5000/api/StockMovements/stock-in', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(stockInData)
+      const response = await axios.post("http://localhost:5000/api/StockMovements/stock-in", stockInData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
-      if (response.ok) {
-        const result = await response.json();
-        await fetchMovements(); // Listeyi yenile
-        setShowStockInModal(false);
-        alert('Stok girişi başarıyla kaydedildi!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Stok girişi kaydedilemedi');
-      }
+
+      await fetchAllData(); // Listeyi yenile
+      setShowStockInModal(false);
+      alert('Stok girişi başarıyla kaydedildi!');
     } catch (error) {
-      console.error('Stok giriş hatası:', error);
-      alert('Hata: ' + error.message);
+      alert('Hata: ' + (error.response?.data?.message || 'Stok girişi kaydedilemedi'));
     }
   };
-  
+
   const handleStockOut = async (stockOutData) => {
     try {
       const token = localStorage.getItem("token");
       
-      const response = await fetch('http://localhost:5000/api/StockMovements/stock-out', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(stockOutData)
+      const response = await axios.post("http://localhost:5000/api/StockMovements/stock-out", stockOutData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
-      if (response.ok) {
-        const result = await response.json();
-        await fetchMovements(); // Listeyi yenile
-        setShowStockOutModal(false);
-        alert('Stok çıkışı başarıyla kaydedildi!');
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Stok çıkışı kaydedilemedi');
-      }
+
+      await fetchAllData(); // Listeyi yenile
+      setShowStockOutModal(false);
+      alert('Stok çıkışı başarıyla kaydedildi!');
     } catch (error) {
-      console.error('Stok çıkış hatası:', error);
-      alert('Hata: ' + error.message);
+      alert('Hata: ' + (error.response?.data?.message || 'Stok çıkışı kaydedilemedi'));
     }
   };
 
@@ -200,8 +155,8 @@ const StockMovements = () => {
     setCurrentPage(1);
   };
 
-  const visibleMovements = movements.filter((movement) => {
-    const itemMatch = !searchFilters.stockItemId || movement.stockItemId === parseInt(searchFilters.stockItemId);
+  const visibleMovements = Array.isArray(movements) ? movements.filter((movement) => {
+    const itemMatch = !searchFilters.stockItemId || movement.stockItemId === parseInt(searchFilters.stockItemId); // String'i number'a çevir
     const typeMatch = !searchFilters.movementType || movement.movementType === searchFilters.movementType;
     const referenceMatch = (movement.referenceNumber || "").toLowerCase().includes(searchFilters.referenceNumber.toLowerCase());
     
@@ -214,7 +169,8 @@ const StockMovements = () => {
     }
 
     return itemMatch && typeMatch && referenceMatch && dateMatch;
-  });
+  }) : [];
+
 
   const totalPages = Math.ceil(visibleMovements.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -305,7 +261,15 @@ const StockMovements = () => {
           handleFilterChange={handleFilterChange}
           clearFilters={clearFilters}
           filtersConfig={[
-            { key: "stockItemId", type: "select", placeholder: "Stok Kalemi", options: stockItems.map(item => ({ value: item.id, label: item.name })) },
+            { 
+              key: "stockItemId", 
+              type: "select", 
+              placeholder: "Stok Kalemi", 
+              options: Array.isArray(stockItems) ? stockItems.map(item => ({ 
+                value: item.id.toString(), // Number'ı string'e çevir
+                label: item.name 
+              })) : []
+            },
             {
               key: "movementType",
               type: "select",
@@ -328,75 +292,83 @@ const StockMovements = () => {
       {/* Hareketler Tablosu */}
       <div className="px-4">
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hareket
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stok Kodu
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Malzeme Adı
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Lokasyon
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Miktar
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tarih
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Referans No
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Açıklama
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentMovements.map((movement) => (
-                  <tr key={movement.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4">
-                      <div className="flex items-center">
-                        {getMovementIcon(movement.movementType)}
-                        <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMovementTypeColor(movement.movementType)}`}>
-                          {getMovementTypeName(movement.movementType)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                      {movement.stockItem?.itemCode}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      {movement.stockItem?.name}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      {movement.location?.name}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      <span className={movement.movementType === "StockOut" ? "text-red-600" : "text-green-600"}>
-                        {movement.movementType === "StockOut" ? "-" : "+"}{movement.quantity} {movement.stockItem?.unit}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      {formatDate(movement.movementDate)}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      {movement.referenceNumber || "-"}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-500">
-                      {movement.description || "-"}
-                    </td>
+          {currentMovements.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 text-lg">
+                {movements.length === 0 ? "Henüz stok hareketi bulunmuyor." : "Filtreleme kriterlerine uygun hareket bulunamadı."}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Hareket
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stok Kodu
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Malzeme Adı
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Lokasyon
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Miktar
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tarih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Referans No
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Açıklama
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentMovements.map((movement) => (
+                    <tr key={movement.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center">
+                          {getMovementIcon(movement.movementType)}
+                          <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMovementTypeColor(movement.movementType)}`}>
+                            {getMovementTypeName(movement.movementType)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                        {movement.stockItem?.itemCode}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        {movement.stockItem?.name}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        {movement.location?.name}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        <span className={movement.movementType === "StockOut" ? "text-red-600" : "text-green-600"}>
+                          {movement.movementType === "StockOut" ? "-" : "+"}{movement.quantity} {movement.stockItem?.unit}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        {formatDate(movement.movementDate)}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        {movement.referenceNumber || "-"}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-500">
+                        {movement.description || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -471,13 +443,13 @@ const StockMovements = () => {
         isOpen={showStockInModal}
         onClose={() => setShowStockInModal(false)}
         onSubmit={handleStockIn}
-        stockItems={stockItems}
+        stockItems={Array.isArray(stockItems) ? stockItems : []}
       />
       <StockOutModal
         isOpen={showStockOutModal}
         onClose={() => setShowStockOutModal(false)}
         onSubmit={handleStockOut}
-        stockItems={stockItems}
+        stockItems={Array.isArray(stockItems) ? stockItems : []}
       />
 
       {/* Stok Hareketi Ekle */}

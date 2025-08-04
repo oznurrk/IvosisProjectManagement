@@ -44,10 +44,29 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
         })
       ]);
 
-      const items = itemsRes.data;
+      console.log("StockOutModal API Response:", itemsRes.data);
+
+      // Safely handle the response data
+      let items = [];
+      if (Array.isArray(itemsRes.data)) {
+        items = itemsRes.data;
+      } else if (itemsRes.data && typeof itemsRes.data === 'object') {
+        // Check if data is wrapped in an object
+        if (itemsRes.data.items && Array.isArray(itemsRes.data.items)) {
+          items = itemsRes.data.items;
+        } else if (itemsRes.data.data && Array.isArray(itemsRes.data.data)) {
+          items = itemsRes.data.data;
+        } else if (itemsRes.data.stockItems && Array.isArray(itemsRes.data.stockItems)) {
+          items = itemsRes.data.stockItems;
+        }
+      }
+
+      console.log("Processed StockOut Items:", items);
       setStockItems(items);
     } catch (error) {
-      console.error('Veri yükleme hatası:', error);
+      console.error('StockOutModal veri yükleme hatası:', error);
+      // Set empty array on error to prevent map errors
+      setStockItems([]);
     }
   };
 
@@ -68,7 +87,7 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
     setForm(prev => ({ ...prev, [field]: value }));
     
     if (field === "itemId") {
-      const item = stockItems.find(i => i.id.toString() === value);
+      const item = stockItems.find(i => i.id.toString() === value); // String olarak karşılaştır
       setSelectedItem(item);
     }
     
@@ -182,11 +201,15 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
                   }`}
                 >
                   <option value="">Malzeme Seçiniz</option>
-                  {stockItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.itemCode} - {item.name} (Mevcut: {item.currentStock} {item.unit})
-                    </option>
-                  ))}
+                  {Array.isArray(stockItems) && stockItems.length > 0 ? (
+                    stockItems.map((item) => (
+                      <option key={item.id} value={item.id.toString()}>
+                        {item.itemCode} - {item.name} (Mevcut: {item.currentStock || 0} {item.unit || 'Adet'})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Yükleniyor...</option>
+                  )}
                 </select>
                 {errors.itemId && (
                   <p className="text-red-500 text-xs mt-1">{errors.itemId}</p>

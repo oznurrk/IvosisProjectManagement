@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useOutletContext, Link } from "react-router-dom";
 import axios from "axios";
 import Header from "../components/Header/Header";
+import StockInModal from "../components/Stock/StockInModal";
+import StockOutModal from "../components/Stock/StockOutModal";
 import { 
   IconPackage, 
   IconPlus, 
@@ -22,6 +24,10 @@ const StockManagement = () => {
   const [lowStockItems, setLowStockItems] = useState([]);
   const [criticalStockItems, setCriticalStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [showStockInModal, setShowStockInModal] = useState(false);
+  const [showStockOutModal, setShowStockOutModal] = useState(false);
 
   useEffect(() => {
     fetchStockData();
@@ -52,23 +58,78 @@ const StockManagement = () => {
       let inStockCount = 0;
       let outOfStockCount = 0;
 
-      // StockItems verilerini işle
-      const stockItems = stockItemsRes.data;
-      totalItems = stockItems.length;
-      totalValue = stockItems.reduce((sum, item) => sum + (item.currentStock * item.purchasePrice || 0), 0);
-      inStockCount = stockItems.filter(item => item.currentStock > 0).length;
-      outOfStockCount = stockItems.filter(item => item.currentStock <= 0).length;
+      // StockItems verilerini işle - array olduğundan emin ol
+      let stockItems = [];
+      if (Array.isArray(stockItemsRes.data)) {
+        stockItems = stockItemsRes.data;
+      } else if (stockItemsRes.data && typeof stockItemsRes.data === 'object') {
+        // Eğer data bir object ise, içinde array olup olmadığını kontrol et
+        if (stockItemsRes.data.items && Array.isArray(stockItemsRes.data.items)) {
+          stockItems = stockItemsRes.data.items;
+        } else if (stockItemsRes.data.data && Array.isArray(stockItemsRes.data.data)) {
+          stockItems = stockItemsRes.data.data;
+        } else if (stockItemsRes.data.stockItems && Array.isArray(stockItemsRes.data.stockItems)) {
+          stockItems = stockItemsRes.data.stockItems;
+        }
+      }
 
-      // Diğer verileri set et
-      setLowStockItems(lowStockRes.data);
-      setCriticalStockItems(criticalStockRes.data);
-      setRecentMovements(movementsRes.data);
+      // Array olduğundan emin olduktan sonra işlemleri yap
+      if (Array.isArray(stockItems) && stockItems.length > 0) {
+        totalItems = stockItems.length;
+        totalValue = stockItems.reduce((sum, item) => {
+          const currentStock = Number(item.currentStock) || 0;
+          const purchasePrice = Number(item.purchasePrice) || 0;
+          return sum + (currentStock * purchasePrice);
+        }, 0);
+        inStockCount = stockItems.filter(item => (Number(item.currentStock) || 0) > 0).length;
+        outOfStockCount = stockItems.filter(item => (Number(item.currentStock) || 0) <= 0).length;
+      }
+
+      // Diğer verileri set et - array olduğundan emin ol
+      let lowStockData = [];
+      if (Array.isArray(lowStockRes.data)) {
+        lowStockData = lowStockRes.data;
+      } else if (lowStockRes.data && typeof lowStockRes.data === 'object') {
+        if (lowStockRes.data.items && Array.isArray(lowStockRes.data.items)) {
+          lowStockData = lowStockRes.data.items;
+        } else if (lowStockRes.data.data && Array.isArray(lowStockRes.data.data)) {
+          lowStockData = lowStockRes.data.data;
+        }
+      }
+
+      let criticalStockData = [];
+      if (Array.isArray(criticalStockRes.data)) {
+        criticalStockData = criticalStockRes.data;
+      } else if (criticalStockRes.data && typeof criticalStockRes.data === 'object') {
+        if (criticalStockRes.data.items && Array.isArray(criticalStockRes.data.items)) {
+          criticalStockData = criticalStockRes.data.items;
+        } else if (criticalStockRes.data.data && Array.isArray(criticalStockRes.data.data)) {
+          criticalStockData = criticalStockRes.data.data;
+        }
+      }
+
+      let movementsData = [];
+      if (Array.isArray(movementsRes.data)) {
+        movementsData = movementsRes.data;
+      } else if (movementsRes.data && typeof movementsRes.data === 'object') {
+        if (movementsRes.data.items && Array.isArray(movementsRes.data.items)) {
+          movementsData = movementsRes.data.items;
+        } else if (movementsRes.data.data && Array.isArray(movementsRes.data.data)) {
+          movementsData = movementsRes.data.data;
+        } else if (movementsRes.data.movements && Array.isArray(movementsRes.data.movements)) {
+          movementsData = movementsRes.data.movements;
+        }
+      }
+
+      setLowStockItems(lowStockData);
+      setCriticalStockItems(criticalStockData);
+      setRecentMovements(movementsData);
 
       setStockStats({
         totalItems,
         totalValue,
-        lowStockCount: lowStockRes.data.length,
-        criticalStockCount: criticalStockRes.data.length,
+        lowStockCount: lowStockData.length,
+        criticalStockCount: criticalStockData.length,
         inStockCount,
         outOfStockCount
       });
@@ -78,12 +139,12 @@ const StockManagement = () => {
       
       // Mock data fallback
       setStockStats({
-        totalItems: 145,
-        totalValue: 2850000,
-        lowStockCount: 8,
-        criticalStockCount: 3,
-        inStockCount: 134,
-        outOfStockCount: 2
+        totalItems: 0,
+        totalValue: 0,
+        lowStockCount: 0,
+        criticalStockCount: 0,
+        inStockCount: 0,
+        outOfStockCount: 0
       });
       setRecentMovements([]);
       setLowStockItems([]);
@@ -103,6 +164,17 @@ const StockManagement = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("tr-TR");
+  };
+
+  // Modal handlers
+  const handleStockInSuccess = () => {
+    // Verileri yeniden yükle
+    fetchStockData();
+  };
+
+  const handleStockOutSuccess = () => {
+    // Verileri yeniden yükle
+    fetchStockData();
   };
 
   if (loading) {
@@ -225,7 +297,10 @@ const StockManagement = () => {
               </div>
             </Link>
 
-            <button className="p-4 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+            <button 
+              onClick={() => setShowStockInModal(true)}
+              className="p-4 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            >
               <div className="text-center">
                 <IconPlus className="h-8 w-8 mx-auto mb-2" />
                 <h4 className="text-sm font-medium">Stok Girişi</h4>
@@ -233,7 +308,10 @@ const StockManagement = () => {
               </div>
             </button>
 
-            <button className="p-4 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+            <button 
+              onClick={() => setShowStockOutModal(true)}
+              className="p-4 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            >
               <div className="text-center">
                 <IconTruck className="h-8 w-8 mx-auto mb-2" />
                 <h4 className="text-sm font-medium">Stok Çıkışı</h4>
@@ -254,24 +332,24 @@ const StockManagement = () => {
               </h3>
             </div>
             <div className="p-6">
-              {recentMovements.length > 0 ? (
+              {Array.isArray(recentMovements) && recentMovements.length > 0 ? (
                 <div className="space-y-3">
                   {recentMovements.slice(0, 5).map((movement, index) => (
-                    <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div key={movement.id || index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                       <div className="flex items-center">
                         <div className={`w-2 h-2 rounded-full mr-3 ${
                           movement.movementType === 'StockIn' ? 'bg-green-500' : 'bg-red-500'
                         }`}></div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{movement.stockItem?.name}</p>
-                          <p className="text-xs text-gray-500">{movement.stockItem?.itemCode}</p>
+                          <p className="text-sm font-medium text-gray-900">{movement.stockItem?.name || 'Bilinmiyor'}</p>
+                          <p className="text-xs text-gray-500">{movement.stockItem?.itemCode || '-'}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-medium ${
                           movement.movementType === 'StockIn' ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {movement.movementType === 'StockIn' ? '+' : '-'}{movement.quantity}
+                          {movement.movementType === 'StockIn' ? '+' : '-'}{movement.quantity || 0}
                         </p>
                         <p className="text-xs text-gray-500">{formatDate(movement.movementDate)}</p>
                       </div>
@@ -301,20 +379,20 @@ const StockManagement = () => {
               </h3>
             </div>
             <div className="p-6">
-              {lowStockItems.length > 0 ? (
+              {Array.isArray(lowStockItems) && lowStockItems.length > 0 ? (
                 <div className="space-y-3">
                   {lowStockItems.slice(0, 5).map((item, index) => (
-                    <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div key={item.id || index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                       <div className="flex items-center">
                         <IconAlertTriangle className="h-4 w-4 text-red-500 mr-3" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                          <p className="text-xs text-gray-500">{item.itemCode}</p>
+                          <p className="text-sm font-medium text-gray-900">{item.name || 'Bilinmiyor'}</p>
+                          <p className="text-xs text-gray-500">{item.itemCode || '-'}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-red-600">{item.currentStock} {item.unit}</p>
-                        <p className="text-xs text-gray-500">Min: {item.minimumStock}</p>
+                        <p className="text-sm font-medium text-red-600">{item.currentStock || 0} {item.unit || ''}</p>
+                        <p className="text-xs text-gray-500">Min: {item.minimumStock || 0}</p>
                       </div>
                     </div>
                   ))}
@@ -334,6 +412,20 @@ const StockManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Stock In Modal */}
+      <StockInModal
+        isOpen={showStockInModal}
+        onClose={() => setShowStockInModal(false)}
+        onSave={handleStockInSuccess}
+      />
+
+      {/* Stock Out Modal */}
+      <StockOutModal
+        isOpen={showStockOutModal}
+        onClose={() => setShowStockOutModal(false)}
+        onSave={handleStockOutSuccess}
+      />
     </div>
   );
 };

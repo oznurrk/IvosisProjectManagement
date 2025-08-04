@@ -68,7 +68,7 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
     setForm(prev => ({ ...prev, [field]: value }));
     
     if (field === "itemId") {
-      const item = stockItems.find(i => i.id.toString() === value);
+      const item = stockItems.find(i => i.id.toString() === value); // String olarak karşılaştır
       setSelectedItem(item);
       if (item) {
         setForm(prev => ({ ...prev, unitPrice: item.purchasePrice?.toString() || "" }));
@@ -172,8 +172,8 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
                   }`}
                 >
                   <option value="">Malzeme Seçiniz</option>
-                  {stockItems.map((item) => (
-                    <option key={item.id} value={item.id}>
+                  {Array.isArray(stockItems) && stockItems.map((item) => (
+                    <option key={item.id} value={item.id.toString()}>
                       {item.itemCode} - {item.itemName} (Mevcut: {item.currentStock} {item.unit})
                     </option>
                   ))}
