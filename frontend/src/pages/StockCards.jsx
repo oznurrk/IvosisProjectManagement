@@ -49,24 +49,17 @@ const StockCards = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       
-      const [stockItemsRes, categoriesRes, unitsRes] = await Promise.all([
+      const [stockItemsRes] = await Promise.all([
         axios.get("http://localhost:5000/api/StockItems", {
           headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("http://localhost:5000/api/StockItems", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("http://localhost:5000/api/StockItems", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        })
       ]);
-
+  
       // StockItems verilerini set et - array olduğundan emin ol
       let stockData = [];
       if (Array.isArray(stockItemsRes.data)) {
         stockData = stockItemsRes.data;
       } else if (stockItemsRes.data && typeof stockItemsRes.data === 'object') {
-        // Eğer data bir object ise, içinde array olup olmadığını kontrol et
         if (stockItemsRes.data.items && Array.isArray(stockItemsRes.data.items)) {
           stockData = stockItemsRes.data.items;
         } else if (stockItemsRes.data.data && Array.isArray(stockItemsRes.data.data)) {
@@ -75,27 +68,57 @@ const StockCards = () => {
           stockData = stockItemsRes.data.stockItems;
         }
       }
+      
+      console.log('Raw StockItems data:', stockData);
       setStockItems(stockData);
-
-      // Categories verilerini çıkar ve set et
-      const categoryData = Array.isArray(categoriesRes.data) ? categoriesRes.data : [];
-      const uniqueCategories = [...new Set(categoryData.map(item => item.category).filter(Boolean))];
-      setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
-
-      // Units verilerini çıkar ve set et
-      const unitData = Array.isArray(unitsRes.data) ? unitsRes.data : [];
-      const uniqueUnits = [...new Set(unitData.map(item => item.unit).filter(Boolean))];
-      setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
-
+  
+      const categoryMap = new Map();
+      stockData.forEach(item => {
+        console.log('Item category info:', {
+          id: item.id,
+          categoryId: item.categoryId,
+          category: item.category,
+          categoryName: item.categoryName
+        });
+        
+        // Farklı field isimlerini kontrol et
+        const catId = item.categoryId || item.CategoryId;
+        const catName = item.category || item.categoryName || item.Category || item.CategoryName;
+        
+        if (catId && catName) {
+          categoryMap.set(catId, catName);
+        }
+      });
+      
+      const categoriesArray = Array.from(categoryMap.entries()).map(([id, name]) => ({
+        id: parseInt(id),
+        name: name
+      }));
+      
+      console.log('Final categories array:', categoriesArray);
+      setCategories(categoriesArray);
+  
+      // Units'i direkt stockItems'dan çıkar
+      const unitMap = new Map();
+      stockData.forEach(item => {
+        const unitId = item.unitId || item.UnitId;
+        const unitName = item.unit || item.unitName || item.Unit || item.UnitName;
+        
+        if (unitId && unitName) {
+          unitMap.set(unitId, unitName);
+        }
+      });
+      
+      const unitsArray = Array.from(unitMap.entries()).map(([id, name]) => ({
+        id: parseInt(id),
+        name: name
+      }));
+      
+      console.log('Final units array:', unitsArray);
+      setUnits(unitsArray);
+  
     } catch (error) {
       console.error('Veriler yüklenirken hata:', error);
-      console.error('Error Details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        headers: error.response?.headers
-      });
-      // Hata durumunda boş arrayler set et
       setStockItems([]);
       setCategories([]);
       setUnits([]);
@@ -296,13 +319,48 @@ const StockCards = () => {
     setCurrentPage(1);
   };
 
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : 'Bilinmiyor';
+  const getCategoryName = (categoryId, item) => {
+    console.log('getCategoryName called with:', {
+      categoryId,
+      categoryIdType: typeof categoryId,
+      availableCategories: categories,
+      itemCategory: item?.category
+    });
+    
+    // Önce item'dan direkt category'yi al
+    if (item?.category) {
+      return item.category;
+    }
+    
+    // Eğer item'da category yoksa categories dizisinden bul
+    if (!categoryId) return 'Kategori Yok';
+    
+    const category = categories.find(cat => {
+      const match = cat.id === categoryId || 
+                   cat.id === parseInt(categoryId) || 
+                   cat.id === categoryId?.toString() ||
+                   cat.id.toString() === categoryId?.toString();
+      
+      if (match) {
+        console.log('Category match found:', cat);
+      }
+      return match;
+    });
+    
+    const result = category ? category.name : 'Bilinmiyor';
+    console.log('getCategoryName result:', result);
+    return result;
   };
 
   const getUnitName = (unitId) => {
-    const unit = units.find(u => u.id === unitId);
+    if (!unitId) return 'Adet';
+    
+    const unit = units.find(u => 
+      u.id === unitId || 
+      u.id === parseInt(unitId) || 
+      u.id.toString() === unitId?.toString()
+    );
+    
     return unit ? unit.name : 'Adet';
   };
 
@@ -315,6 +373,9 @@ const StockCards = () => {
     const statusMatch = !searchFilters.status || getStockStatus(item) === searchFilters.status;
 
     return codeMatch && nameMatch && categoryMatch && brandMatch && criticalMatch && statusMatch;
+  }).sort((a, b) => {
+    // ID'ye göre artan sırada sırala
+    return (a.id || 0) - (b.id || 0);
   }) : [];
 
   const totalPages = Math.ceil(visibleItems.length / itemsPerPage);
@@ -484,26 +545,36 @@ const StockCards = () => {
                       <tr key={item.id} className="hover:bg-gray-50">
                         {/* Malzeme Bilgileri */}
                         <td className="px-4 py-4">
-                          <div className="flex items-center">
-                            <IconPackage className="h-8 w-8 text-ivosis-500 mr-3" />
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.name}
-                              </div>
-                              <div className="text-sm text-gray-500 flex items-center">
+                          <div className="space-y-2">
+                            {/* ID Başlığı */}
+                            <div className="flex items-center justify-between">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-ivosis-100 text-ivosis-800">
+                                ID: {item.id}
+                              </span>
+                            </div>
+                            
+                            {/* Malzeme Detayları */}
+                            <div className="flex items-start space-x-3">
+                              <IconPackage className="h-6 w-6 text-ivosis-500 mt-1 flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-medium text-gray-900 break-words">
+                                  {item.name}
+                                </div>
                                 {item.brand && (
-                                  <>
-                                    <IconStar size={12} className="mr-1" />
-                                    {item.brand}
-                                    {item.model && ` - ${item.model}`}
-                                  </>
+                                  <div className="text-sm text-gray-500 flex items-center mt-1">
+                                    <IconStar size={12} className="mr-1 flex-shrink-0" />
+                                    <span className="break-words">
+                                      {item.brand}
+                                      {item.model && ` - ${item.model}`}
+                                    </span>
+                                  </div>
+                                )}
+                                {item.description && (
+                                  <div className="text-xs text-gray-400 mt-1 line-clamp-2">
+                                    {item.description}
+                                  </div>
                                 )}
                               </div>
-                              {item.description && (
-                                <div className="text-xs text-gray-400 mt-1 max-w-xs truncate">
-                                  {item.description}
-                                </div>
-                              )}
                             </div>
                           </div>
                         </td>
@@ -518,7 +589,7 @@ const StockCards = () => {
                         {/* Kategori */}
                         <td className="px-4 py-4">
                           <div className="text-sm text-gray-900">
-                            {getCategoryName(item.categoryId)}
+                            {item.category || getCategoryName(item.categoryId, item)}
                           </div>
                         </td>
 

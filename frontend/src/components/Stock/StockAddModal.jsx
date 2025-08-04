@@ -175,15 +175,22 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('Form submit başlatıldı');
+    console.log('Form verileri:', form);
+    
+    if (!validateForm()) {
+      console.log('Form validation başarısız:', errors);
+      return;
+    }
     
     setLoading(true);
     
     try {
+      // Veri formatını kontrol et ve temizle
       const stockData = {
-        itemCode: form.itemCode || generateItemCode(),
-        name: form.name,
-        description: form.description || "",
+        itemCode: (form.itemCode || generateItemCode()).trim(),
+        name: form.name.trim(),
+        description: (form.description || "").trim(),
         categoryId: parseInt(form.categoryId),
         unitId: parseInt(form.unitId),
         minimumStock: parseFloat(form.minimumStock),
@@ -191,21 +198,29 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         reorderLevel: parseFloat(form.reorderLevel),
         purchasePrice: parseFloat(form.purchasePrice),
         salePrice: parseFloat(form.salePrice) || parseFloat(form.purchasePrice) * 1.2,
-        currency: form.currency,
-        brand: form.brand || "",
-        model: form.model || "",
-        specifications: form.specifications || "",
-        qualityStandards: form.qualityStandards || "",
-        certificateNumbers: form.certificateNumbers || "",
-        storageConditions: form.storageConditions || "",
+        currency: form.currency || "TRY",
+        brand: (form.brand || "").trim(),
+        model: (form.model || "").trim(),
+        specifications: (form.specifications || "").trim(),
+        qualityStandards: (form.qualityStandards || "").trim(),
+        certificateNumbers: (form.certificateNumbers || "").trim(),
+        storageConditions: (form.storageConditions || "").trim(),
         shelfLife: parseInt(form.shelfLife) || 0,
-        isCriticalItem: form.isCriticalItem
+        isCriticalItem: Boolean(form.isCriticalItem)
       };
       
-      console.log('Gönderilen veri:', stockData);
+      // NaN kontrolü
+      if (isNaN(stockData.categoryId) || isNaN(stockData.unitId)) {
+        throw new Error('Kategori ve birim seçimi zorunludur');
+      }
+      
+      console.log('API\'ye gönderilecek temiz veri:', stockData);
       
       await onSave(stockData);
       
+      console.log('Kaydetme başarılı, form sıfırlanıyor');
+      
+      // Form'u sıfırla
       setForm({
         itemCode: "",
         name: "",
@@ -228,9 +243,11 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         isCriticalItem: false
       });
       setSearchTerm("");
+      setErrors({});
       
     } catch (error) {
       console.error("Stok kartı ekleme hatası:", error);
+      alert('Kaydetme hatası: ' + (error.message || 'Bilinmeyen hata'));
     } finally {
       setLoading(false);
     }
