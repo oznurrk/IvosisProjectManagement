@@ -99,21 +99,35 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
     
     try {
       const stockOutData = {
-        itemId: parseInt(form.itemId),
+        stockItemId: parseInt(form.itemId),
         quantity: parseFloat(form.quantity),
         reason: form.reason,
         destination: form.destination,
         requestedBy: form.requestedBy,
-        notes: form.notes,
-        date: new Date().toISOString(),
-        type: "OUT"
+        notes: form.notes
       };
       
-      await onSave(stockOutData);
-      resetForm();
+      const response = await fetch('http://localhost:5000/api/StockMovements/stock-out', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(stockOutData)
+      });
+
+      if (response.ok) {
+        resetForm();
+        onClose();
+        alert('Stok çıkış işlemi başarıyla tamamlandı!');
+        if (onSave) onSave();
+      } else {
+        const errorData = await response.json();
+        alert('Hata: ' + (errorData.message || 'Stok çıkış işlemi başarısız'));
+      }
       
     } catch (error) {
       console.error("Stok çıkış hatası:", error);
+      alert('Bağlantı hatası: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -124,8 +138,8 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
     
     const remaining = selectedItem.currentStock - parseFloat(form.quantity);
     
-    if (remaining < selectedItem.criticalStock) return "text-red-600 bg-red-50";
-    if (remaining < selectedItem.minStock) return "text-yellow-600 bg-yellow-50";
+    if (remaining < selectedItem.reorderLevel) return "text-red-600 bg-red-50";
+    if (remaining < selectedItem.minimumStock) return "text-yellow-600 bg-yellow-50";
     return "text-green-600 bg-green-50";
   };
 
@@ -175,7 +189,7 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
                   <option value="">Malzeme Seçiniz</option>
                   {stockItems.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.itemCode} - {item.itemName} (Mevcut: {item.currentStock} {item.unit})
+                      {item.itemCode} - {item.name} (Mevcut: {item.currentStock} {item.unit})
                     </option>
                   ))}
                 </select>
@@ -189,11 +203,11 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
                   <h4 className="font-medium text-blue-800 mb-2">Seçilen Malzeme</h4>
                   <div className="text-sm text-blue-700">
                     <p><strong>Kod:</strong> {selectedItem.itemCode}</p>
-                    <p><strong>Ad:</strong> {selectedItem.itemName}</p>
+                    <p><strong>Ad:</strong> {selectedItem.name}</p>
                     <p><strong>Kategori:</strong> {selectedItem.category}</p>
                     <p><strong>Mevcut Stok:</strong> {selectedItem.currentStock} {selectedItem.unit}</p>
-                    <p><strong>Minimum Stok:</strong> {selectedItem.minStock} {selectedItem.unit}</p>
-                    <p><strong>Kritik Stok:</strong> {selectedItem.criticalStock} {selectedItem.unit}</p>
+                    <p><strong>Minimum Stok:</strong> {selectedItem.minimumStock} {selectedItem.unit}</p>
+                    <p><strong>Kritik Stok:</strong> {selectedItem.reorderLevel} {selectedItem.unit}</p>
                   </div>
                 </div>
               )}
@@ -281,13 +295,13 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
                     <div className="font-semibold">
                       İşlem Sonrası Kalan Stok: {(selectedItem.currentStock - parseFloat(form.quantity || 0)).toFixed(1)} {selectedItem.unit}
                     </div>
-                    {(selectedItem.currentStock - parseFloat(form.quantity || 0)) < selectedItem.criticalStock && (
+                    {(selectedItem.currentStock - parseFloat(form.quantity || 0)) < selectedItem.reorderLevel && (
                       <div className="text-sm mt-1">
                         ⚠️ Kritik stok seviyesinin altına düşecek!
                       </div>
                     )}
-                    {(selectedItem.currentStock - parseFloat(form.quantity || 0)) < selectedItem.minStock && 
-                     (selectedItem.currentStock - parseFloat(form.quantity || 0)) >= selectedItem.criticalStock && (
+                    {(selectedItem.currentStock - parseFloat(form.quantity || 0)) < selectedItem.minimumStock && 
+                     (selectedItem.currentStock - parseFloat(form.quantity || 0)) >= selectedItem.reorderLevel && (
                       <div className="text-sm mt-1">
                         ⚠️ Minimum stok seviyesinin altına düşecek!
                       </div>

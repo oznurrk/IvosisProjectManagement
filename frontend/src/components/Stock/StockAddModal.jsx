@@ -62,88 +62,44 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const fetchModalData = async () => {
     setDataLoading(true);
     try {
-      const [itemsRes, categoriesRes, unitsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/StockItems'),
-        fetch('http://localhost:5000/api/Categories'),
-        fetch('http://localhost:5000/api/Units')
+      const token = localStorage.getItem("token");
+
+      const [itemsRes] = await Promise.all([
+        fetch('http://localhost:5000/api/StockItems', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
       ]);
 
       if (itemsRes.ok) {
         const items = await itemsRes.json();
         setExistingItems(items);
-      }
-
-      if (categoriesRes.ok) {
-        const cats = await categoriesRes.json();
-        setCategories(cats);
+        
+        // StockItems'dan categories çıkar
+        const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
+        setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
+        
+        // StockItems'dan units çıkar
+        const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
+        setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
       } else {
-        setCategories([
-          { id: 1, name: "Elektrik Malzemeleri" },
-          { id: 2, name: "Mekanik Parçalar" },
-          { id: 3, name: "Elektronik Bileşenler" },
-          { id: 4, name: "Güvenlik Ekipmanları" },
-          { id: 5, name: "Diğer" }
-        ]);
+        console.error("Modal verileri yetkisiz erişim:", itemsRes.status);
       }
 
-      if (unitsRes.ok) {
-        const unitsData = await unitsRes.json();
-        setUnits(unitsData);
-      } else {
-        setUnits([
-          { id: 1, name: "Adet" },
-          { id: 2, name: "Kg" },
-          { id: 3, name: "Lt" },
-          { id: 4, name: "M" },
-          { id: 5, name: "M²" },
-          { id: 6, name: "M³" },
-          { id: 7, name: "Ton" },
-          { id: 8, name: "Gram" },
-          { id: 9, name: "Paket" },
-          { id: 10, name: "Kutu" },
-          { id: 11, name: "Rulo" }
-        ]);
-      }
-
-      setSuppliers([
-        "ABC Çelik San. Tic. Ltd. Şti.",
-        "XYZ Metal San. A.Ş.", 
-        "GHI Paslanmaz Ltd.",
-        "JKL Alüminyum San.",
-        "MNO Galvaniz A.Ş."
-      ]);
-      
-      setLocations([
-        "DEPO-A-01", "DEPO-A-02", "DEPO-A-03",
-        "DEPO-B-01", "DEPO-B-02", "DEPO-B-03",
-        "DEPO-C-01", "DEPO-C-02", "DEPO-C-03"
-      ]);
-
-    } catch (error) {
-      console.error('Modal verileri yüklenirken hata:', error);
-      setCategories([
-        { id: 1, name: "Elektrik Malzemeleri" },
-        { id: 2, name: "Mekanik Parçalar" },
-        { id: 3, name: "Elektronik Bileşenler" },
-        { id: 4, name: "Güvenlik Ekipmanları" },
-        { id: 5, name: "Diğer" }
-      ]);
+      // Suppliers ve locations için API endpoint varsa buraya ekle
       setSuppliers([]);
       setLocations([]);
-      setUnits([
-        { id: 1, name: "Adet" },
-        { id: 2, name: "Kg" },
-        { id: 3, name: "Lt" },
-        { id: 4, name: "M" },
-        { id: 5, name: "M²" }
-      ]);
+
+    } catch (error) {
+      console.error("Modal verileri yükleme hatası:", error);
     } finally {
       setDataLoading(false);
     }
   };
 
-  const generateItemCode = () => {
-    const prefix = "ITM";
+  const generateItemCode = (prefix = "STK") => {
     const year = new Date().getFullYear();
     const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     return `${prefix}-${year}-${randomNum}`;

@@ -67,7 +67,7 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
       const item = stockItems.find(i => i.id.toString() === value);
       setSelectedItem(item);
       if (item) {
-        setForm(prev => ({ ...prev, unitPrice: item.unitPrice?.toString() || "" }));
+        setForm(prev => ({ ...prev, unitPrice: item.purchasePrice?.toString() || "" }));
       }
     }
     
@@ -96,22 +96,36 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
     
     try {
       const stockInData = {
-        itemId: parseInt(form.itemId),
+        stockItemId: parseInt(form.itemId),
         quantity: parseFloat(form.quantity),
         unitPrice: parseFloat(form.unitPrice),
         totalPrice: parseFloat(form.quantity) * parseFloat(form.unitPrice),
         supplier: form.supplier,
-        invoiceNumber: form.invoiceNumber,
-        notes: form.notes,
-        date: new Date().toISOString(),
-        type: "IN"
+        referenceNumber: form.invoiceNumber,
+        notes: form.notes
       };
       
-      await onSave(stockInData);
-      resetForm();
+      const response = await fetch('http://localhost:5000/api/StockMovements/stock-in', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(stockInData)
+      });
+
+      if (response.ok) {
+        resetForm();
+        onClose();
+        alert('Stok giriş işlemi başarıyla tamamlandı!');
+        if (onSave) onSave();
+      } else {
+        const errorData = await response.json();
+        alert('Hata: ' + (errorData.message || 'Stok giriş işlemi başarısız'));
+      }
       
     } catch (error) {
       console.error("Stok giriş hatası:", error);
+      alert('Bağlantı hatası: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -163,7 +177,7 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
                   <option value="">Malzeme Seçiniz</option>
                   {stockItems.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.itemCode} - {item.itemName} (Mevcut: {item.currentStock} {item.unit})
+                      {item.itemCode} - {item.name} (Mevcut: {item.currentStock} {item.unit})
                     </option>
                   ))}
                 </select>
@@ -177,7 +191,7 @@ const StockInModal = ({ isOpen, onClose, onSave }) => {
                   <h4 className="font-medium text-blue-800 mb-2">Seçilen Malzeme</h4>
                   <div className="text-sm text-blue-700">
                     <p><strong>Kod:</strong> {selectedItem.itemCode}</p>
-                    <p><strong>Ad:</strong> {selectedItem.itemName}</p>
+                    <p><strong>Ad:</strong> {selectedItem.name}</p>
                     <p><strong>Kategori:</strong> {selectedItem.category}</p>
                     <p><strong>Mevcut Stok:</strong> {selectedItem.currentStock} {selectedItem.unit}</p>
                   </div>

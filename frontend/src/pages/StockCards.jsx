@@ -48,7 +48,15 @@ const StockCards = () => {
   const fetchStockItems = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/StockItems');
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch('http://localhost:5000/api/StockItems', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setStockItems(data);
@@ -62,7 +70,15 @@ const StockCards = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/StockItems');
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch('http://localhost:5000/api/StockItems', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (response.ok) {
         const items = await response.json();
         const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
@@ -75,7 +91,15 @@ const StockCards = () => {
 
   const fetchUnits = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/StockItems');
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch('http://localhost:5000/api/StockItems', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (response.ok) {
         const items = await response.json();
         const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
@@ -88,17 +112,19 @@ const StockCards = () => {
 
   const handleAddStockCard = async (newStockCard) => {
     try {
-      console.log('API\'ye gönderilen veri:', newStockCard); // Debug için
+      console.log('API\'ye gönderilen veri:', newStockCard);
+      const token = localStorage.getItem("token");
       
       const response = await fetch('http://localhost:5000/api/StockItems', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(newStockCard)
       });
 
-      console.log('API Response Status:', response.status); // Debug için
+      console.log('API Response Status:', response.status);
 
       if (response.ok) {
         const addedItem = await response.json();
@@ -106,7 +132,6 @@ const StockCards = () => {
         setShowAddModal(false);
         alert('Stok kartı başarıyla eklendi!');
       } else {
-        // Detaylı hata bilgisi al
         const errorData = await response.json().catch(() => null);
         console.error('API Error Response:', errorData);
         
@@ -127,6 +152,8 @@ const StockCards = () => {
 
   const handleEditStockCard = async (updatedStockCard) => {
     try {
+      const token = localStorage.getItem("token");
+      
       // PUT işlemi için backend'in beklediği format
       const updateData = {
         itemCode: updatedStockCard.itemCode,
@@ -155,6 +182,7 @@ const StockCards = () => {
       const response = await fetch(`http://localhost:5000/api/StockItems/${updatedStockCard.id}`, {
         method: 'PUT',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(updateData)
@@ -186,9 +214,12 @@ const StockCards = () => {
     if (!confirmDelete) return;
 
     try {
+      const token = localStorage.getItem("token");
+      
       const response = await fetch(`http://localhost:5000/api/StockItems/${id}`, {
         method: 'DELETE',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });

@@ -42,106 +42,136 @@ const StockMovements = () => {
   const fetchMovements = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/StockMovements');
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch('http://localhost:5000/api/StockMovements', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setMovements(data);
+      } else {
+        console.error("Stok hareketleri yetkisiz erişim:", response.status);
+        // Mock data fallback
+        setMovements([
+          {
+            id: 1,
+            stockItemId: 1,
+            stockItem: { itemCode: 'ITM-001', name: 'Siyah Sac 2mm', unit: 'Ton' },
+            locationId: 1,
+            location: { name: 'DEPO-A-01' },
+            movementType: 'StockIn',
+            quantity: 25.5,
+            unitPrice: 150.00,
+            referenceType: 'Invoice',
+            referenceId: 1,
+            referenceNumber: 'INV-2024-001',
+            description: 'Tedarikçiden gelen mal',
+            notes: 'Kalite kontrolden geçti',
+            movementDate: '2024-01-15T14:30:00'
+          },
+          {
+            id: 2,
+            stockItemId: 2,
+            stockItem: { itemCode: 'ITM-002', name: 'Galvaniz Sac 1.5mm', unit: 'Ton' },
+            locationId: 2,
+            location: { name: 'DEPO-B-02' },
+            movementType: 'StockOut',
+            quantity: 18.2,
+            unitPrice: 180.00,
+            referenceType: 'Order',
+            referenceId: 2,
+            referenceNumber: 'ORD-2024-002',
+            description: 'Müşteri siparişi',
+            notes: 'Sevkiyat tamamlandı',
+            movementDate: '2024-01-15T15:45:00'
+          }
+        ]);
       }
     } catch (error) {
       console.error('Stok hareketleri yüklenirken hata:', error);
-      // Mock data
-      setMovements([
-        {
-          id: 1,
-          stockItemId: 1,
-          stockItem: { itemCode: 'ITM-001', name: 'Siyah Sac 2mm', unit: 'Ton' },
-          locationId: 1,
-          location: { name: 'DEPO-A-01' },
-          movementType: 'StockIn',
-          quantity: 25.5,
-          unitPrice: 150.00,
-          referenceType: 'Invoice',
-          referenceId: 1,
-          referenceNumber: 'INV-2024-001',
-          description: 'Tedarikçiden gelen mal',
-          notes: 'Kalite kontrolden geçti',
-          movementDate: '2024-01-15T14:30:00'
-        },
-        {
-          id: 2,
-          stockItemId: 2,
-          stockItem: { itemCode: 'ITM-002', name: 'Galvaniz Sac 1.5mm', unit: 'Ton' },
-          locationId: 2,
-          location: { name: 'DEPO-B-02' },
-          movementType: 'StockOut',
-          quantity: 18.2,
-          unitPrice: 180.00,
-          referenceType: 'Order',
-          referenceId: 2,
-          referenceNumber: 'ORD-2024-002',
-          description: 'Müşteri siparişi',
-          notes: 'Sevkiyat tamamlandı',
-          movementDate: '2024-01-15T15:45:00'
-        }
-      ]);
+      // Mock data fallback
+      setMovements([]);
     } finally {
       setLoading(false);
     }
   };
-
+  
   const fetchStockItems = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/StockItems');
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch('http://localhost:5000/api/StockItems', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setStockItems(data);
+      } else {
+        console.error("StockItems yetkisiz erişim:", response.status);
       }
     } catch (error) {
       console.error('Stok kalemleri yüklenirken hata:', error);
     }
   };
-
+  
   const handleStockIn = async (stockInData) => {
     try {
+      const token = localStorage.getItem("token");
+      
       const response = await fetch('http://localhost:5000/api/StockMovements/stock-in', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(stockInData)
       });
-
+  
       if (response.ok) {
         const result = await response.json();
         await fetchMovements(); // Listeyi yenile
         setShowStockInModal(false);
         alert('Stok girişi başarıyla kaydedildi!');
       } else {
-        throw new Error('Stok girişi kaydedilemedi');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Stok girişi kaydedilemedi');
       }
     } catch (error) {
       console.error('Stok giriş hatası:', error);
       alert('Hata: ' + error.message);
     }
   };
-
+  
   const handleStockOut = async (stockOutData) => {
     try {
+      const token = localStorage.getItem("token");
+      
       const response = await fetch('http://localhost:5000/api/StockMovements/stock-out', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(stockOutData)
       });
-
+  
       if (response.ok) {
         const result = await response.json();
         await fetchMovements(); // Listeyi yenile
         setShowStockOutModal(false);
         alert('Stok çıkışı başarıyla kaydedildi!');
       } else {
-        throw new Error('Stok çıkışı kaydedilemedi');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Stok çıkışı kaydedilemedi');
       }
     } catch (error) {
       console.error('Stok çıkış hatası:', error);
