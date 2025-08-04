@@ -5,18 +5,25 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const [form, setForm] = useState({
     itemCode: "",
     itemName: "",
-    category: "",
+    categoryId: "",
     currentStock: "",
+    maxStock: "",
     minStock: "",
     criticalStock: "",
-    unit: "Adet",
+    unitId: "",
     unitPrice: "",
+    salePrice: "",
     location: "",
     description: "",
     supplier: "",
     barcode: "",
     brand: "",
-    model: ""
+    model: "",
+    specifications: "",
+    qualityStandards: "",
+    certificateNumbers: "",
+    storageConditions: "",
+    shelfLife: ""
   });
 
   const [errors, setErrors] = useState({});
@@ -33,10 +40,6 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredItems, setFilteredItems] = useState([]);
 
-  const defaultUnits = [
-    "Adet", "Kg", "Lt", "M", "M²", "M³", "Ton", "Gram", "Paket", "Kutu", "Rulo"
-  ];
-
   useEffect(() => {
     if (isOpen) {
       fetchModalData();
@@ -46,7 +49,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   useEffect(() => {
     if (searchTerm) {
       const filtered = existingItems.filter(item => 
-        item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.itemCode.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredItems(filtered);
@@ -59,51 +62,81 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const fetchModalData = async () => {
     setDataLoading(true);
     try {
-      const [itemsRes, categoriesRes, suppliersRes, locationsRes] = await Promise.all([
+      const [itemsRes, categoriesRes, unitsRes] = await Promise.all([
         fetch('http://localhost:5000/api/StockItems'),
-        fetch('http://localhost:5000/api/StockItems').then(res => res.json()).then(items => 
-          [...new Set(items.map(item => item.category).filter(Boolean))]
-        ).catch(() => []),
-        Promise.resolve([
-          "ABC Çelik San. Tic. Ltd. Şti.",
-          "XYZ Metal San. A.Ş.", 
-          "GHI Paslanmaz Ltd.",
-          "JKL Alüminyum San.",
-          "MNO Galvaniz A.Ş."
-        ]),
-        Promise.resolve([
-          "DEPO-A-01", "DEPO-A-02", "DEPO-A-03",
-          "DEPO-B-01", "DEPO-B-02", "DEPO-B-03",
-          "DEPO-C-01", "DEPO-C-02", "DEPO-C-03"
-        ])
+        fetch('http://localhost:5000/api/Categories'),
+        fetch('http://localhost:5000/api/Units')
       ]);
 
       if (itemsRes.ok) {
         const items = await itemsRes.json();
         setExistingItems(items);
-        
-        const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
-        setCategories(uniqueCategories);
-
-        const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
-        setUnits([...new Set([...defaultUnits, ...uniqueUnits])]);
       }
 
-      setSuppliers(suppliersRes);
-      setLocations(locationsRes);
+      if (categoriesRes.ok) {
+        const cats = await categoriesRes.json();
+        setCategories(cats);
+      } else {
+        setCategories([
+          { id: 1, name: "Elektrik Malzemeleri" },
+          { id: 2, name: "Mekanik Parçalar" },
+          { id: 3, name: "Elektronik Bileşenler" },
+          { id: 4, name: "Güvenlik Ekipmanları" },
+          { id: 5, name: "Diğer" }
+        ]);
+      }
+
+      if (unitsRes.ok) {
+        const unitsData = await unitsRes.json();
+        setUnits(unitsData);
+      } else {
+        setUnits([
+          { id: 1, name: "Adet" },
+          { id: 2, name: "Kg" },
+          { id: 3, name: "Lt" },
+          { id: 4, name: "M" },
+          { id: 5, name: "M²" },
+          { id: 6, name: "M³" },
+          { id: 7, name: "Ton" },
+          { id: 8, name: "Gram" },
+          { id: 9, name: "Paket" },
+          { id: 10, name: "Kutu" },
+          { id: 11, name: "Rulo" }
+        ]);
+      }
+
+      setSuppliers([
+        "ABC Çelik San. Tic. Ltd. Şti.",
+        "XYZ Metal San. A.Ş.", 
+        "GHI Paslanmaz Ltd.",
+        "JKL Alüminyum San.",
+        "MNO Galvaniz A.Ş."
+      ]);
+      
+      setLocations([
+        "DEPO-A-01", "DEPO-A-02", "DEPO-A-03",
+        "DEPO-B-01", "DEPO-B-02", "DEPO-B-03",
+        "DEPO-C-01", "DEPO-C-02", "DEPO-C-03"
+      ]);
 
     } catch (error) {
       console.error('Modal verileri yüklenirken hata:', error);
       setCategories([
-        "Elektrik Malzemeleri",
-        "Mekanik Parçalar", 
-        "Elektronik Bileşenler",
-        "Güvenlik Ekipmanları",
-        "Diğer"
+        { id: 1, name: "Elektrik Malzemeleri" },
+        { id: 2, name: "Mekanik Parçalar" },
+        { id: 3, name: "Elektronik Bileşenler" },
+        { id: 4, name: "Güvenlik Ekipmanları" },
+        { id: 5, name: "Diğer" }
       ]);
       setSuppliers([]);
       setLocations([]);
-      setUnits(defaultUnits);
+      setUnits([
+        { id: 1, name: "Adet" },
+        { id: 2, name: "Kg" },
+        { id: 3, name: "Lt" },
+        { id: 4, name: "M" },
+        { id: 5, name: "M²" }
+      ]);
     } finally {
       setDataLoading(false);
     }
@@ -135,13 +168,16 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const selectExistingItem = (item) => {
     setForm(prev => ({
       ...prev,
-      itemName: item.itemName,
-      category: item.category,
-      unit: item.unit,
-      unitPrice: item.unitPrice?.toString() || "",
-      description: item.description || ""
+      itemName: item.name,
+      categoryId: item.categoryId?.toString() || "",
+      unitId: item.unitId?.toString() || "",
+      unitPrice: item.purchasePrice?.toString() || "",
+      salePrice: item.salePrice?.toString() || "",
+      description: item.description || "",
+      brand: item.brand || "",
+      model: item.model || ""
     }));
-    setSearchTerm(item.itemName);
+    setSearchTerm(item.name);
     setShowSuggestions(false);
   };
 
@@ -149,18 +185,25 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     const sampleData = {
       itemCode: generateItemCode(),
       itemName: "Örnek Malzeme",
-      category: categories[0] || "Elektrik Malzemeleri",
+      categoryId: categories[0]?.id?.toString() || "1",
       currentStock: "100",
+      maxStock: "500",
       minStock: "20",
       criticalStock: "5",
-      unit: "Adet",
+      unitId: units[0]?.id?.toString() || "1",
       unitPrice: "10.50",
+      salePrice: "12.60",
       location: locations[0] || "DEPO-A-01",
       supplier: suppliers[0] || "",
       barcode: generateBarcode().toString(),
       brand: "Örnek Marka",
       model: "M-001",
-      description: "Örnek açıklama"
+      description: "Örnek açıklama",
+      specifications: "Örnek özellikler",
+      qualityStandards: "ISO 9001",
+      certificateNumbers: "CERT-001",
+      storageConditions: "Kuru ortam",
+      shelfLife: "365"
     };
     setForm(prev => ({ ...prev, ...sampleData }));
   };
@@ -169,7 +212,8 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     const newErrors = {};
 
     if (!form.itemName.trim()) newErrors.itemName = "Malzeme adı zorunludur";
-    if (!form.category.trim()) newErrors.category = "Kategori zorunludur";
+    if (!form.categoryId) newErrors.categoryId = "Kategori zorunludur";
+    if (!form.unitId) newErrors.unitId = "Birim zorunludur";
     if (!form.currentStock || parseFloat(form.currentStock) < 0) newErrors.currentStock = "Geçerli bir stok miktarı giriniz";
     if (!form.minStock || parseFloat(form.minStock) < 0) newErrors.minStock = "Geçerli bir minimum stok giriniz";
     if (!form.criticalStock || parseFloat(form.criticalStock) < 0) newErrors.criticalStock = "Geçerli bir kritik stok giriniz";
@@ -193,38 +237,52 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     try {
       const stockData = {
         itemCode: form.itemCode || generateItemCode(),
-        itemName: form.itemName,
-        category: form.category,
-        currentStock: parseFloat(form.currentStock),
-        minStock: parseFloat(form.minStock),
-        criticalStock: parseFloat(form.criticalStock),
-        unit: form.unit,
-        unitPrice: parseFloat(form.unitPrice),
-        location: form.location,
-        description: form.description,
-        supplier: form.supplier,
-        barcode: form.barcode,
-        brand: form.brand,
-        model: form.model
+        name: form.itemName,
+        description: form.description || "",
+        categoryId: parseInt(form.categoryId),
+        unitId: parseInt(form.unitId),
+        minimumStock: parseFloat(form.minStock),
+        maximumStock: parseFloat(form.maxStock) || parseFloat(form.currentStock) * 5,
+        reorderLevel: parseFloat(form.criticalStock),
+        purchasePrice: parseFloat(form.unitPrice),
+        salePrice: parseFloat(form.salePrice) || parseFloat(form.unitPrice) * 1.2,
+        currency: "TRY",
+        brand: form.brand || "",
+        model: form.model || "",
+        specifications: form.specifications || "",
+        qualityStandards: form.qualityStandards || "",
+        certificateNumbers: form.certificateNumbers || "",
+        storageConditions: form.storageConditions || "",
+        shelfLife: parseInt(form.shelfLife) || 0,
+        isCriticalItem: parseFloat(form.currentStock) <= parseFloat(form.criticalStock)
       };
+      
+      console.log('Gönderilen veri:', stockData);
       
       await onSave(stockData);
       
       setForm({
         itemCode: "",
         itemName: "",
-        category: "",
+        categoryId: "",
         currentStock: "",
+        maxStock: "",
         minStock: "",
         criticalStock: "",
-        unit: "Adet",
+        unitId: "",
         unitPrice: "",
+        salePrice: "",
         location: "",
         description: "",
         supplier: "",
         barcode: "",
         brand: "",
-        model: ""
+        model: "",
+        specifications: "",
+        qualityStandards: "",
+        certificateNumbers: "",
+        storageConditions: "",
+        shelfLife: ""
       });
       setSearchTerm("");
       
@@ -328,7 +386,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                             onClick={() => selectExistingItem(item)}
                             className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                           >
-                            <div className="font-medium text-sm">{item.itemName}</div>
+                            <div className="font-medium text-sm">{item.name}</div>
                             <div className="text-xs text-gray-500">{item.itemCode} • {item.category}</div>
                           </div>
                         ))}
@@ -341,35 +399,41 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                       Kategori *
                     </label>
                     <select
-                      value={form.category}
-                      onChange={(e) => handleChange("category", e.target.value)}
+                      value={form.categoryId}
+                      onChange={(e) => handleChange("categoryId", e.target.value)}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.category ? 'border-red-500' : 'border-gray-300'
+                        errors.categoryId ? 'border-red-500' : 'border-gray-300'
                       }`}
                     >
                       <option value="">Kategori Seçiniz</option>
                       {categories.map((category) => (
-                        <option key={category} value={category}>{category}</option>
+                        <option key={category.id} value={category.id}>{category.name}</option>
                       ))}
                     </select>
-                    {errors.category && (
-                      <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                    {errors.categoryId && (
+                      <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
                     )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Birim
+                      Birim *
                     </label>
                     <select
-                      value={form.unit}
-                      onChange={(e) => handleChange("unit", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                      value={form.unitId}
+                      onChange={(e) => handleChange("unitId", e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                        errors.unitId ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     >
+                      <option value="">Birim Seçiniz</option>
                       {units.map((unit) => (
-                        <option key={unit} value={unit}>{unit}</option>
+                        <option key={unit.id} value={unit.id}>{unit.name}</option>
                       ))}
                     </select>
+                    {errors.unitId && (
+                      <p className="text-red-500 text-xs mt-1">{errors.unitId}</p>
+                    )}
                   </div>
 
                   <div>
@@ -406,7 +470,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   Stok Bilgileri
                   <span className="text-sm font-normal text-gray-600 ml-2">(Kritik &lt; Min &lt; Mevcut)</span>
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Mevcut Stok *
@@ -424,6 +488,20 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     {errors.currentStock && (
                       <p className="text-red-500 text-xs mt-1">{errors.currentStock}</p>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maksimum Stok
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={form.maxStock}
+                      onChange={(e) => handleChange("maxStock", e.target.value)}
+                      placeholder="0.0"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    />
                   </div>
 
                   <div>
@@ -469,7 +547,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
               {/* Tedarikçi ve Lokasyon */}
               <div className="bg-green-50 border border-green-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Tedarikçi ve Lokasyon</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Tedarikçi
@@ -504,25 +582,6 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Birim Fiyat (₺) *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={form.unitPrice}
-                      onChange={(e) => handleChange("unitPrice", e.target.value)}
-                      placeholder="0.00"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.unitPrice ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.unitPrice && (
-                      <p className="text-red-500 text-xs mt-1">{errors.unitPrice}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Barkod
                     </label>
                     <div className="flex space-x-2">
@@ -541,6 +600,110 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                         <IconPlus size={16} />
                       </button>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Alış Fiyatı (₺) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={form.unitPrice}
+                      onChange={(e) => handleChange("unitPrice", e.target.value)}
+                      placeholder="0.00"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                        errors.unitPrice ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.unitPrice && (
+                      <p className="text-red-500 text-xs mt-1">{errors.unitPrice}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Satış Fiyatı (₺)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={form.salePrice}
+                      onChange={(e) => handleChange("salePrice", e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Ek Bilgiler */}
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Ek Bilgiler</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Özellikler
+                    </label>
+                    <textarea
+                      value={form.specifications}
+                      onChange={(e) => handleChange("specifications", e.target.value)}
+                      placeholder="Teknik özellikler..."
+                      rows="2"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kalite Standartları
+                    </label>
+                    <input
+                      type="text"
+                      value={form.qualityStandards}
+                      onChange={(e) => handleChange("qualityStandards", e.target.value)}
+                      placeholder="ISO 9001, CE, vb."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sertifika Numaraları
+                    </label>
+                    <input
+                      type="text"
+                      value={form.certificateNumbers}
+                      onChange={(e) => handleChange("certificateNumbers", e.target.value)}
+                      placeholder="Sertifika numaraları"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Depolama Koşulları
+                    </label>
+                    <input
+                      type="text"
+                      value={form.storageConditions}
+                      onChange={(e) => handleChange("storageConditions", e.target.value)}
+                      placeholder="Depolama koşulları"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Raf Ömrü (Gün)
+                    </label>
+                    <input
+                      type="number"
+                      value={form.shelfLife}
+                      onChange={(e) => handleChange("shelfLife", e.target.value)}
+                      placeholder="365"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    />
                   </div>
                 </div>
               </div>

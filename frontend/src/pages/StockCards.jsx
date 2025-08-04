@@ -33,7 +33,7 @@ const StockCards = () => {
   const [searchFilters, setSearchFilters] = useState({
     itemCode: "",
     name: "",
-    categoryId: "",
+    category: "",
     brand: "",
     isCriticalItem: "",
     status: ""
@@ -62,25 +62,41 @@ const StockCards = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/Categories');
+      const response = await fetch('http://localhost:5000/api/StockItems');
       if (response.ok) {
-        const data = await response.json();
-        setCategories(data);
+        const items = await response.json();
+        const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
+        setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
       }
     } catch (error) {
       console.error('Kategoriler yüklenirken hata:', error);
+      setCategories([
+        { id: 1, name: "Elektrik Malzemeleri" },
+        { id: 2, name: "Mekanik Parçalar" },
+        { id: 3, name: "Elektronik Bileşenler" },
+        { id: 4, name: "Güvenlik Ekipmanları" },
+        { id: 5, name: "Diğer" }
+      ]);
     }
   };
 
   const fetchUnits = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/Units');
+      const response = await fetch('http://localhost:5000/api/StockItems');
       if (response.ok) {
-        const data = await response.json();
-        setUnits(data);
+        const items = await response.json();
+        const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
+        setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
       }
     } catch (error) {
       console.error('Birimler yüklenirken hata:', error);
+      setUnits([
+        { id: 1, name: "Adet" },
+        { id: 2, name: "Kg" },
+        { id: 3, name: "Lt" },
+        { id: 4, name: "M" },
+        { id: 5, name: "M²" }
+      ]);
     }
   };
 
@@ -134,6 +150,34 @@ const StockCards = () => {
     }
   };
 
+  const handleDeleteStockCard = async (id) => {
+    const confirmDelete = window.confirm(
+      'Bu stok kartını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz ve tüm stok hareketleri de silinecektir.'
+    );
+    
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/StockItems/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setStockItems(prev => prev.filter(item => item.id !== id));
+        alert('Stok kartı başarıyla silindi!');
+      } else {
+        const errorData = await response.json();
+        alert('Silme hatası: ' + (errorData.message || 'Stok kartı silinemedi'));
+      }
+    } catch (error) {
+      console.error('Stok kartı silinirken hata:', error);
+      alert('Bağlantı hatası: ' + error.message);
+    }
+  };
+
   const handleEdit = (item) => {
     setSelectedItem(item);
     setShowEditModal(true);
@@ -151,7 +195,7 @@ const StockCards = () => {
     setSearchFilters({
       itemCode: "",
       name: "",
-      categoryId: "",
+      category: "",
       brand: "",
       isCriticalItem: "",
       status: ""
@@ -159,20 +203,18 @@ const StockCards = () => {
     setCurrentPage(1);
   };
 
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : 'Bilinmiyor';
+  const getCategoryName = (category) => {
+    return category || 'Bilinmiyor';
   };
 
-  const getUnitName = (unitId) => {
-    const unit = units.find(u => u.id === unitId);
-    return unit ? unit.name : 'Adet';
+  const getUnitName = (unit) => {
+    return unit || 'Adet';
   };
 
   const visibleItems = stockItems.filter((item) => {
     const codeMatch = (item.itemCode || "").toLowerCase().includes(searchFilters.itemCode.toLowerCase());
     const nameMatch = (item.name || "").toLowerCase().includes(searchFilters.name.toLowerCase());
-    const categoryMatch = !searchFilters.categoryId || item.categoryId.toString() === searchFilters.categoryId;
+    const categoryMatch = !searchFilters.category || (item.category || "").toLowerCase().includes(searchFilters.category.toLowerCase());
     const brandMatch = !searchFilters.brand || (item.brand || "").toLowerCase().includes(searchFilters.brand.toLowerCase());
     const criticalMatch = searchFilters.isCriticalItem === "" || item.isCriticalItem.toString() === searchFilters.isCriticalItem;
     const statusMatch = !searchFilters.status || getStockStatus(item) === searchFilters.status;
@@ -249,13 +291,9 @@ const StockCards = () => {
             { key: "name", type: "text", placeholder: "Malzeme Adı..." },
             { key: "brand", type: "text", placeholder: "Marka..." },
             {
-              key: "categoryId",
-              type: "select",
-              placeholder: "Kategori",
-              options: [
-                { value: "", label: "Tüm Kategoriler" },
-                ...categories.map(cat => ({ value: cat.id.toString(), label: cat.name }))
-              ]
+              key: "category",
+              type: "text",
+              placeholder: "Kategori..."
             },
             {
               key: "isCriticalItem",
@@ -309,7 +347,7 @@ const StockCards = () => {
                       <IconPackage className="h-8 w-8 text-ivosis-500" />
                       <div className="ml-3">
                         <h3 className="text-sm font-semibold text-gray-900">{item.itemCode}</h3>
-                        <p className="text-xs text-gray-500">{getCategoryName(item.categoryId)}</p>
+                        <p className="text-xs text-gray-500">{getCategoryName(item.category)}</p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end space-y-1">
@@ -352,19 +390,19 @@ const StockCards = () => {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Mevcut Stok:</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {item.currentStock || 0} {getUnitName(item.unitId)}
+                        {item.currentStock || 0} {getUnitName(item.unit)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Min. Stok:</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {item.minimumStock} {getUnitName(item.unitId)}
+                        {item.minimumStock} {getUnitName(item.unit)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-500">Sipariş Seviyesi:</span>
                       <span className="text-sm font-medium text-gray-900">
-                        {item.reorderLevel} {getUnitName(item.unitId)}
+                        {item.reorderLevel} {getUnitName(item.unit)}
                       </span>
                     </div>
                   </div>
@@ -436,14 +474,22 @@ const StockCards = () => {
                     </div>
                   )}
 
-                  {/* Düzenleme Butonu */}
+                  {/* Düzenleme ve Silme Butonları */}
                   <div className="pt-3 border-t border-gray-200">
-                    <button
-                      onClick={() => handleEdit(item)}
-                      className="w-full text-center text-sm text-ivosis-600 hover:text-ivosis-800 font-medium transition-colors duration-200 py-1"
-                    >
-                      Düzenle
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="flex-1 text-center text-sm text-ivosis-600 hover:text-ivosis-800 font-medium transition-colors duration-200 py-2 border border-ivosis-200 rounded-lg hover:bg-ivosis-50"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDeleteStockCard(item.id)}
+                        className="flex-1 text-center text-sm text-red-600 hover:text-red-800 font-medium transition-colors duration-200 py-2 border border-red-200 rounded-lg hover:bg-red-50"
+                      >
+                        Sil
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

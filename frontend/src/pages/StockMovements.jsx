@@ -19,7 +19,6 @@ const StockMovements = () => {
   const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [movements, setMovements] = useState([]);
   const [stockItems, setStockItems] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15);
@@ -38,7 +37,6 @@ const StockMovements = () => {
   useEffect(() => {
     fetchMovements();
     fetchStockItems();
-    fetchLocations();
   }, []);
 
   const fetchMovements = async () => {
@@ -100,25 +98,6 @@ const StockMovements = () => {
       }
     } catch (error) {
       console.error('Stok kalemleri yüklenirken hata:', error);
-    }
-  };
-
-  const fetchLocations = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/Locations');
-      if (response.ok) {
-        const data = await response.json();
-        setLocations(data);
-      }
-    } catch (error) {
-      console.error('Lokasyonlar yüklenirken hata:', error);
-      // Mock locations
-      setLocations([
-        { id: 1, name: 'DEPO-A-01' },
-        { id: 2, name: 'DEPO-A-02' },
-        { id: 3, name: 'DEPO-B-01' },
-        { id: 4, name: 'DEPO-B-02' }
-      ]);
     }
   };
 
@@ -461,14 +440,12 @@ const StockMovements = () => {
         onClose={() => setShowStockInModal(false)}
         onSubmit={handleStockIn}
         stockItems={stockItems}
-        locations={locations}
       />
       <StockOutModal
         isOpen={showStockOutModal}
         onClose={() => setShowStockOutModal(false)}
         onSubmit={handleStockOut}
         stockItems={stockItems}
-        locations={locations}
       />
 
       {/* Stok Hareketi Ekle */}
