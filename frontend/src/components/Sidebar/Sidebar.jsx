@@ -13,6 +13,9 @@ import {
   IconUserCircle,
   IconUsers,
   IconPackage,
+  IconFileInvoice,
+  IconFileText,
+  IconTruck,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 
@@ -49,7 +52,40 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
       ],
     },
     { name: "Süreçler", url: "/processes", icon: <IconLoader size={20} /> },
-    { name: "Stok Yönetimi", url: "/stock-management", icon: <IconPackage size={20} /> },
+    { 
+      name: "Stok Yönetimi", 
+      url: "/stock-management", 
+      icon: <IconPackage size={20} />,
+      children: [
+        {
+          name: "Stok Kartları",
+          url: "/stock-cards",
+          icon: <IconPackage size={18} />,
+        },
+        {
+          name: "Stok Hareketleri",
+          url: "/stock-movements",
+          icon: <IconPackage size={18} />,
+        },
+      ]
+    },
+    { 
+      name: "E-Fatura", 
+      url: "/e-invoice-dashboard", 
+      icon: <IconFileInvoice size={20} />,
+      children: [
+        {
+          name: "Gelen Faturalar",
+          url: "/incoming-invoices",
+          icon: <IconFileText size={18} />,
+        },
+        {
+          name: "İrsaliyeler",
+          url: "/waybills",
+          icon: <IconTruck size={18} />,
+        },
+      ]
+    },
     { name: "Belgeler", url: "/documents", icon: <IconClipboardText size={20} /> },
     { name: "Ayarlar", url: "/settings", icon: <IconSettings size={20} /> },
     { name: "Çıkış Yap", url: "/#", icon: <IconLogout size={20} /> }
