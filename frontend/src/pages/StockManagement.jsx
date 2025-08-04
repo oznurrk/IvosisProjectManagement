@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext, Link } from "react-router-dom";
+import axios from "axios";
 import Header from "../components/Header/Header";
 import { 
   IconPackage, 
@@ -29,12 +30,21 @@ const StockManagement = () => {
   const fetchStockData = async () => {
     try {
       setLoading(true);
-      
+      const token = localStorage.getItem("token");
+
       const [lowStockRes, criticalStockRes, stockItemsRes, movementsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/StockItems/low-stock'),
-        fetch('http://localhost:5000/api/StockItems/critical-stock'),
-        fetch('http://localhost:5000/api/StockItems'),
-        fetch('http://localhost:5000/api/StockMovements')
+        axios.get("http://localhost:5000/api/StockItems/low-stock", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get("http://localhost:5000/api/StockItems/critical-stock", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get("http://localhost:5000/api/StockMovements", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
       ]);
 
       let totalItems = 0;
@@ -42,34 +52,23 @@ const StockManagement = () => {
       let inStockCount = 0;
       let outOfStockCount = 0;
 
-      if (stockItemsRes.ok) {
-        const stockItems = await stockItemsRes.json();
-        totalItems = stockItems.length;
-        totalValue = stockItems.reduce((sum, item) => sum + (item.currentStock * item.purchasePrice || 0), 0);
-        inStockCount = stockItems.filter(item => item.currentStock > 0).length;
-        outOfStockCount = stockItems.filter(item => item.currentStock <= 0).length;
-      }
+      // StockItems verilerini işle
+      const stockItems = stockItemsRes.data;
+      totalItems = stockItems.length;
+      totalValue = stockItems.reduce((sum, item) => sum + (item.currentStock * item.purchasePrice || 0), 0);
+      inStockCount = stockItems.filter(item => item.currentStock > 0).length;
+      outOfStockCount = stockItems.filter(item => item.currentStock <= 0).length;
 
-      if (lowStockRes.ok) {
-        const lowStockData = await lowStockRes.json();
-        setLowStockItems(lowStockData);
-      }
-
-      if (criticalStockRes.ok) {
-        const criticalStockData = await criticalStockRes.json();
-        setCriticalStockItems(criticalStockData);
-      }
-
-      if (movementsRes.ok) {
-        const movementsData = await movementsRes.json();
-        setRecentMovements(movementsData);
-      }
+      // Diğer verileri set et
+      setLowStockItems(lowStockRes.data);
+      setCriticalStockItems(criticalStockRes.data);
+      setRecentMovements(movementsRes.data);
 
       setStockStats({
         totalItems,
         totalValue,
-        lowStockCount: lowStockItems.length,
-        criticalStockCount: criticalStockItems.length,
+        lowStockCount: lowStockRes.data.length,
+        criticalStockCount: criticalStockRes.data.length,
         inStockCount,
         outOfStockCount
       });
@@ -77,7 +76,7 @@ const StockManagement = () => {
     } catch (error) {
       console.error('Stok verileri yüklenirken hata:', error);
       
-      // Mock data
+      // Mock data fallback
       setStockStats({
         totalItems: 145,
         totalValue: 2850000,

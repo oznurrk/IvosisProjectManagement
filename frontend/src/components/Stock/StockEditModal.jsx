@@ -1,18 +1,30 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { IconX, IconCheck } from "@tabler/icons-react";
 
-const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
+const StockEditModal = ({ isOpen, onClose, item, onSave, categories, units }) => {
   const [form, setForm] = useState({
     itemCode: "",
-    itemName: "",
-    category: "",
-    currentStock: "",
-    minStock: "",
-    criticalStock: "",
-    unit: "Adet",
-    unitPrice: "",
-    location: "",
-    description: ""
+    name: "",
+    description: "",
+    categoryId: "",
+    unitId: "",
+    minimumStock: "",
+    maximumStock: "",
+    reorderLevel: "",
+    purchasePrice: "",
+    salePrice: "",
+    currency: "TRY",
+    brand: "",
+    model: "",
+    specifications: "",
+    qualityStandards: "",
+    certificateNumbers: "",
+    storageConditions: "",
+    shelfLife: "",
+    isCriticalItem: false,
+    isActive: true,
+    isDiscontinued: false
   });
 
   const [errors, setErrors] = useState({});
@@ -22,32 +34,29 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
     if (item) {
       setForm({
         itemCode: item.itemCode || "",
-        itemName: item.itemName || "",
-        category: item.category || "",
-        currentStock: item.currentStock?.toString() || "",
-        minStock: item.minStock?.toString() || "",
-        criticalStock: item.criticalStock?.toString() || "",
-        unit: item.unit || "Adet",
-        unitPrice: item.unitPrice?.toString() || "",
-        location: item.location || "",
-        description: item.description || ""
+        name: item.name || "",
+        description: item.description || "",
+        categoryId: item.categoryId?.toString() || "",
+        unitId: item.unitId?.toString() || "",
+        minimumStock: item.minimumStock?.toString() || "",
+        maximumStock: item.maximumStock?.toString() || "",
+        reorderLevel: item.reorderLevel?.toString() || "",
+        purchasePrice: item.purchasePrice?.toString() || "",
+        salePrice: item.salePrice?.toString() || "",
+        currency: item.currency || "TRY",
+        brand: item.brand || "",
+        model: item.model || "",
+        specifications: item.specifications || "",
+        qualityStandards: item.qualityStandards || "",
+        certificateNumbers: item.certificateNumbers || "",
+        storageConditions: item.storageConditions || "",
+        shelfLife: item.shelfLife?.toString() || "",
+        isCriticalItem: item.isCriticalItem || false,
+        isActive: item.isActive !== false,
+        isDiscontinued: item.isDiscontinued || false
       });
     }
   }, [item]);
-
-  const categoryOptions = [
-    "Elektrik Malzemeleri",
-    "Mekanik Parçalar", 
-    "Elektronik Bileşenler",
-    "Güvenlik Ekipmanları",
-    "Diğer"
-  ];
-
-  const locationOptions = [
-    "DEPO-A-01", "DEPO-A-02", "DEPO-A-03",
-    "DEPO-B-01", "DEPO-B-02", "DEPO-B-03", 
-    "DEPO-C-01", "DEPO-C-02", "DEPO-C-03"
-  ];
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -61,11 +70,16 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
     const newErrors = {};
 
     if (!form.itemCode.trim()) newErrors.itemCode = "Stok kodu zorunludur";
-    if (!form.itemName.trim()) newErrors.itemName = "Malzeme adı zorunludur";
-    if (!form.category.trim()) newErrors.category = "Kategori zorunludur";
-    if (!form.currentStock || parseFloat(form.currentStock) < 0) newErrors.currentStock = "Geçerli bir stok miktarı giriniz";
-    if (!form.minStock || parseFloat(form.minStock) < 0) newErrors.minStock = "Geçerli bir minimum stok giriniz";
-    if (!form.criticalStock || parseFloat(form.criticalStock) < 0) newErrors.criticalStock = "Geçerli bir kritik stok giriniz";
+    if (!form.name.trim()) newErrors.name = "Malzeme adı zorunludur";
+    if (!form.categoryId) newErrors.categoryId = "Kategori zorunludur";
+    if (!form.unitId) newErrors.unitId = "Birim zorunludur";
+    if (!form.minimumStock || parseFloat(form.minimumStock) < 0) newErrors.minimumStock = "Geçerli bir minimum stok giriniz";
+    if (!form.reorderLevel || parseFloat(form.reorderLevel) < 0) newErrors.reorderLevel = "Geçerli bir kritik stok giriniz";
+    if (!form.purchasePrice || parseFloat(form.purchasePrice) <= 0) newErrors.purchasePrice = "Geçerli bir alış fiyatı giriniz";
+
+    if (parseFloat(form.reorderLevel) >= parseFloat(form.minimumStock)) {
+      newErrors.reorderLevel = "Kritik stok, minimum stoktan küçük olmalıdır";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -81,11 +95,27 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
     try {
       const stockData = {
         ...item,
-        ...form,
-        currentStock: parseFloat(form.currentStock),
-        minStock: parseFloat(form.minStock),
-        criticalStock: parseFloat(form.criticalStock),
-        unitPrice: parseFloat(form.unitPrice) || 0
+        itemCode: form.itemCode,
+        name: form.name,
+        description: form.description,
+        categoryId: parseInt(form.categoryId),
+        unitId: parseInt(form.unitId),
+        minimumStock: parseFloat(form.minimumStock),
+        maximumStock: parseFloat(form.maximumStock) || parseFloat(form.minimumStock) * 5,
+        reorderLevel: parseFloat(form.reorderLevel),
+        purchasePrice: parseFloat(form.purchasePrice),
+        salePrice: parseFloat(form.salePrice) || parseFloat(form.purchasePrice) * 1.2,
+        currency: form.currency,
+        brand: form.brand,
+        model: form.model,
+        specifications: form.specifications,
+        qualityStandards: form.qualityStandards,
+        certificateNumbers: form.certificateNumbers,
+        storageConditions: form.storageConditions,
+        shelfLife: parseInt(form.shelfLife) || 0,
+        isCriticalItem: form.isCriticalItem,
+        isActive: form.isActive,
+        isDiscontinued: form.isDiscontinued
       };
       
       await onSave(stockData);
@@ -100,11 +130,14 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-ivosis-600 to-ivosis-700 px-6 py-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">Stok Kartı Düzenle</h2>
+            <div>
+              <h2 className="text-xl font-bold text-white">Stok Kartı Düzenle</h2>
+              <p className="text-ivosis-100 text-sm">Malzeme bilgilerini güncelleyin</p>
+            </div>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-lg"
@@ -145,14 +178,14 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
                   </label>
                   <input
                     type="text"
-                    value={form.itemName}
-                    onChange={(e) => handleChange("itemName", e.target.value)}
+                    value={form.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.itemName ? 'border-red-500' : 'border-gray-300'
+                      errors.name ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
-                  {errors.itemName && (
-                    <p className="text-red-500 text-xs mt-1">{errors.itemName}</p>
+                  {errors.name && (
+                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                   )}
                 </div>
 
@@ -161,38 +194,67 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
                     Kategori *
                   </label>
                   <select
-                    value={form.category}
-                    onChange={(e) => handleChange("category", e.target.value)}
+                    value={form.categoryId}
+                    onChange={(e) => handleChange("categoryId", e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.category ? 'border-red-500' : 'border-gray-300'
+                      errors.categoryId ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
                     <option value="">Kategori Seçiniz</option>
-                    {categoryOptions.map((category) => (
-                      <option key={category} value={category}>{category}</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
                   </select>
-                  {errors.category && (
-                    <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                  {errors.categoryId && (
+                    <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Birim
+                    Birim *
                   </label>
                   <select
-                    value={form.unit}
-                    onChange={(e) => handleChange("unit", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    value={form.unitId}
+                    onChange={(e) => handleChange("unitId", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                      errors.unitId ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   >
-                    <option value="Adet">Adet</option>
-                    <option value="Kg">Kg</option>
-                    <option value="Lt">Lt</option>
-                    <option value="M">M</option>
-                    <option value="M2">M²</option>
-                    <option value="M3">M³</option>
+                    <option value="">Birim Seçiniz</option>
+                    {units.map((unit) => (
+                      <option key={unit.id} value={unit.id}>{unit.name}</option>
+                    ))}
                   </select>
+                  {errors.unitId && (
+                    <p className="text-red-500 text-xs mt-1">{errors.unitId}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marka
+                  </label>
+                  <input
+                    type="text"
+                    value={form.brand}
+                    onChange={(e) => handleChange("brand", e.target.value)}
+                    placeholder="Marka adı"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Model
+                  </label>
+                  <input
+                    type="text"
+                    value={form.model}
+                    onChange={(e) => handleChange("model", e.target.value)}
+                    placeholder="Model kodu"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  />
                 </div>
               </div>
             </div>
@@ -203,38 +265,33 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mevcut Stok *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.currentStock}
-                    onChange={(e) => handleChange("currentStock", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.currentStock ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.currentStock && (
-                    <p className="text-red-500 text-xs mt-1">{errors.currentStock}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Minimum Stok *
                   </label>
                   <input
                     type="number"
                     step="0.1"
-                    value={form.minStock}
-                    onChange={(e) => handleChange("minStock", e.target.value)}
+                    value={form.minimumStock}
+                    onChange={(e) => handleChange("minimumStock", e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.minStock ? 'border-red-500' : 'border-gray-300'
+                      errors.minimumStock ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
-                  {errors.minStock && (
-                    <p className="text-red-500 text-xs mt-1">{errors.minStock}</p>
+                  {errors.minimumStock && (
+                    <p className="text-red-500 text-xs mt-1">{errors.minimumStock}</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Maksimum Stok
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.maximumStock}
+                    onChange={(e) => handleChange("maximumStock", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  />
                 </div>
 
                 <div>
@@ -244,64 +301,188 @@ const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
                   <input
                     type="number"
                     step="0.1"
-                    value={form.criticalStock}
-                    onChange={(e) => handleChange("criticalStock", e.target.value)}
+                    value={form.reorderLevel}
+                    onChange={(e) => handleChange("reorderLevel", e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.criticalStock ? 'border-red-500' : 'border-gray-300'
+                      errors.reorderLevel ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
-                  {errors.criticalStock && (
-                    <p className="text-red-500 text-xs mt-1">{errors.criticalStock}</p>
+                  {errors.reorderLevel && (
+                    <p className="text-red-500 text-xs mt-1">{errors.reorderLevel}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Diğer Bilgiler */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Diğer Bilgiler</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fiyat Bilgileri */}
+            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Fiyat Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Birim Fiyat (₺)
+                    Alış Fiyatı (₺) *
                   </label>
                   <input
                     type="number"
                     step="0.01"
-                    value={form.unitPrice}
-                    onChange={(e) => handleChange("unitPrice", e.target.value)}
+                    value={form.purchasePrice}
+                    onChange={(e) => handleChange("purchasePrice", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                      errors.purchasePrice ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.purchasePrice && (
+                    <p className="text-red-500 text-xs mt-1">{errors.purchasePrice}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Satış Fiyatı (₺)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.salePrice}
+                    onChange={(e) => handleChange("salePrice", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lokasyon
+                    Para Birimi
                   </label>
                   <select
-                    value={form.location}
-                    onChange={(e) => handleChange("location", e.target.value)}
+                    value={form.currency}
+                    onChange={(e) => handleChange("currency", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
                   >
-                    <option value="">Lokasyon Seçiniz</option>
-                    {locationOptions.map((location) => (
-                      <option key={location} value={location}>{location}</option>
-                    ))}
+                    <option value="TRY">TRY</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
                   </select>
                 </div>
+              </div>
+            </div>
 
-                <div className="md:col-span-2">
+            {/* Ek Bilgiler */}
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Ek Bilgiler</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Açıklama
+                    Özellikler
                   </label>
                   <textarea
-                    value={form.description}
-                    onChange={(e) => handleChange("description", e.target.value)}
-                    rows="3"
+                    value={form.specifications}
+                    onChange={(e) => handleChange("specifications", e.target.value)}
+                    placeholder="Teknik özellikler..."
+                    rows="2"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent resize-none"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kalite Standartları
+                  </label>
+                  <input
+                    type="text"
+                    value={form.qualityStandards}
+                    onChange={(e) => handleChange("qualityStandards", e.target.value)}
+                    placeholder="ISO 9001, CE, vb."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sertifika Numaraları
+                  </label>
+                  <input
+                    type="text"
+                    value={form.certificateNumbers}
+                    onChange={(e) => handleChange("certificateNumbers", e.target.value)}
+                    placeholder="Sertifika numaraları"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Depolama Koşulları
+                  </label>
+                  <input
+                    type="text"
+                    value={form.storageConditions}
+                    onChange={(e) => handleChange("storageConditions", e.target.value)}
+                    placeholder="Depolama koşulları"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Raf Ömrü (Gün)
+                  </label>
+                  <input
+                    type="number"
+                    value={form.shelfLife}
+                    onChange={(e) => handleChange("shelfLife", e.target.value)}
+                    placeholder="365"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  />
+                </div>
               </div>
+            </div>
+
+            {/* Durum Bilgileri */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Durum Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.isCriticalItem}
+                    onChange={(e) => handleChange("isCriticalItem", e.target.checked)}
+                    className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 text-sm text-gray-700">Kritik Malzeme</label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={(e) => handleChange("isActive", e.target.checked)}
+                    className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 text-sm text-gray-700">Aktif</label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.isDiscontinued}
+                    onChange={(e) => handleChange("isDiscontinued", e.target.checked)}
+                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 text-sm text-gray-700">Üretimi Durdu</label>
+                </div>
+              </div>
+            </div>
+
+            {/* Açıklama */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Açıklama</h3>
+              <textarea
+                value={form.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Malzeme hakkında detaylı açıklama..."
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent resize-none"
+              />
             </div>
 
             {/* Buttons */}

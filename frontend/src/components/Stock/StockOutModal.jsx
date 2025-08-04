@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { IconX, IconCheck, IconAlertTriangle, IconTruck } from "@tabler/icons-react";
 
 const StockOutModal = ({ isOpen, onClose, onSave }) => {
@@ -35,14 +36,16 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
 
   const fetchData = async () => {
     try {
+      const token = localStorage.getItem("token");
+
       const [itemsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/StockItems')
+        axios.get("http://localhost:5000/api/StockItems", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
       ]);
 
-      if (itemsRes.ok) {
-        const items = await itemsRes.json();
-        setStockItems(items);
-      }
+      const items = itemsRes.data;
+      setStockItems(items);
     } catch (error) {
       console.error('Veri yükleme hatası:', error);
     }
@@ -98,6 +101,8 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
     setLoading(true);
     
     try {
+      const token = localStorage.getItem("token");
+      
       const stockOutData = {
         stockItemId: parseInt(form.itemId),
         quantity: parseFloat(form.quantity),
@@ -107,27 +112,17 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
         notes: form.notes
       };
       
-      const response = await fetch('http://localhost:5000/api/StockMovements/stock-out', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(stockOutData)
+      const response = await axios.post("http://localhost:5000/api/StockMovements/stock-out", stockOutData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        resetForm();
-        onClose();
-        alert('Stok çıkış işlemi başarıyla tamamlandı!');
-        if (onSave) onSave();
-      } else {
-        const errorData = await response.json();
-        alert('Hata: ' + (errorData.message || 'Stok çıkış işlemi başarısız'));
-      }
-      
+      resetForm();
+      onClose();
+      alert('Stok çıkış işlemi başarıyla tamamlandı!');
+      if (onSave) onSave();
     } catch (error) {
       console.error("Stok çıkış hatası:", error);
-      alert('Bağlantı hatası: ' + error.message);
+      alert('Hata: ' + (error.response?.data?.message || 'Stok çıkış işlemi başarısız'));
     } finally {
       setLoading(false);
     }
