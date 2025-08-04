@@ -90,7 +90,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                 .ToListAsync();
         }
 
-        public async Task UpdateBalanceAsync(int stockItemId, int locationId, decimal quantity, string movementType)
+      public async Task UpdateBalanceAsync(int stockItemId, int locationId, decimal quantity, string movementType)
         {
             var balance = await _context.StockBalances
                 .FirstOrDefaultAsync(x => x.StockItemId == stockItemId && x.LocationId == locationId);
@@ -116,6 +116,9 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                 balance.CurrentQuantity -= quantity;
             }
 
+            //Her değişiklik sonrası AvailableQuantity'yi güncelle
+           balance.AvailableQuantity = balance.CurrentQuantity - balance.ReservedQuantity;
+            
             balance.LastMovementDate = DateTime.Now;
             balance.LastUpdateDate = DateTime.Now;
 

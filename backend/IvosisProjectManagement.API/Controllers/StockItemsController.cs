@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class StockItemsController : BaseController
     {
         private readonly IStockItemService _stockItemService;
@@ -102,7 +102,7 @@ using Microsoft.AspNetCore.Mvc;
             }
         }
 
-        [HttpPost]
+    [HttpPost]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<ActionResult<object>> CreateStockItem([FromBody] StockItemDtoCreate dto)
     {

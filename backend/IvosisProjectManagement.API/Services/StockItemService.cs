@@ -22,7 +22,14 @@ public class StockItemService : IStockItemService
 
     public async Task<(IEnumerable<StockItemDto> Items, int TotalCount)> GetFilteredAsync(StockItemFilterDto filter)
     {
-        return await _stockItemRepository.GetFilteredAsync(filter);
+        try
+        {
+            return await _stockItemRepository.GetFilteredAsync(filter);
+        }
+    catch (Exception ex)
+    {
+        throw new Exception($"StockItemService.GetFilteredAsync Error: {ex.Message}", ex);
+    }
     }
 
     public async Task<StockItemDto> GetByIdAsync(int id)
