@@ -44,7 +44,13 @@ namespace IvosisProjectManagement.API.Services
 
         public async Task<ProjectTaskDto?> GetByIdAsync(int id)
         {
-            var pt = await _context.ProjectTasks.FindAsync(id);
+            var pt = await _context.ProjectTasks
+                .Include(x => x.Project)           // Navigation property ile join
+                .Include(x => x.Task)
+                .Include(x => x.Process)
+                .Include(x => x.AssignedUser)      // User bilgilerini getir
+                .Include(x => x.CreatedByUser)
+                .FirstOrDefaultAsync(x => x.Id == id);
             if (pt == null) return null;
 
             return new ProjectTaskDto
@@ -62,37 +68,69 @@ namespace IvosisProjectManagement.API.Services
                 CreatedAt = pt.CreatedAt,
                 CreatedByUserId = pt.CreatedByUserId,
                 UpdatedAt = pt.UpdatedAt,
-                UpdatedByUserId = pt.UpdatedByUserId
+                UpdatedByUserId = pt.UpdatedByUserId,
+                ProjectName = pt.Project?.Name,
+                TaskTitle = pt.Task?.Title,
+                ProcessName = pt.Process?.Name
             };
         }
 
         public async Task<IEnumerable<ProjectTaskDto>> GetTasksByProjectIdAsync(int projectId)
         {
+            /* var items = await _context.ProjectTasks
+                 .Where(pt => pt.ProjectId == projectId)
+                 .Select(pt => new ProjectTaskDto
+                 {
+                     Id = pt.Id,
+                     ProjectId = pt.ProjectId,
+                     ProcessId = pt.ProcessId,
+                     TaskId = pt.TaskId,
+                     AssignedUserId = pt.AssignedUserId,
+                     Status = pt.Status,
+                     StartDate = pt.StartDate,
+                     EndDate = pt.EndDate,
+                     Description = pt.Description,
+                     FilePath = pt.FilePath ?? new List<string>(),
+                     CreatedAt = pt.CreatedAt,
+                     CreatedByUserId = pt.CreatedByUserId,
+                     UpdatedAt = pt.UpdatedAt,
+                     UpdatedByUserId = pt.UpdatedByUserId
+                 })
+                 .ToListAsync();
+
+             foreach (var item in items)
+                 item.FilePath = FileHelper.NormalizeFilePaths(item.FilePath);
+
+             return items;*/
             var items = await _context.ProjectTasks
+                .Include(pt => pt.Project)
+                .Include(pt => pt.Task)
+                .Include(pt => pt.Process)
+                .Include(pt => pt.AssignedUser)
+                .Include(pt => pt.CreatedByUser)
                 .Where(pt => pt.ProjectId == projectId)
-                .Select(pt => new ProjectTaskDto
-                {
-                    Id = pt.Id,
-                    ProjectId = pt.ProjectId,
-                    ProcessId = pt.ProcessId,
-                    TaskId = pt.TaskId,
-                    AssignedUserId = pt.AssignedUserId,
-                    Status = pt.Status,
-                    StartDate = pt.StartDate,
-                    EndDate = pt.EndDate,
-                    Description = pt.Description,
-                    FilePath = pt.FilePath ?? new List<string>(),
-                    CreatedAt = pt.CreatedAt,
-                    CreatedByUserId = pt.CreatedByUserId,
-                    UpdatedAt = pt.UpdatedAt,
-                    UpdatedByUserId = pt.UpdatedByUserId
-                })
                 .ToListAsync();
 
-            foreach (var item in items)
-                item.FilePath = FileHelper.NormalizeFilePaths(item.FilePath);
-
-            return items;
+            return items.Select(pt => new ProjectTaskDto
+            {
+                Id = pt.Id,
+                ProjectId = pt.ProjectId,
+                ProcessId = pt.ProcessId,
+                TaskId = pt.TaskId,
+                AssignedUserId = pt.AssignedUserId,
+                Status = pt.Status,
+                StartDate = pt.StartDate,
+                EndDate = pt.EndDate,
+                Description = pt.Description,
+                FilePath = FileHelper.NormalizeFilePaths(pt.FilePath ?? new List<string>()),
+                CreatedAt = pt.CreatedAt,
+                CreatedByUserId = pt.CreatedByUserId,
+                UpdatedAt = pt.UpdatedAt,
+                UpdatedByUserId = pt.UpdatedByUserId,
+                ProjectName = pt.Project?.Name,
+                TaskTitle = pt.Task?.Title,
+                ProcessName = pt.Process?.Name
+            }).ToList();
         }
 
         public async Task<List<ProjectTaskDto>> GetTasksByUserIdAsync(int userId)
