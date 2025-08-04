@@ -1,144 +1,71 @@
 import React, { useState, useEffect } from "react";
-import { IconX, IconCheck, IconAlertCircle } from "@tabler/icons-react";
+import { IconX, IconCheck } from "@tabler/icons-react";
 
-const StockEditModal = ({ isOpen, onClose, stock, onSave }) => {
+const StockEditModal = ({ isOpen, onClose, item, onSave }) => {
   const [form, setForm] = useState({
-    stockCode: "",
-    materialName: "",
-    lotNumber: "",
-    weight: "",
-    unit: "Kg",
-    supplier: "",
-    arrivalDate: "",
-    labelNumber: "",
-    waybillNumber: "",
-    location: "",
+    itemCode: "",
+    itemName: "",
+    category: "",
+    currentStock: "",
+    minStock: "",
+    criticalStock: "",
+    unit: "Adet",
     unitPrice: "",
-    totalPrice: "",
-    notes: "",
-    status: "Stokta",
-    saleCustomer: "",
-    saleDate: "",
-    reserveCustomer: "",
-    reserveDate: ""
+    location: "",
+    description: ""
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const materialOptions = [
-    "Çelik Bobin A1",
-    "Çelik Bobin A2",
-    "Alüminyum Bobin B1",
-    "Alüminyum Bobin B2",
-    "Paslanmaz Çelik Bobin C1",
-    "Paslanmaz Çelik Bobin C2",
-    "Galvaniz Çelik Bobin D1",
-    "Bakır Bobin E1"
-  ];
+  useEffect(() => {
+    if (item) {
+      setForm({
+        itemCode: item.itemCode || "",
+        itemName: item.itemName || "",
+        category: item.category || "",
+        currentStock: item.currentStock?.toString() || "",
+        minStock: item.minStock?.toString() || "",
+        criticalStock: item.criticalStock?.toString() || "",
+        unit: item.unit || "Adet",
+        unitPrice: item.unitPrice?.toString() || "",
+        location: item.location || "",
+        description: item.description || ""
+      });
+    }
+  }, [item]);
 
-  const supplierOptions = [
-    "ABC Çelik San. Tic. Ltd. Şti.",
-    "XYZ Metal San. A.Ş.",
-    "GHI Paslanmaz Ltd.",
-    "JKL Alüminyum San.",
-    "MNO Galvaniz A.Ş.",
-    "PQR Bakır San. Ltd."
+  const categoryOptions = [
+    "Elektrik Malzemeleri",
+    "Mekanik Parçalar", 
+    "Elektronik Bileşenler",
+    "Güvenlik Ekipmanları",
+    "Diğer"
   ];
 
   const locationOptions = [
-    "A-01-001", "A-01-002", "A-01-003",
-    "B-02-001", "B-02-002", "B-02-003",
-    "C-03-001", "C-03-002", "C-03-003",
-    "D-04-001", "D-04-002", "D-04-003"
+    "DEPO-A-01", "DEPO-A-02", "DEPO-A-03",
+    "DEPO-B-01", "DEPO-B-02", "DEPO-B-03", 
+    "DEPO-C-01", "DEPO-C-02", "DEPO-C-03"
   ];
-
-  const statusOptions = [
-    { value: "Stokta", label: "Stokta" },
-    { value: "Satıldı", label: "Satıldı" },
-    { value: "Rezerve", label: "Rezerve" },
-    { value: "İade", label: "İade" }
-  ];
-
-  useEffect(() => {
-    if (stock && isOpen) {
-      setForm({
-        stockCode: stock.stockCode || "",
-        materialName: stock.materialName || "",
-        lotNumber: stock.lotNumber || "",
-        weight: stock.weight?.toString() || "",
-        unit: stock.unit || "Kg",
-        supplier: stock.supplier || "",
-        arrivalDate: stock.arrivalDate || "",
-        labelNumber: stock.labelNumber || "",
-        waybillNumber: stock.waybillNumber || "",
-        location: stock.location || "",
-        unitPrice: stock.unitPrice?.toString() || "",
-        totalPrice: stock.totalPrice?.toString() || "",
-        notes: stock.notes || "",
-        status: stock.status || "Stokta",
-        saleCustomer: stock.saleCustomer || "",
-        saleDate: stock.saleDate || "",
-        reserveCustomer: stock.reserveCustomer || "",
-        reserveDate: stock.reserveDate || ""
-      });
-    }
-  }, [stock, isOpen]);
 
   const handleChange = (field, value) => {
-    const newForm = { ...form, [field]: value };
+    setForm(prev => ({ ...prev, [field]: value }));
     
-    // Otomatik hesaplama
-    if (field === 'weight' || field === 'unitPrice' || field === 'unit') {
-      const weight = parseFloat(field === 'weight' ? value : newForm.weight) || 0;
-      const unitPrice = parseFloat(field === 'unitPrice' ? value : newForm.unitPrice) || 0;
-      const unit = field === 'unit' ? value : newForm.unit;
-      // Eğer ton seçiliyse kg'a çevir
-      const weightInKg = unit === "Ton" ? weight * 1000 : weight;
-      newForm.totalPrice = (weightInKg * unitPrice).toString();
-    }
-    
-    // Durum değişikliğinde ilgili alanları temizle
-    if (field === 'status') {
-      if (value !== 'Satıldı') {
-        newForm.saleCustomer = "";
-        newForm.saleDate = "";
-      }
-      if (value !== 'Rezerve') {
-        newForm.reserveCustomer = "";
-        newForm.reserveDate = "";
-      }
-    }
-    
-    setForm(newForm);
-    
-    // Hata temizle
     if (errors[field]) {
-      setErrors({ ...errors, [field]: "" });
+      setErrors(prev => ({ ...prev, [field]: "" }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!form.materialName.trim()) newErrors.materialName = "Malzeme adı zorunludur";
-    if (!form.weight || parseFloat(form.weight) <= 0) newErrors.weight = "Geçerli bir ağırlık giriniz";
-    if (!form.supplier.trim()) newErrors.supplier = "Tedarikçi zorunludur";
-    if (!form.arrivalDate) newErrors.arrivalDate = "Giriş tarihi zorunludur";
-    if (!form.waybillNumber.trim()) newErrors.waybillNumber = "İrsaliye numarası zorunludur";
-    if (!form.location.trim()) newErrors.location = "Lokasyon zorunludur";
-    if (!form.unitPrice || parseFloat(form.unitPrice) <= 0) newErrors.unitPrice = "Geçerli bir birim fiyat giriniz";
-
-    // Durum bazlı validasyonlar
-    if (form.status === 'Satıldı') {
-      if (!form.saleCustomer.trim()) newErrors.saleCustomer = "Müşteri bilgisi zorunludur";
-      if (!form.saleDate) newErrors.saleDate = "Satış tarihi zorunludur";
-    }
-
-    if (form.status === 'Rezerve') {
-      if (!form.reserveCustomer.trim()) newErrors.reserveCustomer = "Rezerve eden bilgisi zorunludur";
-      if (!form.reserveDate) newErrors.reserveDate = "Rezerve tarihi zorunludur";
-    }
+    if (!form.itemCode.trim()) newErrors.itemCode = "Stok kodu zorunludur";
+    if (!form.itemName.trim()) newErrors.itemName = "Malzeme adı zorunludur";
+    if (!form.category.trim()) newErrors.category = "Kategori zorunludur";
+    if (!form.currentStock || parseFloat(form.currentStock) < 0) newErrors.currentStock = "Geçerli bir stok miktarı giriniz";
+    if (!form.minStock || parseFloat(form.minStock) < 0) newErrors.minStock = "Geçerli bir minimum stok giriniz";
+    if (!form.criticalStock || parseFloat(form.criticalStock) < 0) newErrors.criticalStock = "Geçerli bir kritik stok giriniz";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -153,15 +80,15 @@ const StockEditModal = ({ isOpen, onClose, stock, onSave }) => {
     
     try {
       const stockData = {
-        ...stock,
+        ...item,
         ...form,
-        weight: parseFloat(form.weight),
-        unitPrice: parseFloat(form.unitPrice),
-        totalPrice: parseFloat(form.totalPrice)
+        currentStock: parseFloat(form.currentStock),
+        minStock: parseFloat(form.minStock),
+        criticalStock: parseFloat(form.criticalStock),
+        unitPrice: parseFloat(form.unitPrice) || 0
       };
       
       await onSave(stockData);
-      
     } catch (error) {
       console.error("Stok güncelleme hatası:", error);
     } finally {
@@ -169,18 +96,15 @@ const StockEditModal = ({ isOpen, onClose, stock, onSave }) => {
     }
   };
 
-  if (!isOpen || !stock) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-ivosis-600 to-ivosis-700 px-6 py-4">
           <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold text-white">Stok Düzenle</h2>
-              <p className="text-blue-100 text-sm">{stock.stockCode}</p>
-            </div>
+            <h2 className="text-xl font-bold text-white">Stok Kartı Düzenle</h2>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 transition-colors duration-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-lg"
@@ -200,324 +124,184 @@ const StockEditModal = ({ isOpen, onClose, stock, onSave }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Stok Kodu
+                    Stok Kodu *
                   </label>
                   <input
                     type="text"
-                    value={form.stockCode}
-                    onChange={(e) => handleChange("stockCode", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                    readOnly
+                    value={form.itemCode}
+                    onChange={(e) => handleChange("itemCode", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                      errors.itemCode ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.itemCode && (
+                    <p className="text-red-500 text-xs mt-1">{errors.itemCode}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Malzeme Adı *
                   </label>
-                  <select
-                    value={form.materialName}
-                    onChange={(e) => handleChange("materialName", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.materialName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Malzeme Seçiniz</option>
-                    {materialOptions.map((material) => (
-                      <option key={material} value={material}>{material}</option>
-                    ))}
-                  </select>
-                  {errors.materialName && (
-                    <p className="text-red-500 text-xs mt-1">{errors.materialName}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lot Numarası
-                  </label>
                   <input
                     type="text"
-                    value={form.lotNumber}
-                    onChange={(e) => handleChange("lotNumber", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                    readOnly
+                    value={form.itemName}
+                    onChange={(e) => handleChange("itemName", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                      errors.itemName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Etiket Numarası
-                  </label>
-                  <input
-                    type="text"
-                    value={form.labelNumber}
-                    onChange={(e) => handleChange("labelNumber", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ağırlık *
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={form.weight}
-                      onChange={(e) => handleChange("weight", e.target.value)}
-                      className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.weight ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    <select
-                      value={form.unit}
-                      onChange={(e) => handleChange("unit", e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                    >
-                      <option value="Kg">Kg</option>
-                      <option value="Ton">Ton</option>
-                    </select>
-                  </div>
-                  {errors.weight && (
-                    <p className="text-red-500 text-xs mt-1">{errors.weight}</p>
+                  {errors.itemName && (
+                    <p className="text-red-500 text-xs mt-1">{errors.itemName}</p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lokasyon *
+                    Kategori *
                   </label>
                   <select
-                    value={form.location}
-                    onChange={(e) => handleChange("location", e.target.value)}
+                    value={form.category}
+                    onChange={(e) => handleChange("category", e.target.value)}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.location ? 'border-red-500' : 'border-gray-300'
+                      errors.category ? 'border-red-500' : 'border-gray-300'
                     }`}
                   >
-                    <option value="">Lokasyon Seçiniz</option>
-                    {locationOptions.map((location) => (
-                      <option key={location} value={location}>{location}</option>
+                    <option value="">Kategori Seçiniz</option>
+                    {categoryOptions.map((category) => (
+                      <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
-                  {errors.location && (
-                    <p className="text-red-500 text-xs mt-1">{errors.location}</p>
+                  {errors.category && (
+                    <p className="text-red-500 text-xs mt-1">{errors.category}</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Birim
+                  </label>
+                  <select
+                    value={form.unit}
+                    onChange={(e) => handleChange("unit", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  >
+                    <option value="Adet">Adet</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Lt">Lt</option>
+                    <option value="M">M</option>
+                    <option value="M2">M²</option>
+                    <option value="M3">M³</option>
+                  </select>
                 </div>
               </div>
             </div>
 
-            {/* Durum Bilgileri */}
+            {/* Stok Bilgileri */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Durum Bilgileri</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Stok Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Durum *
+                    Mevcut Stok *
                   </label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => handleChange("status", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                  >
-                    {statusOptions.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.currentStock}
+                    onChange={(e) => handleChange("currentStock", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                      errors.currentStock ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.currentStock && (
+                    <p className="text-red-500 text-xs mt-1">{errors.currentStock}</p>
+                  )}
                 </div>
 
-                {/* Satış Bilgileri */}
-                {form.status === 'Satıldı' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Müşteri *
-                      </label>
-                      <input
-                        type="text"
-                        value={form.saleCustomer}
-                        onChange={(e) => handleChange("saleCustomer", e.target.value)}
-                        placeholder="Müşteri adı"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                          errors.saleCustomer ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {errors.saleCustomer && (
-                        <p className="text-red-500 text-xs mt-1">{errors.saleCustomer}</p>
-                      )}
-                    </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Minimum Stok *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.minStock}
+                    onChange={(e) => handleChange("minStock", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                      errors.minStock ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.minStock && (
+                    <p className="text-red-500 text-xs mt-1">{errors.minStock}</p>
+                  )}
+                </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Satış Tarihi *
-                      </label>
-                      <input
-                        type="date"
-                        value={form.saleDate}
-                        onChange={(e) => handleChange("saleDate", e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                          errors.saleDate ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {errors.saleDate && (
-                        <p className="text-red-500 text-xs mt-1">{errors.saleDate}</p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Rezervasyon Bilgileri */}
-                {form.status === 'Rezerve' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Rezerve Eden *
-                      </label>
-                      <input
-                        type="text"
-                        value={form.reserveCustomer}
-                        onChange={(e) => handleChange("reserveCustomer", e.target.value)}
-                        placeholder="Rezerve eden"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                          errors.reserveCustomer ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {errors.reserveCustomer && (
-                        <p className="text-red-500 text-xs mt-1">{errors.reserveCustomer}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Rezerve Tarihi *
-                      </label>
-                      <input
-                        type="date"
-                        value={form.reserveDate}
-                        onChange={(e) => handleChange("reserveDate", e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                          errors.reserveDate ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                      />
-                      {errors.reserveDate && (
-                        <p className="text-red-500 text-xs mt-1">{errors.reserveDate}</p>
-                      )}
-                    </div>
-                  </>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kritik Stok *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.criticalStock}
+                    onChange={(e) => handleChange("criticalStock", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                      errors.criticalStock ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.criticalStock && (
+                    <p className="text-red-500 text-xs mt-1">{errors.criticalStock}</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Tedarikçi Bilgileri */}
+            {/* Diğer Bilgiler */}
             <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Tedarikçi Bilgileri</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Diğer Bilgiler</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tedarikçi *
-                  </label>
-                  <select
-                    value={form.supplier}
-                    onChange={(e) => handleChange("supplier", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.supplier ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Tedarikçi Seçiniz</option>
-                    {supplierOptions.map((supplier) => (
-                      <option key={supplier} value={supplier}>{supplier}</option>
-                    ))}
-                  </select>
-                  {errors.supplier && (
-                    <p className="text-red-500 text-xs mt-1">{errors.supplier}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giriş Tarihi *
-                  </label>
-                  <input
-                    type="date"
-                    value={form.arrivalDate}
-                    onChange={(e) => handleChange("arrivalDate", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.arrivalDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.arrivalDate && (
-                    <p className="text-red-500 text-xs mt-1">{errors.arrivalDate}</p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    İrsaliye Numarası *
-                  </label>
-                  <input
-                    type="text"
-                    value={form.waybillNumber}
-                    onChange={(e) => handleChange("waybillNumber", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.waybillNumber ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.waybillNumber && (
-                    <p className="text-red-500 text-xs mt-1">{errors.waybillNumber}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Fiyat Bilgileri */}
-            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Fiyat Bilgileri</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Birim Fiyat (₺) *
+                    Birim Fiyat (₺)
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={form.unitPrice}
                     onChange={(e) => handleChange("unitPrice", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                      errors.unitPrice ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
                   />
-                  {errors.unitPrice && (
-                    <p className="text-red-500 text-xs mt-1">{errors.unitPrice}</p>
-                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Toplam Fiyat (₺)
+                    Lokasyon
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.totalPrice}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                  <select
+                    value={form.location}
+                    onChange={(e) => handleChange("location", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  >
+                    <option value="">Lokasyon Seçiniz</option>
+                    {locationOptions.map((location) => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Açıklama
+                  </label>
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => handleChange("description", e.target.value)}
+                    rows="3"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent resize-none"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Otomatik hesaplanır</p>
                 </div>
               </div>
-            </div>
-
-            {/* Notlar */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Notlar</h3>
-              <textarea
-                value={form.notes}
-                onChange={(e) => handleChange("notes", e.target.value)}
-                placeholder="İsteğe bağlı notlar..."
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent resize-none"
-              />
             </div>
 
             {/* Buttons */}

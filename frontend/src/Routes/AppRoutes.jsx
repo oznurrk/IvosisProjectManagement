@@ -12,7 +12,10 @@ import Dashboard from "../pages/Dashboard";
 import PersonnelListPage from "../pages/PersonnelListPage";
 import PersonnelAddPage from "../pages/PersonnelAddPage";
 import StockManagement from "../pages/StockManagement";
-
+import StockCards from "../pages/StockCards";
+import StockMovements from "../pages/StockMovements";
+import IncomingInvoices from "../pages/IncomingInvoices";
+import EInvoiceDashboard from "../pages/EInvoiceDashboard";
 
 const AppRoutes = () => {
     return(
@@ -32,6 +35,12 @@ const AppRoutes = () => {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/users" element={<PersonnelListPage  />} />
                     <Route path="personel-add" element={<PersonnelAddPage />} />
+                    <Route path="/stock-cards" element={<StockCards />} />
+                    <Route path="/stock-movements" element={<StockMovements />} />
+                    <Route path="/e-invoices" element={<IncomingInvoices />} />
+                    <Route path="/incoming-invoices" element={<IncomingInvoices />} />
+                    <Route path="/e-invoice-dashboard" element={<EInvoiceDashboard />} />
+                    <Route path="/waybills" element={<Random />} />
                 </Route>
             </Routes>
         </BrowserRouter>

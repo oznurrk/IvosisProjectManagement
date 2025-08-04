@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { 
   Users, FolderOpen, CheckCircle, Clock, TrendingUp, Calendar,
-  Activity, Target, Award, Briefcase, Package
+  Activity, Target, Award, Briefcase, Package, FileText
 } from 'lucide-react';
 import Header from "../components/Header/Header";
 import { IconLayoutGrid } from "@tabler/icons-react";
@@ -171,7 +171,7 @@ const Dashboard = () => {
             <Activity className="h-5 w-5 mr-2 text-blue-600" />
             Hızlı İşlemler
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <QuickActionCard
               title="Yeni Proje"
               icon={<FolderOpen className="h-6 w-6" />}
@@ -195,6 +195,18 @@ const Dashboard = () => {
               icon={<Package className="h-6 w-6" />}
               link="/stock-management"
               color="orange"
+            />
+            <QuickActionCard
+              title="Stok Kartları"
+              icon={<Package className="h-5 w-5" />}
+              link="/stock-cards"
+              color="emerald"
+            />
+            <QuickActionCard
+              title="E-Fatura"
+              icon={<FileText className="h-6 w-6" />}
+              link="/incoming-invoices"
+              color="violet"
             />
             <QuickActionCard
               title="Personel"
@@ -406,7 +418,9 @@ const QuickActionCard = ({ title, icon, link, color }) => {
     purple: "from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700",
     orange: "from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700",
     indigo: "from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700",
-    cyan: "from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
+    cyan: "from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700",
+    emerald: "from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700",
+    violet: "from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700"
   };
 
   return (
