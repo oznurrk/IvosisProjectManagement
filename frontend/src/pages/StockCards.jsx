@@ -20,7 +20,7 @@ const StockCards = () => {
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(12);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -231,15 +231,16 @@ const StockCards = () => {
       setTimeout(() => {
         setStockItems(current => {
           const newVisibleItems = current.filter(item => {
-            const codeMatch = (item.itemCode || "").toLowerCase().includes(searchFilters.itemCode.toLowerCase());
-            const nameMatch = (item.name || "").toLowerCase().includes(searchFilters.name.toLowerCase());
+            // Use searchFilters.search for general search (itemCode and name)
+            const searchTerm = (searchFilters.search || "").toLowerCase();
+            const codeMatch = (item.itemCode || "").toLowerCase().includes(searchTerm);
+            const nameMatch = (item.name || "").toLowerCase().includes(searchTerm);
             const categoryMatch = !searchFilters.category || (item.category || "").toLowerCase().includes(searchFilters.category.toLowerCase());
             const brandMatch = !searchFilters.brand || (item.brand || "").toLowerCase().includes(searchFilters.brand.toLowerCase());
             const criticalMatch = searchFilters.isCriticalItem === "" || item.isCriticalItem.toString() === searchFilters.isCriticalItem;
             const statusMatch = !searchFilters.status || getStockStatus(item) === searchFilters.status;
-            return codeMatch && nameMatch && categoryMatch && brandMatch && criticalMatch && statusMatch;
+            return (codeMatch || nameMatch) && categoryMatch && brandMatch && criticalMatch && statusMatch;
           });
-          
           const newTotalPages = Math.ceil(newVisibleItems.length / itemsPerPage);
           if (currentPage > newTotalPages && newTotalPages > 0) {
             setCurrentPage(newTotalPages);
@@ -340,11 +341,15 @@ const StockCards = () => {
     return unit ? unit.name : 'Adet';
   };
 
-  function getStockStatus(item) {
-    if (item.currentStock <= item.reorderLevel) return "Kritik";
-    if (item.currentStock <= item.minimumStock) return "Düşük";
-    return "Normal";
-  }
+function getStockStatus(item) {
+  // If currentStock is undefined/null, use minimumStock or 0
+  const currentStock = typeof item.currentStock === 'number' && !isNaN(item.currentStock)
+    ? item.currentStock
+    : (typeof item.minimumStock === 'number' && !isNaN(item.minimumStock) ? item.minimumStock : 0);
+  if (currentStock <= item.reorderLevel) return "Kritik";
+  if (currentStock <= item.minimumStock) return "Düşük";
+  return "Normal";
+}
 
   function getStatusColor(status) {
     switch (status) {
@@ -401,6 +406,15 @@ const StockCards = () => {
   const totalPages = Math.ceil(visibleItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = visibleItems.slice(startIndex, startIndex + itemsPerPage);
+
+  // Items per page options
+  const itemsPerPageOptions = [5, 10, 12, 20, 50, 100];
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
   const formatCurrency = (amount, currency = 'TRY') => {
     return new Intl.NumberFormat('tr-TR', {
@@ -518,33 +532,15 @@ const StockCards = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      #
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      Malzeme Bilgileri
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      Stok Kodu
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      Kategori
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      Mevcut Stok
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      Min/Kritik Stok
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      Fiyat Bilgileri
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      Durum
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      İşlemler
-                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">ID</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Malzeme Bilgileri</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Stok Kodu</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Stok Türü</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Mevcut Stok</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Min/Kritik Stok</th>
+                    {/* <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Fiyat Bilgileri</th> */}
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Durum</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">İşlemler</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -554,7 +550,7 @@ const StockCards = () => {
                     return (
                       <tr key={item.id} className="hover:bg-gray-50">
                         {/* Sıra Numarası */}
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-4 text-center">
                           <div className="flex items-center justify-center">
                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold bg-ivosis-100 text-ivosis-800">
                               {rowNumber}
@@ -563,15 +559,14 @@ const StockCards = () => {
                         </td>
 
                         {/* Malzeme Bilgileri */}
-                        <td className="px-4 py-4">
-                          <div className="flex items-center justify-center space-x-3">
-                            <IconPackage className="h-6 w-6 text-ivosis-500 mt-1 flex-shrink-0" />
-                            <div className="min-w-0 flex-1 text-center">
-                              <div className="text-sm font-medium text-gray-900 break-words">
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex items-center justify-end space-x-3">
+                            <div className="min-w-0 flex-1 text-right">
+                              <div className="text-sm font-medium text-gray-900 break-words text-right">
                                 {item.name}
                               </div>
                               {item.brand && (
-                                <div className="text-sm items-center text-gray-500 flex items-center justify-center mt-1">
+                                <div className="text-sm items-center text-gray-500 flex items-center justify-end mt-1 text-right">
                                   <IconStar size={12} className="mr-1 flex-shrink-0" />
                                   <span className="break-words">
                                     {item.brand}
@@ -580,7 +575,7 @@ const StockCards = () => {
                                 </div>
                               )}
                               {item.description && (
-                                <div className="text-xs text-gray-400 mt-1 line-clamp-2 text-center">
+                                <div className="text-xs text-gray-400 mt-1 line-clamp-2 text-right">
                                   {item.description}
                                 </div>
                               )}
@@ -589,22 +584,22 @@ const StockCards = () => {
                         </td>
 
                         {/* Stok Kodu */}
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-center font-medium text-gray-900">
+                        <td className="px-4 py-4 text-right">
+                          <div className="text-sm font-medium text-gray-900 text-right">
                             {item.itemCode}
                           </div>
                         </td>
 
                         {/* Kategori */}
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-center text-gray-900">
+                        <td className="px-4 py-4 text-right">
+                          <div className="text-sm text-gray-900 text-right">
                             {item.category || getCategoryName(item.categoryId, item)}
                           </div>
                         </td>
 
                         {/* Mevcut Stok */}
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-center text-gray-900">
+                        <td className="px-4 py-4 text-left">
+                          <div className="text-sm text-gray-900 text-left">
                             <span className={`font-medium ${
                               status === "Kritik" ? "text-red-600" : 
                               status === "Düşük" ? "text-yellow-600" : "text-green-600"
@@ -618,8 +613,8 @@ const StockCards = () => {
                         </td>
 
                         {/* Min/Kritik Stok */}
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-center text-gray-900">
+                        <td className="px-4 py-4 text-left">
+                          <div className="text-sm text-gray-900 text-left">
                             <div>Min: {item.minimumStock} {getUnitName(item.unitId)}</div>
                             <div className="text-xs text-gray-500">
                               Kritik: {item.reorderLevel} {getUnitName(item.unitId)}
@@ -627,7 +622,7 @@ const StockCards = () => {
                           </div>
                         </td>
 
-                        {/* Fiyat Bilgileri */}
+                        {/* Fiyat Bilgileri 
                         <td className="px-4 py-4">
                           <div className="text-sm text-center text-gray-900">
                             {item.purchasePrice > 0 && (
@@ -642,13 +637,12 @@ const StockCards = () => {
                             )}
                           </div>
                         </td>
+                        */}
 
                         {/* Durum */}
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col items-center space-y-1">
-                            <span className={`inline-flex px-2 py-1 justify-center text-xs font-semibold rounded-full ${getStatusColor(status)}`}>
-                              {status}
-                            </span>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex flex-col items-center space-y-1 text-center">
+                            <span className={`inline-flex px-2 py-1 justify-center text-xs font-semibold rounded-full ${getStatusColor(status)}`}>{status}</span>
                             {item.isCriticalItem && (
                               <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
                                 <IconAlertTriangle size={10} className="mr-1" />
@@ -659,8 +653,8 @@ const StockCards = () => {
                         </td>
 
                         {/* İşlemler */}
-                        <td className="px-4 py-4">
-                          <div className="flex justify-center space-x-2">
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex justify-center space-x-2 text-center">
                             <button
                               onClick={() => handleEdit(item)}
                               className="text-ivosis-600 hover:text-ivosis-900 transition-colors"
@@ -694,34 +688,37 @@ const StockCards = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Önceki
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Sonraki
-                </button>
+          {/* Pagination ve Sayfa başına seçim her zaman görünür - Movement ile birebir */}
+          <div className="bg-white px-4 py-3 flex flex-col items-center justify-center border-t border-gray-200">
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 mb-2">
+              {/* Pagination mobilde */}
+              <div className="flex justify-center sm:hidden">
+                {totalPages > 1 && (
+                  <>
+                    <button
+                      onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Önceki
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Sonraki
+                    </button>
+                  </>
+                )}
               </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(startIndex + itemsPerPage, visibleItems.length)}</span> arası,{" "}
-                    toplam <span className="font-medium">{visibleItems.length}</span> kayıt
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+              {/* Masaüstü: Pagination ve Sayfa başına seçim yan yana */}
+              <div className="hidden sm:flex flex-row items-center justify-center w-full gap-4">
+                <p className="text-sm text-gray-700 mb-0">
+                  <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(startIndex + itemsPerPage, visibleItems.length)}</span> arası, toplam <span className="font-medium">{visibleItems.length}</span> kayıt
+                </p>
+                {totalPages > 1 && (
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px justify-center">
                     <button
                       onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                       disabled={currentPage === 1}
@@ -755,10 +752,24 @@ const StockCards = () => {
                       Sonraki
                     </button>
                   </nav>
+                )}
+                {/* Sayfa başına gösterilecek kayıt sayısı seçimi */}
+                <div className="flex items-center">
+                  <label htmlFor="itemsPerPageBottom" className="mr-2 text-sm text-gray-700">Sayfa başına:</label>
+                  <select
+                    id="itemsPerPageBottom"
+                    value={itemsPerPage}
+                    onChange={handleItemsPerPageChange}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    {itemsPerPageOptions.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 

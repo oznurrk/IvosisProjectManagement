@@ -422,7 +422,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Kategori *
+                      Stok Türü *
                     </label>
                     <select
                       value={form.categoryId}
@@ -563,7 +563,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                 </div>
               </div>
 
-              {/* Fiyat Bilgileri */}
+              {/* Fiyat Bilgileri 
               <div className="bg-green-50 border border-green-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Fiyat Bilgileri</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -616,6 +616,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   </div>
                 </div>
               </div>
+              */}
 
               {/* Ek Bilgiler */}
               <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
