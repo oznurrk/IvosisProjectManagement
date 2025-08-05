@@ -32,6 +32,7 @@ builder.Services.AddSwaggerGen();
 
 // AutoMapper Configuration
 builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // ⬇️ Servis Katmanı
 builder.Services.AddScoped<IUserService, UserService>();
@@ -71,7 +72,6 @@ builder.Services.AddScoped<IStockAlertService, StockAlertService>();
 builder.Services.AddScoped<IDashboardStockService, DashboardStockService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
-builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IStockLocationService, StockLocationService>();
 builder.Services.AddMemoryCache();
