@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 public class StockBalance
     {
-            public int Id { get; set; }
+        public int Id { get; set; }
         public int StockItemId { get; set; }
         public int LocationId { get; set; }
         public decimal CurrentQuantity { get; set; } = 0;
