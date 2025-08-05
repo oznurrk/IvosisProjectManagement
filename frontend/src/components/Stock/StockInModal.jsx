@@ -13,6 +13,25 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
     notes: ""
   });
 
+  // Helper to get category name from categoryId and categories prop
+  const getCategoryName = (categoryId, item) => {
+    if (item?.category) return item.category;
+    if (!categoryId || !Array.isArray(stockItems)) return "Kategori Yok";
+    // Try to find category name from stockItems array
+    const found = stockItems.find(i => {
+      return (
+        i.categoryId === categoryId ||
+        i.categoryId === parseInt(categoryId) ||
+        i.categoryId?.toString() === categoryId?.toString() ||
+        i.category?.toString() === categoryId?.toString()
+      );
+    });
+    if (found && found.category) return found.category;
+    // Try to find categoryName or CategoryName
+    if (found && (found.categoryName || found.CategoryName)) return found.categoryName || found.CategoryName;
+    return "Bilinmiyor";
+  };
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -228,7 +247,7 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
                   <div className="text-sm text-blue-700">
                     <p><strong>Kod:</strong> {selectedItem.itemCode}</p>
                     <p><strong>Ad:</strong> {selectedItem.name}</p>
-                    <p><strong>Kategori:</strong> {selectedItem.category}</p>
+                    <p><strong>Kategori:</strong> {getCategoryName(selectedItem.categoryId, selectedItem)}</p>
                     <p><strong>Mevcut Stok:</strong> {selectedItem.currentStock || 0} {selectedItem.unit || 'Adet'}</p>
                     <p><strong>Alış Fiyatı:</strong> {selectedItem.purchasePrice || 0} ₺</p>
                   </div>
