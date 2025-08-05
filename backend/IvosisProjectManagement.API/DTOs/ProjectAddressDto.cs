@@ -12,5 +12,6 @@ namespace IvosisProjectManagement.API.DTOs
         public string? NeighborhoodName { get; set; }
         public string? Ada { get; set; }
         public string? Parsel { get; set; }
+        public string? AdressDetails { get; set; }
     }
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 public class StockBalance
     {
             public int Id { get; set; }
@@ -6,6 +8,7 @@ public class StockBalance
         public decimal CurrentQuantity { get; set; } = 0;
         public decimal ReservedQuantity { get; set; } = 0;
         
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public decimal AvailableQuantity { get; set; }
         
         public DateTime? LastMovementDate { get; set; }

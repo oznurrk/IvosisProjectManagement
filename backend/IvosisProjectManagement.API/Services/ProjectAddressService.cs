@@ -19,13 +19,15 @@ public class ProjectAddressService : IProjectAddressService
             .Include(pa => pa.City)
             .Include(pa => pa.District)
             .Include(pa => pa.Neighborhood)
+            .Include(pa => pa.AdressDetails)
             .Select(pa => new ProjectAddressDto
             {
                 CityName = pa.City.Name,
                 DistrictName = pa.District.Name,
                 NeighborhoodName = pa.Neighborhood != null ? pa.Neighborhood.Name : null,
                 Ada = pa.Ada,
-                Parsel = pa.Parsel
+                Parsel = pa.Parsel,
+                AdressDetails = pa.AdressDetails
             })
             .ToListAsync();
     }

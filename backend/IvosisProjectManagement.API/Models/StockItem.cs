@@ -7,6 +7,7 @@ public class StockItem : BaseEntity
     public string Name { get; set; }
     public string Description { get; set; }
     public int CategoryId { get; set; }
+    public int? CompanyId { get; set; }
     public int UnitId { get; set; }
     public decimal MinimumStock { get; set; } = 0;
     public decimal MaximumStock { get; set; } = 0;
@@ -24,8 +25,6 @@ public class StockItem : BaseEntity
     public bool IsActive { get; set; } = true;
     public bool IsDiscontinued { get; set; } = false;
     public bool IsCriticalItem { get; set; } = false;
-
-    // Navigation properties - ForeignKey attribute'ları KALDıRıLDı
     public virtual StockCategory Category { get; set; }
     public virtual Unit Unit { get; set; }
     public virtual ICollection<StockBalance> StockBalances { get; set; }

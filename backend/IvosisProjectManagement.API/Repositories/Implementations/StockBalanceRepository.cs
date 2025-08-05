@@ -117,7 +117,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
             }
 
             //Her değişiklik sonrası AvailableQuantity'yi güncelle
-           balance.AvailableQuantity = balance.CurrentQuantity - balance.ReservedQuantity;
+           //balance.AvailableQuantity = balance.CurrentQuantity - balance.ReservedQuantity;
             
             balance.LastMovementDate = DateTime.Now;
             balance.LastUpdateDate = DateTime.Now;

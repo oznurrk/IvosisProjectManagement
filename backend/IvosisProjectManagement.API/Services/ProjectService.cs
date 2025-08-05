@@ -51,7 +51,8 @@ namespace IvosisProjectManagement.API.Services
                     AdditionalPanelPower = p.AdditionalPanelPower,
                     CreatedAt = p.CreatedAt,
                     CreatedByUserId = p.CreatedByUserId,
-                    UpdatedAt = p.UpdatedAt
+                    UpdatedAt = p.UpdatedAt,
+                    ProjeGesType = p.ProjeGesType
                 }).ToListAsync();
         }
 
@@ -95,7 +96,8 @@ namespace IvosisProjectManagement.API.Services
                 AdditionalPanelPower = project.AdditionalPanelPower,
                 CreatedAt = project.CreatedAt,
                 CreatedByUserId = project.CreatedByUserId,
-                UpdatedAt = project.UpdatedAt
+                UpdatedAt = project.UpdatedAt,
+                ProjeGesType = project.ProjeGesType
             };
         }
 
@@ -124,6 +126,7 @@ namespace IvosisProjectManagement.API.Services
                 AdditionalPanelCount = dto.AdditionalPanelCount,
                 AdditionalInverterCount = dto.AdditionalInverterCount,
                 AdditionalPanelPower = dto.AdditionalPanelPower ?? 0,
+                ProjeGesType=   dto.ProjeGesType,
                 Address = dto.Address.Select(a => new ProjectAddress
                 {
                     CityId = a.CityId,
@@ -149,6 +152,7 @@ namespace IvosisProjectManagement.API.Services
                 AcValue = project.AcValue,
                 DcValue = project.DcValue,
                 ProjectTypeId = project.ProjectTypeId,
+                ProjeGesType = project.ProjeGesType,
                 Address = project.Address.Select(a => new ProjectAddressDto
                 {
                     CityId = a.CityId,
@@ -200,6 +204,7 @@ namespace IvosisProjectManagement.API.Services
             project.AdditionalPanelCount = dto.AdditionalPanelCount;
             project.AdditionalInverterCount = dto.AdditionalInverterCount;
             project.AdditionalPanelPower = dto.AdditionalPanelPower ?? 0;
+            project.ProjeGesType = dto.ProjeGesType;
 
             project.Address.Clear();
             foreach (var a in dto.Address)
@@ -271,7 +276,8 @@ namespace IvosisProjectManagement.API.Services
                     CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
                     UpdatedAt = p.UpdatedAt,
                     UpdatedByUserId = p.UpdatedByUserId,
-                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null
+                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null,
+                    ProjeGesType= p.ProjeGesType
                 })
                 .ToListAsync();
 
@@ -327,7 +333,8 @@ namespace IvosisProjectManagement.API.Services
                     CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
                     UpdatedAt = p.UpdatedAt,
                     UpdatedByUserId = p.UpdatedByUserId,
-                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null
+                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null,
+                    ProjeGesType = p.ProjeGesType
                 })
                 .ToListAsync();
 

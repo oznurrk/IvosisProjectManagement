@@ -18,4 +18,6 @@ public class ProjectAddress
 
     public string? Ada { get; set; } // nullable yapılmalı
     public string? Parsel { get; set; } // nullable yapılmalı
+
+    public string? AdressDetails { get; set; } // nullable yapılmalı
 }

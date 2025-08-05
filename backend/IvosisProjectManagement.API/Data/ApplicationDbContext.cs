@@ -507,9 +507,9 @@ namespace IvosisProjectManagement.API.Data
                     
                 // AvailableQuantity'yi veritabanı kolonu olarak tanımla
                 entity.Property(e => e.AvailableQuantity)
-                    .HasColumnType("decimal(18,2)")
-                    .HasDefaultValue(0);
-                
+                    .HasComputedColumnSql("[CurrentQuantity] - [ReservedQuantity]")
+                    .HasColumnType("decimal(18,2)");
+                            
                 entity.Property(e => e.LastUpdateDate)
                     .HasDefaultValueSql("GETDATE()");
                     
