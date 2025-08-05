@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {Modal,Text,Group,Stack,Button,Paper,TextInput,Loader,ActionIcon} from "@mantine/core";
+import {Modal,Text,Group,Stack,Button,Paper,TextInput,Textarea,Loader,ActionIcon} from "@mantine/core";
 import {IconPlus,IconEdit,IconTrash,IconCheck,IconX,} from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import axios from "axios";
@@ -10,7 +10,8 @@ const TaskListModal = ({ opened, onClose, process }) => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
-    const [editingTaskName, setEditingTaskName] = useState("");
+    const [editingTaskTitle, setEditingTaskTitle] = useState("");
+    const [editingTaskDescription, setEditingTaskDescription] = useState("");
     const [taskAddModalOpened, setTaskAddModalOpened] = useState(false);
 
     const token = localStorage.getItem("token");
@@ -27,6 +28,11 @@ const TaskListModal = ({ opened, onClose, process }) => {
             setTasks(response.data);
         } catch (error) {
             console.error("Görevler alınamadı:", error);
+            notifications.show({
+                title: 'Hata',
+                message: 'Görevler yüklenirken bir hata oluştu.',
+                color: 'red',
+            });
             setTasks([]);
         } finally {
             setLoading(false);
@@ -41,32 +47,54 @@ const TaskListModal = ({ opened, onClose, process }) => {
 
     const handleEditStart = (task) => {
         setEditingTaskId(task.id);
-        setEditingTaskName(task.title);
+        setEditingTaskTitle(task.title || "");
+        setEditingTaskDescription(task.description || "");
     };
 
     const handleEditCancel = () => {
         setEditingTaskId(null);
-        setEditingTaskName("");
+        setEditingTaskTitle("");
+        setEditingTaskDescription("");
     };
 
     const handleEditSave = async (taskId) => {
-        if (!editingTaskName.trim()) {
+        if (!editingTaskTitle.trim()) {
+            notifications.show({
+                title: 'Uyarı',
+                message: 'Görev başlığı boş olamaz.',
+                color: 'yellow',
+            });
             return;
         }
 
         try {
             await axios.put(
-                `http://localhost:5000/api/tasks/${taskId}`,
-                { title: editingTaskName.trim() },
+                `http://localhost:5000/api/Tasks/${taskId}`,
+                { 
+                    title: editingTaskTitle.trim(),
+                    description: editingTaskDescription.trim() 
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
+
+            notifications.show({
+                title: 'Başarılı',
+                message: 'Görev güncellendi.',
+                color: 'green',
+            });
 
             // Görevleri yeniden yükle
             await fetchTasks();
             setEditingTaskId(null);
-            setEditingTaskName("");
+            setEditingTaskTitle("");
+            setEditingTaskDescription("");
         } catch (error) {
             console.error("Görev güncellenemedi:", error);
+            notifications.show({
+                title: 'Hata',
+                message: 'Görev güncellenirken bir hata oluştu.',
+                color: 'red',
+            });
         }
     };
 
@@ -84,7 +112,7 @@ const TaskListModal = ({ opened, onClose, process }) => {
             onConfirm: async () => {
                 try {
                     await axios.delete(
-                        `http://localhost:5000/api/tasks/${task.id}`,
+                        `http://localhost:5000/api/Tasks/${task.id}`,
                         {
                             headers: { Authorization: `Bearer ${token}` },
                         }
@@ -106,7 +134,6 @@ const TaskListModal = ({ opened, onClose, process }) => {
             },
         });
     };
-
 
     const handleTaskAdded = () => {
         fetchTasks(); // Görevleri yeniden yükle
@@ -138,11 +165,11 @@ const TaskListModal = ({ opened, onClose, process }) => {
                     {/* Add Task Button */}
                     <div className="flex justify-end">
                         <Button
-                            leftSection={<IconPlus size={16} />}
                             onClick={() => setTaskAddModalOpened(true)}
-                            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 hover:from-ivosis-600 hover:to-ivosis-700"
+                            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 h-8.5 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-500 transition-all duration-200 flex items-center gap-2 font-semibold"
                         >
-                            Ekle
+                            <IconPlus size={16} />
+                        Ekle
                         </Button>
                     </div>
 
@@ -152,6 +179,7 @@ const TaskListModal = ({ opened, onClose, process }) => {
                             <Loader size="lg" />
                         </div>
                     )}
+                    
                     {/* Tasks List */}
                     {!loading && tasks.length > 0 && (
                         <Stack spacing="sm">
@@ -162,74 +190,94 @@ const TaskListModal = ({ opened, onClose, process }) => {
                                     radius="md"
                                     p="md"
                                     withBorder
-                                    className="flex justify-between items-center"
+                                    className="border-l-4 border-l-ivosis-500"
                                 >
-                                    {/* Task Name or Input */}
-                                    <div className="flex-1">
-                                        {editingTaskId === task.id ? (
+                                    {editingTaskId === task.id ? (
+                                        // Edit Mode
+                                        <Stack spacing="md">
                                             <TextInput
-                                                value={editingTaskName}
-                                                onChange={(e) => setEditingTaskName(e.target.value)}
-                                                placeholder="Görev adı"
+                                                label="Görev Başlığı"
+                                                value={editingTaskTitle}
+                                                onChange={(e) => setEditingTaskTitle(e.target.value)}
+                                                placeholder="Görev başlığını girin"
                                                 size="sm"
-                                                onKeyPress={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        handleEditSave(task.id);
-                                                    }
-                                                }}
+                                                required
                                                 autoFocus
                                             />
-                                        ) : (
-                                            <Text size="md" weight={500} color="#2d3748">
-                                                {task.title}
-                                            </Text>
-                                        )}
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    <Group spacing="xs" className="ml-4">
-                                        {editingTaskId === task.id ? (
-                                            <>
+                                            <Textarea
+                                                label="Açıklama"
+                                                value={editingTaskDescription}
+                                                onChange={(e) => setEditingTaskDescription(e.target.value)}
+                                                placeholder="Görev açıklamasını girin"
+                                                size="sm"
+                                                minRows={3}
+                                                maxRows={6}
+                                                autosize
+                                            />
+                                            <Group spacing="xs" position="right">
                                                 <ActionIcon
-                                                    size="sm"
+                                                    size="lg"
                                                     color="green"
                                                     variant="light"
                                                     onClick={() => handleEditSave(task.id)}
+                                                    title="Kaydet"
                                                 >
-                                                    <IconCheck size={16} />
+                                                    <IconCheck size={18} />
                                                 </ActionIcon>
                                                 <ActionIcon
-                                                    size="sm"
+                                                    size="lg"
                                                     color="gray"
                                                     variant="light"
                                                     onClick={handleEditCancel}
+                                                    title="İptal"
                                                 >
-                                                    <IconX size={16} />
+                                                    <IconX size={18} />
                                                 </ActionIcon>
-                                            </>
-                                        ) : (
-                                            <>
+                                            </Group>
+                                        </Stack>
+                                    ) : (
+                                        // View Mode
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex-1 pr-4">
+                                                <Text size="md" weight={600} color="#2d3748" className="mb-2">
+                                                    {task.title}
+                                                </Text>
+                                                {task.description && (
+                                                    <Text size="sm" color="#6b7280" className="whitespace-pre-wrap">
+                                                        {task.description}
+                                                    </Text>
+                                                )}
+                                                {!task.description && (
+                                                    <Text size="sm" color="dimmed" style={{ fontStyle: 'italic' }}>
+                                                        Açıklama bulunmamaktadır
+                                                    </Text>
+                                                )}
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <Group spacing="xs" className="flex-shrink-0">
                                                 <Button
                                                     size="xs"
                                                     variant="light"
                                                     color="blue"
-                                                    leftSection={<IconEdit size={14} />}
                                                     onClick={() => handleEditStart(task)}
                                                 >
-                                                    Düzenle
+                                                    <IconEdit size={14} />
                                                 </Button>
                                                 <Button
                                                     size="xs"
                                                     variant="outline"
                                                     color="red"
-                                                    leftSection={<IconTrash size={14} />}
+                                                   
                                                     onClick={() => handleDelete(task)}
                                                 >
-                                                    Sil
+                                                    <IconTrash size={14} />
                                                 </Button>
-                                            </>
-                                        )}
-                                    </Group>
+                                                    
+                                                
+                                            </Group>
+                                        </div>
+                                    )}
                                 </Paper>
                             ))}
                         </Stack>
