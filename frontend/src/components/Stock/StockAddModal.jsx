@@ -22,7 +22,12 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     certificateNumbers: "",
     storageConditions: "",
     shelfLife: "",
-    isCriticalItem: false
+    isCriticalItem: false,
+    rawMaterialType: "",
+    rawMaterialQuality: "",
+    rawMaterialThickness: "",
+    rawMaterialWidth: "",
+    lotTracking: false
   });
 
   const [errors, setErrors] = useState({});
@@ -98,23 +103,36 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
       
       setCategories(categoriesArray);
 
-      // Units'i direkt stockItems'dan çıkar (listedeki gibi)
-      const unitMap = new Map();
-      stockItemsData.forEach(item => {
-        const unitId = item.unitId || item.UnitId;
-        const unitName = item.unit || item.unitName || item.Unit || item.UnitName;
-        
-        if (unitId && unitName) {
-          unitMap.set(unitId, unitName);
+      // Units'i /api/Unit GET API'sinden çek
+      try {
+        const unitsRes = await axios.get("http://localhost:5000/api/Unit", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log(unitsRes.data);
+        let unitsArray = [];
+        if (Array.isArray(unitsRes.data)) {
+          unitsArray = unitsRes.data;
+        } else if (unitsRes.data && typeof unitsRes.data === 'object') {
+          if (unitsRes.data.items && Array.isArray(unitsRes.data.items)) {
+            unitsArray = unitsRes.data.items;
+          } else if (unitsRes.data.data && Array.isArray(unitsRes.data.data)) {
+            unitsArray = unitsRes.data.data;
+          }
         }
-      });
-      
-      const unitsArray = Array.from(unitMap.entries()).map(([id, name]) => ({
-        id: parseInt(id),
-        name: name
-      }));
-      
-      setUnits(unitsArray);
+        // Map units to always have id and name fields for dropdown
+        const mappedUnits = unitsArray.map(u => ({
+          id: u.id ?? u.Id,
+          name: u.name ?? u.Name,
+          code: u.code ?? u.Code,
+          description: u.description ?? u.Description,
+          isActive: u.isActive ?? u.IsActive,
+          createdAt: u.createdAt ?? u.CreatedAt,
+          createdBy: u.createdBy ?? u.CreatedBy
+        }));
+        setUnits(mappedUnits);
+      } catch (unitErr) {
+        setUnits([]);
+      }
 
       // Locations'ı dene, olmasa da sorun değil
       let locationData = [];
@@ -445,6 +463,40 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     {errors.categoryId && (
                       <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
                     )}
+                    {/* Hammadde seçildiyse ek pencere */}
+                    {(() => {
+                      const selectedCategory = categories.find(cat => cat.id.toString() === form.categoryId);
+                      if (selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde")) {
+                        return (
+                          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                            <h4 className="text-md font-semibold text-gray-800 mb-2">Hammadde Özellikleri</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Türü</label>
+                                <input type="text" value={form.rawMaterialType} onChange={e => handleChange("rawMaterialType", e.target.value)} placeholder="Malzeme türü" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Kalitesi</label>
+                                <input type="text" value={form.rawMaterialQuality} onChange={e => handleChange("rawMaterialQuality", e.target.value)} placeholder="Malzeme kalitesi" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Kalınlığı</label>
+                                <input type="text" value={form.rawMaterialThickness} onChange={e => handleChange("rawMaterialThickness", e.target.value)} placeholder="Kalınlık" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Genişliği (mm)</label>
+                                <input type="text" value={form.rawMaterialWidth} onChange={e => handleChange("rawMaterialWidth", e.target.value)} placeholder="Genişlik (mm)" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
+                              </div>
+                            </div>
+                            <div className="flex items-center mt-4">
+                              <input type="checkbox" checked={form.lotTracking} onChange={e => handleChange("lotTracking", e.target.checked)} className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded" />
+                              <label className="ml-2 text-sm text-gray-700">Lot Takibi Yapılsın</label>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   <div>
