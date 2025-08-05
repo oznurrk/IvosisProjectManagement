@@ -2,20 +2,20 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { IconX, IconCheck, IconAlertTriangle, IconTruck } from "@tabler/icons-react";
 
-const StockOutModal = ({ isOpen, onClose, onSave }) => {
+const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
   const [form, setForm] = useState({
     itemId: "",
+    locationId: "1", // Default location
     quantity: "",
-    reason: "",
-    destination: "",
-    requestedBy: "",
+    referenceNumber: "",
+    description: "",
     notes: ""
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [stockItems, setStockItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [locations, setLocations] = useState([]); // Lokasyonlar için state
 
   const reasons = [
     "Üretim Talebi",
@@ -29,54 +29,58 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
 
   useEffect(() => {
     if (isOpen) {
-      fetchData();
       resetForm();
+      fetchLocations(); // Lokasyonları yükle
+      console.log('StockOutModal açıldı, gelen stockItems:', stockItems);
     }
-  }, [isOpen]);
+  }, [isOpen, stockItems]);
 
-  const fetchData = async () => {
+  const fetchLocations = async () => {
     try {
       const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:5000/api/StockLocations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      const [itemsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/StockItems", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-      ]);
-
-      console.log("StockOutModal API Response:", itemsRes.data);
-
-      // Safely handle the response data
-      let items = [];
-      if (Array.isArray(itemsRes.data)) {
-        items = itemsRes.data;
-      } else if (itemsRes.data && typeof itemsRes.data === 'object') {
-        // Check if data is wrapped in an object
-        if (itemsRes.data.items && Array.isArray(itemsRes.data.items)) {
-          items = itemsRes.data.items;
-        } else if (itemsRes.data.data && Array.isArray(itemsRes.data.data)) {
-          items = itemsRes.data.data;
-        } else if (itemsRes.data.stockItems && Array.isArray(itemsRes.data.stockItems)) {
-          items = itemsRes.data.stockItems;
+      // Response'u kontrol et ve array olduğundan emin ol
+      let locationData = [];
+      if (Array.isArray(response.data)) {
+        locationData = response.data;
+      } else if (response.data && typeof response.data === 'object') {
+        if (response.data.items && Array.isArray(response.data.items)) {
+          locationData = response.data.items;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          locationData = response.data.data;
         }
       }
 
-      console.log("Processed StockOut Items:", items);
-      setStockItems(items);
+      // Sadece aktif lokasyonları filtrele
+      const activeLocations = locationData.filter(loc => loc.isActive !== false);
+      setLocations(activeLocations);
+
+      // Eğer lokasyonlar varsa ve form.locationId boşsa, ilk aktif lokasyonu seç
+      if (activeLocations.length > 0 && !form.locationId) {
+        setForm(prev => ({ ...prev, locationId: activeLocations[0].id.toString() }));
+      }
+
+      console.log('Locations loaded:', activeLocations);
     } catch (error) {
-      console.error('StockOutModal veri yükleme hatası:', error);
-      // Set empty array on error to prevent map errors
-      setStockItems([]);
+      console.error('Lokasyonlar yüklenirken hata:', error);
+      // Hata durumunda varsayılan lokasyonlar
+      setLocations([
+        { id: 1, name: "Ana Depo", code: "MAIN" },
+        { id: 2, name: "Yan Depo", code: "SEC" }
+      ]);
     }
   };
 
   const resetForm = () => {
     setForm({
       itemId: "",
+      locationId: "1", // Default location
       quantity: "",
-      reason: "",
-      destination: "",
-      requestedBy: "",
+      referenceNumber: "",
+      description: "",
       notes: ""
     });
     setSelectedItem(null);
@@ -87,8 +91,9 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
     setForm(prev => ({ ...prev, [field]: value }));
     
     if (field === "itemId") {
-      const item = stockItems.find(i => i.id.toString() === value); // String olarak karşılaştır
+      const item = stockItems.find(i => i.id.toString() === value);
       setSelectedItem(item);
+      console.log('Seçilen item:', item);
     }
     
     if (errors[field]) {
@@ -101,7 +106,6 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
 
     if (!form.itemId) newErrors.itemId = "Malzeme seçimi zorunludur";
     if (!form.quantity || parseFloat(form.quantity) <= 0) newErrors.quantity = "Geçerli bir miktar giriniz";
-    if (!form.reason) newErrors.reason = "Çıkış nedeni zorunludur";
 
     // Stok kontrolü
     if (selectedItem && parseFloat(form.quantity) > selectedItem.currentStock) {
@@ -122,17 +126,29 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
     try {
       const token = localStorage.getItem("token");
       
+      // Sadece backend'in beklediği minimal alanları gönder
       const stockOutData = {
         stockItemId: parseInt(form.itemId),
+        locationId: parseInt(form.locationId),
+        movementType: "StockOut",
         quantity: parseFloat(form.quantity),
-        reason: form.reason,
-        destination: form.destination,
-        requestedBy: form.requestedBy,
-        notes: form.notes
+        unitPrice: 0,
+        totalAmount: 0,
+        referenceType: "Issue",
+        referenceNumber: form.referenceNumber || null,
+        description: form.description || null,
+        notes: form.notes || null
+        // movementDate'i göndermiyoruz - backend otomatik set eder
+        // computed column'ları göndermiyoruz
       };
       
+      console.log('StockOut API\'ye gönderilecek veri:', stockOutData);
+      
       const response = await axios.post("http://localhost:5000/api/StockMovements/stock-out", stockOutData, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
       });
 
       resetForm();
@@ -141,7 +157,23 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
       if (onSave) onSave();
     } catch (error) {
       console.error("Stok çıkış hatası:", error);
-      alert('Hata: ' + (error.response?.data?.message || 'Stok çıkış işlemi başarısız'));
+      
+      let errorMessage = 'Stok çıkış işlemi başarısız';
+      
+      if (error.response?.status === 500) {
+        if (error.response?.data?.includes?.('computed column') || 
+            error.response?.data?.includes?.('AvailableQuantity')) {
+          errorMessage = 'Veritabanı yapı hatası. Lütfen sistem yöneticisine başvurun.';
+        } else if (error.response?.data?.includes?.('FOREIGN KEY constraint')) {
+          errorMessage = 'Lokasyon bilgisi geçersiz. Lütfen sistem yöneticisine başvurun.';
+        } else {
+          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      alert('Hata: ' + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -243,10 +275,10 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
                 </label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="0.001"
                   value={form.quantity}
                   onChange={(e) => handleChange("quantity", e.target.value)}
-                  placeholder="0.0"
+                  placeholder="0.000"
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
                     errors.quantity ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -258,47 +290,37 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Çıkış Nedeni *
+                  Lokasyon *
                 </label>
                 <select
-                  value={form.reason}
-                  onChange={(e) => handleChange("reason", e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                    errors.reason ? 'border-red-500' : 'border-gray-300'
+                  value={form.locationId}
+                  onChange={(e) => handleChange("locationId", e.target.value)}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
+                    errors.locationId ? 'border-red-500' : 'border-gray-300'
                   }`}
                 >
-                  <option value="">Neden Seçiniz</option>
-                  {reasons.map((reason) => (
-                    <option key={reason} value={reason}>{reason}</option>
+                  <option value="">Lokasyon Seçiniz</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id.toString()}>
+                      {location.code} - {location.name}
+                      {location.capacity && ` (Kapasite: ${location.capacity} ${location.capacityUnit || ''})`}
+                    </option>
                   ))}
                 </select>
-                {errors.reason && (
-                  <p className="text-red-500 text-xs mt-1">{errors.reason}</p>
+                {errors.locationId && (
+                  <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Varış Yeri / Kullanım Alanı
+                  Referans No
                 </label>
                 <input
                   type="text"
-                  value={form.destination}
-                  onChange={(e) => handleChange("destination", e.target.value)}
-                  placeholder="Örn: Üretim Hattı 1, Proje A, vb."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Talep Eden
-                </label>
-                <input
-                  type="text"
-                  value={form.requestedBy}
-                  onChange={(e) => handleChange("requestedBy", e.target.value)}
-                  placeholder="Adı Soyadı"
+                  value={form.referenceNumber}
+                  onChange={(e) => handleChange("referenceNumber", e.target.value)}
+                  placeholder="İş Emri No, Talep No vb."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 />
               </div>
@@ -311,7 +333,7 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
                   <IconAlertTriangle size={20} className="mr-2" />
                   <div>
                     <div className="font-semibold">
-                      İşlem Sonrası Kalan Stok: {(selectedItem.currentStock - parseFloat(form.quantity || 0)).toFixed(1)} {selectedItem.unit}
+                      İşlem Sonrası Kalan Stok: {(selectedItem.currentStock - parseFloat(form.quantity || 0)).toFixed(3)} {selectedItem.unit}
                     </div>
                     {(selectedItem.currentStock - parseFloat(form.quantity || 0)) < selectedItem.reorderLevel && (
                       <div className="text-sm mt-1">
@@ -330,18 +352,35 @@ const StockOutModal = ({ isOpen, onClose, onSave }) => {
             )}
           </div>
 
-          {/* Notlar */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notlar
-            </label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => handleChange("notes", e.target.value)}
-              placeholder="Çıkış ile ilgili notlar..."
-              rows="3"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-            />
+          {/* Açıklama ve Notlar */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Açıklama
+              </label>
+              <textarea
+                value={form.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Çıkış açıklaması (max 500 karakter)"
+                maxLength="500"
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notlar
+              </label>
+              <textarea
+                value={form.notes}
+                onChange={(e) => handleChange("notes", e.target.value)}
+                placeholder="Ek notlar (max 1000 karakter)"
+                maxLength="1000"
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+              />
+            </div>
           </div>
 
           {/* Buttons */}

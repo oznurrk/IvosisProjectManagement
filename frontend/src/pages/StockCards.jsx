@@ -7,13 +7,7 @@ import {
   IconPlus, 
   IconPackage, 
   IconAlertTriangle,
-  IconCertificate,
-  IconCurrency,
-  IconTool,
-  IconStar,
-  IconShield,
-  IconCalendar,
-  IconThermometer
+  IconStar
 } from "@tabler/icons-react";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 import StockAddModal from "../components/Stock/StockAddModal";
@@ -32,12 +26,11 @@ const StockCards = () => {
   const [selectedItem, setSelectedItem] = useState(null);
 
   const [searchFilters, setSearchFilters] = useState({
-    itemCode: "",
-    name: "",
+    search: "", // Genel arama - hem malzeme adı hem stok kodu
     category: "",
-    brand: "",
-    isCriticalItem: "",
-    status: ""
+    status: "",
+    dateFrom: "",
+    dateTo: ""
   });
 
   useEffect(() => {
@@ -69,18 +62,12 @@ const StockCards = () => {
         }
       }
       
-      console.log('Raw StockItems data:', stockData);
+
       setStockItems(stockData);
   
       const categoryMap = new Map();
       stockData.forEach(item => {
-        console.log('Item category info:', {
-          id: item.id,
-          categoryId: item.categoryId,
-          category: item.category,
-          categoryName: item.categoryName
-        });
-        
+      
         // Farklı field isimlerini kontrol et
         const catId = item.categoryId || item.CategoryId;
         const catName = item.category || item.categoryName || item.Category || item.CategoryName;
@@ -95,7 +82,6 @@ const StockCards = () => {
         name: name
       }));
       
-      console.log('Final categories array:', categoriesArray);
       setCategories(categoriesArray);
   
       // Units'i direkt stockItems'dan çıkar
@@ -114,7 +100,6 @@ const StockCards = () => {
         name: name
       }));
       
-      console.log('Final units array:', unitsArray);
       setUnits(unitsArray);
   
     } catch (error) {
@@ -309,23 +294,16 @@ const StockCards = () => {
 
   const clearFilters = () => {
     setSearchFilters({
-      itemCode: "",
-      name: "",
+      search: "",
       category: "",
-      brand: "",
-      isCriticalItem: "",
-      status: ""
+      status: "",
+      dateFrom: "",
+      dateTo: ""
     });
     setCurrentPage(1);
   };
 
   const getCategoryName = (categoryId, item) => {
-    console.log('getCategoryName called with:', {
-      categoryId,
-      categoryIdType: typeof categoryId,
-      availableCategories: categories,
-      itemCategory: item?.category
-    });
     
     // Önce item'dan direkt category'yi al
     if (item?.category) {
@@ -342,13 +320,11 @@ const StockCards = () => {
                    cat.id.toString() === categoryId?.toString();
       
       if (match) {
-        console.log('Category match found:', cat);
       }
       return match;
     });
     
     const result = category ? category.name : 'Bilinmiyor';
-    console.log('getCategoryName result:', result);
     return result;
   };
 
@@ -364,31 +340,13 @@ const StockCards = () => {
     return unit ? unit.name : 'Adet';
   };
 
-  const visibleItems = Array.isArray(stockItems) ? stockItems.filter((item) => {
-    const codeMatch = (item.itemCode || "").toLowerCase().includes(searchFilters.itemCode.toLowerCase());
-    const nameMatch = (item.name || "").toLowerCase().includes(searchFilters.name.toLowerCase());
-    const categoryMatch = !searchFilters.category || (item.category || "").toLowerCase().includes(searchFilters.category.toLowerCase());
-    const brandMatch = !searchFilters.brand || (item.brand || "").toLowerCase().includes(searchFilters.brand.toLowerCase());
-    const criticalMatch = searchFilters.isCriticalItem === "" || item.isCriticalItem.toString() === searchFilters.isCriticalItem;
-    const statusMatch = !searchFilters.status || getStockStatus(item) === searchFilters.status;
-
-    return codeMatch && nameMatch && categoryMatch && brandMatch && criticalMatch && statusMatch;
-  }).sort((a, b) => {
-    // ID'ye göre artan sırada sırala
-    return (a.id || 0) - (b.id || 0);
-  }) : [];
-
-  const totalPages = Math.ceil(visibleItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = visibleItems.slice(startIndex, startIndex + itemsPerPage);
-
-  const getStockStatus = (item) => {
+  function getStockStatus(item) {
     if (item.currentStock <= item.reorderLevel) return "Kritik";
     if (item.currentStock <= item.minimumStock) return "Düşük";
     return "Normal";
-  };
+  }
 
-  const getStatusColor = (status) => {
+  function getStatusColor(status) {
     switch (status) {
       case "Kritik":
         return "bg-red-100 text-red-800";
@@ -399,7 +357,50 @@ const StockCards = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
+  }
+
+  const visibleItems = Array.isArray(stockItems) ? stockItems.filter((item) => {
+    // Genel arama - hem malzeme adı hem stok kodu
+    const searchMatch = !searchFilters.search || 
+      (item.name || "").toLowerCase().includes(searchFilters.search.toLowerCase()) ||
+      (item.itemCode || "").toLowerCase().includes(searchFilters.search.toLowerCase());
+    
+    // Kategori filtresi - dropdown'dan seçilen değerle tam eşleşme
+    const categoryMatch = !searchFilters.category || 
+      (item.category || "").toLowerCase() === searchFilters.category.toLowerCase() ||
+      getCategoryName(item.categoryId, item).toLowerCase() === searchFilters.category.toLowerCase();
+    
+    const statusMatch = !searchFilters.status || getStockStatus(item) === searchFilters.status;
+
+    // Tarih aralığı filtresi
+    let dateMatch = true;
+    if (searchFilters.dateFrom || searchFilters.dateTo) {
+      const itemDate = new Date(item.createdAt || item.updatedAt || item.createdDate);
+      
+      if (searchFilters.dateFrom && searchFilters.dateTo) {
+        const fromDate = new Date(searchFilters.dateFrom);
+        const toDate = new Date(searchFilters.dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        dateMatch = itemDate >= fromDate && itemDate <= toDate;
+      } else if (searchFilters.dateFrom) {
+        const fromDate = new Date(searchFilters.dateFrom);
+        dateMatch = itemDate >= fromDate;
+      } else if (searchFilters.dateTo) {
+        const toDate = new Date(searchFilters.dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        dateMatch = itemDate <= toDate;
+      }
+    }
+
+    return searchMatch && categoryMatch && statusMatch && dateMatch;
+  }).sort((a, b) => {
+    // ID'ye göre artan sırada sırala
+    return (a.id || 0) - (b.id || 0);
+  }) : [];
+
+  const totalPages = Math.ceil(visibleItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = visibleItems.slice(startIndex, startIndex + itemsPerPage);
 
   const formatCurrency = (amount, currency = 'TRY') => {
     return new Intl.NumberFormat('tr-TR', {
@@ -444,22 +445,17 @@ const StockCards = () => {
           handleFilterChange={handleFilterChange}
           clearFilters={clearFilters}
           filtersConfig={[
-            { key: "itemCode", type: "text", placeholder: "Stok Kodu..." },
-            { key: "name", type: "text", placeholder: "Malzeme Adı..." },
-            { key: "brand", type: "text", placeholder: "Marka..." },
+            { key: "search", type: "text", placeholder: "Malzeme Adı veya Stok Kodu Ara..." },
             {
               key: "category",
-              type: "text",
-              placeholder: "Kategori..."
-            },
-            {
-              key: "isCriticalItem",
               type: "select",
-              placeholder: "Kritik Malzeme",
+              placeholder: "Kategori Seç",
               options: [
-                { value: "", label: "Tümü" },
-                { value: "true", label: "Kritik" },
-                { value: "false", label: "Normal" }
+                { value: "", label: "Tüm Kategoriler" },
+                ...categories.map(cat => ({
+                  value: cat.name,
+                  label: cat.name
+                }))
               ]
             },
             {
@@ -467,11 +463,21 @@ const StockCards = () => {
               type: "select",
               placeholder: "Stok Durumu",
               options: [
-                { value: "", label: "Tümü" },
-                { value: "Normal", label: "Normal" },
+                { value: "", label: "Tüm Durumlar" },
+                { value: "Normal", label: "Normal Stok" },
                 { value: "Düşük", label: "Düşük Stok" },
                 { value: "Kritik", label: "Kritik Stok" }
               ]
+            },
+            {
+              key: "dateFrom",
+              type: "date",
+              placeholder: "Başlangıç Tarihi"
+            },
+            {
+              key: "dateTo",
+              type: "date", 
+              placeholder: "Bitiş Tarihi"
             }
           ]}
         />
@@ -482,7 +488,7 @@ const StockCards = () => {
         <div className="flex justify-end">
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
+            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 h-8 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
           >
             <IconPlus size={20} />
             Ekle
@@ -512,90 +518,93 @@ const StockCards = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                      #
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Malzeme Bilgileri
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Stok Kodu
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Kategori
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Mevcut Stok
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Min/Kritik Stok
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Fiyat Bilgileri
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Durum
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       İşlemler
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentItems.map((item) => {
+                  {currentItems.map((item, index) => {
                     const status = getStockStatus(item);
+                    const rowNumber = startIndex + index + 1; // Sayfa başına göre sıra numarası
                     return (
                       <tr key={item.id} className="hover:bg-gray-50">
+                        {/* Sıra Numarası */}
+                        <td className="px-4 py-4">
+                          <div className="flex items-center justify-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold bg-ivosis-100 text-ivosis-800">
+                              {rowNumber}
+                            </span>
+                          </div>
+                        </td>
+
                         {/* Malzeme Bilgileri */}
                         <td className="px-4 py-4">
-                          <div className="space-y-2">
-                            {/* ID Başlığı */}
-                            <div className="flex items-center justify-between">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-ivosis-100 text-ivosis-800">
-                                ID: {item.id}
-                              </span>
-                            </div>
-                            
-                            {/* Malzeme Detayları */}
-                            <div className="flex items-start space-x-3">
-                              <IconPackage className="h-6 w-6 text-ivosis-500 mt-1 flex-shrink-0" />
-                              <div className="min-w-0 flex-1">
-                                <div className="text-sm font-medium text-gray-900 break-words">
-                                  {item.name}
-                                </div>
-                                {item.brand && (
-                                  <div className="text-sm text-gray-500 flex items-center mt-1">
-                                    <IconStar size={12} className="mr-1 flex-shrink-0" />
-                                    <span className="break-words">
-                                      {item.brand}
-                                      {item.model && ` - ${item.model}`}
-                                    </span>
-                                  </div>
-                                )}
-                                {item.description && (
-                                  <div className="text-xs text-gray-400 mt-1 line-clamp-2">
-                                    {item.description}
-                                  </div>
-                                )}
+                          <div className="flex items-center justify-center space-x-3">
+                            <IconPackage className="h-6 w-6 text-ivosis-500 mt-1 flex-shrink-0" />
+                            <div className="min-w-0 flex-1 text-center">
+                              <div className="text-sm font-medium text-gray-900 break-words">
+                                {item.name}
                               </div>
+                              {item.brand && (
+                                <div className="text-sm items-center text-gray-500 flex items-center justify-center mt-1">
+                                  <IconStar size={12} className="mr-1 flex-shrink-0" />
+                                  <span className="break-words">
+                                    {item.brand}
+                                    {item.model && ` - ${item.model}`}
+                                  </span>
+                                </div>
+                              )}
+                              {item.description && (
+                                <div className="text-xs text-gray-400 mt-1 line-clamp-2 text-center">
+                                  {item.description}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
 
                         {/* Stok Kodu */}
                         <td className="px-4 py-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm text-center font-medium text-gray-900">
                             {item.itemCode}
                           </div>
                         </td>
 
                         {/* Kategori */}
                         <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-center text-gray-900">
                             {item.category || getCategoryName(item.categoryId, item)}
                           </div>
                         </td>
 
                         {/* Mevcut Stok */}
                         <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-center text-gray-900">
                             <span className={`font-medium ${
                               status === "Kritik" ? "text-red-600" : 
                               status === "Düşük" ? "text-yellow-600" : "text-green-600"
@@ -610,7 +619,7 @@ const StockCards = () => {
 
                         {/* Min/Kritik Stok */}
                         <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-center text-gray-900">
                             <div>Min: {item.minimumStock} {getUnitName(item.unitId)}</div>
                             <div className="text-xs text-gray-500">
                               Kritik: {item.reorderLevel} {getUnitName(item.unitId)}
@@ -620,7 +629,7 @@ const StockCards = () => {
 
                         {/* Fiyat Bilgileri */}
                         <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-center text-gray-900">
                             {item.purchasePrice > 0 && (
                               <div>
                                 Alış: {formatCurrency(item.purchasePrice, item.currency)}
@@ -636,12 +645,12 @@ const StockCards = () => {
 
                         {/* Durum */}
                         <td className="px-4 py-4">
-                          <div className="flex flex-col space-y-1">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(status)}`}>
+                          <div className="flex flex-col items-center space-y-1">
+                            <span className={`inline-flex px-2 py-1 justify-center text-xs font-semibold rounded-full ${getStatusColor(status)}`}>
                               {status}
                             </span>
                             {item.isCriticalItem && (
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                              <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
                                 <IconAlertTriangle size={10} className="mr-1" />
                                 Kritik
                               </span>
@@ -651,7 +660,7 @@ const StockCards = () => {
 
                         {/* İşlemler */}
                         <td className="px-4 py-4">
-                          <div className="flex space-x-2">
+                          <div className="flex justify-center space-x-2">
                             <button
                               onClick={() => handleEdit(item)}
                               className="text-ivosis-600 hover:text-ivosis-900 transition-colors"

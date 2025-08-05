@@ -23,6 +23,7 @@ const StockManagement = () => {
   const [recentMovements, setRecentMovements] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [criticalStockItems, setCriticalStockItems] = useState([]);
+  const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Modal states
@@ -85,6 +86,44 @@ const StockManagement = () => {
         outOfStockCount = stockItems.filter(item => (Number(item.currentStock) || 0) <= 0).length;
       }
 
+      // StockItems'ı Map'e çevir hızlı erişim için
+      const stockItemsMap = new Map();
+      stockItems.forEach(item => {
+        stockItemsMap.set(item.id, item);
+      });
+
+      // Movements verilerini işle ve stockItems ile birleştir
+      let movementsData = [];
+      if (Array.isArray(movementsRes.data)) {
+        movementsData = movementsRes.data;
+      } else if (movementsRes.data && typeof movementsRes.data === 'object') {
+        if (movementsRes.data.items && Array.isArray(movementsRes.data.items)) {
+          movementsData = movementsRes.data.items;
+        } else if (movementsRes.data.data && Array.isArray(movementsRes.data.data)) {
+          movementsData = movementsRes.data.data;
+        } else if (movementsRes.data.movements && Array.isArray(movementsRes.data.movements)) {
+          movementsData = movementsRes.data.movements;
+        }
+      }
+
+      // Movements verilerini stockItems ile birleştir (StockMovements sayfasındaki gibi)
+      const enrichedMovements = movementsData.map(movement => {
+        const stockItem = stockItemsMap.get(movement.stockItemId);
+        return {
+          ...movement,
+          stockItem: stockItem || null,
+          // Fallback alanları
+          itemCode: stockItem?.itemCode || movement.itemCode || 'Bilinmiyor',
+          itemName: stockItem?.name || movement.itemName || 'Bilinmiyor',
+          unit: stockItem?.unit || movement.unit || 'Adet'
+        };
+      });
+
+      // Son hareketleri tarihe göre sırala ve ilk 10'unu al
+      const sortedMovements = enrichedMovements.sort((a, b) => {
+        return new Date(b.movementDate) - new Date(a.movementDate);
+      });
+
       // Diğer verileri set et - array olduğundan emin ol
       let lowStockData = [];
       if (Array.isArray(lowStockRes.data)) {
@@ -108,22 +147,10 @@ const StockManagement = () => {
         }
       }
 
-      let movementsData = [];
-      if (Array.isArray(movementsRes.data)) {
-        movementsData = movementsRes.data;
-      } else if (movementsRes.data && typeof movementsRes.data === 'object') {
-        if (movementsRes.data.items && Array.isArray(movementsRes.data.items)) {
-          movementsData = movementsRes.data.items;
-        } else if (movementsRes.data.data && Array.isArray(movementsRes.data.data)) {
-          movementsData = movementsRes.data.data;
-        } else if (movementsRes.data.movements && Array.isArray(movementsRes.data.movements)) {
-          movementsData = movementsRes.data.movements;
-        }
-      }
-
       setLowStockItems(lowStockData);
       setCriticalStockItems(criticalStockData);
-      setRecentMovements(movementsData);
+      setRecentMovements(sortedMovements); // Enriched ve sorted movements'ı set et
+      setStockItems(stockItems);
 
       setStockStats({
         totalItems,
@@ -177,6 +204,50 @@ const StockManagement = () => {
     fetchStockData();
   };
 
+  const calculateStats = () => {
+    if (!Array.isArray(stockItems)) {
+      return {
+        totalItems: 0,
+        lowStockItems: 0,
+        criticalStockItems: 0,
+        outOfStockItems: 0
+      };
+    }
+  
+    const stats = stockItems.reduce((acc, item) => {
+      acc.totalItems += 1;
+      
+      // Stok tükendi kontrolü
+      if ((item.currentStock || 0) <= 0) {
+        acc.outOfStockItems += 1;
+      }
+      
+      // Kritik stok kontrolü - reorder level'ın altında VEYA kritik malzeme
+      const isCriticalStock = (item.currentStock || 0) <= (item.reorderLevel || 0);
+      const isCriticalItem = item.isCriticalItem === true;
+      
+      if (isCriticalStock || isCriticalItem) {
+        acc.criticalStockItems += 1;
+      }
+      
+      // Düşük stok kontrolü - minimum stok altında ama kritik seviyenin üstünde
+      if ((item.currentStock || 0) <= (item.minimumStock || 0) && (item.currentStock || 0) > (item.reorderLevel || 0)) {
+        acc.lowStockItems += 1;
+      }
+      
+      return acc;
+    }, {
+      totalItems: 0,
+      lowStockItems: 0,
+      criticalStockItems: 0,
+      outOfStockItems: 0
+    });
+  
+    return stats;
+  };
+  
+  const stats = calculateStats();
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -206,63 +277,47 @@ const StockManagement = () => {
 
       <div className="px-4 space-y-6">
         {/* İstatistik Kartları */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Toplam Stok */}
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
             <div className="flex items-center">
               <IconPackage className="h-8 w-8 text-blue-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Toplam Stok</p>
-                <p className="text-2xl font-semibold text-gray-900">{stockStats?.totalItems || 0}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-            <div className="flex items-center">
-              <IconScale className="h-8 w-8 text-green-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Stokta</p>
-                <p className="text-2xl font-semibold text-gray-900">{stockStats?.inStockCount || 0}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.totalItems}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+          {/* Düşük Stok */}
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
             <div className="flex items-center">
-              <IconTruck className="h-8 w-8 text-purple-500" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Toplam Değer</p>
-                <p className="text-lg font-semibold text-gray-900">{formatCurrency(stockStats?.totalValue || 0)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
-            <div className="flex items-center">
-              <IconBarcode className="h-8 w-8 text-yellow-500" />
+              <IconAlertTriangle className="h-8 w-8 text-yellow-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Düşük Stok</p>
-                <p className="text-2xl font-semibold text-gray-900">{lowStockItems.length}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.lowStockItems}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+          {/* Kritik Stok */}
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center">
               <IconAlertTriangle className="h-8 w-8 text-red-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Kritik Stok</p>
-                <p className="text-2xl font-semibold text-gray-900">{criticalStockItems.length}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.criticalStockItems}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
+          {/* Tükenen Stok */}
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-gray-500">
             <div className="flex items-center">
               <IconCalendar className="h-8 w-8 text-gray-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Stok Tükendi</p>
-                <p className="text-2xl font-semibold text-gray-900">{stockStats?.outOfStockCount || 0}</p>
+                <p className="text-sm font-medium text-gray-500">Tükenen Stok</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.outOfStockItems}</p>
               </div>
             </div>
           </div>
@@ -341,8 +396,12 @@ const StockManagement = () => {
                           movement.movementType === 'StockIn' ? 'bg-green-500' : 'bg-red-500'
                         }`}></div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{movement.stockItem?.name || 'Bilinmiyor'}</p>
-                          <p className="text-xs text-gray-500">{movement.stockItem?.itemCode || '-'}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {movement.stockItem?.name || movement.itemName || 'Bilinmiyor'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {movement.stockItem?.itemCode || movement.itemCode || '-'}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -418,6 +477,7 @@ const StockManagement = () => {
         isOpen={showStockInModal}
         onClose={() => setShowStockInModal(false)}
         onSave={handleStockInSuccess}
+        stockItems={stockItems} // StockItems state'ini geç
       />
 
       {/* Stock Out Modal */}
@@ -425,6 +485,7 @@ const StockManagement = () => {
         isOpen={showStockOutModal}
         onClose={() => setShowStockOutModal(false)}
         onSave={handleStockOutSuccess}
+        stockItems={stockItems} // StockItems state'ini geç
       />
     </div>
   );

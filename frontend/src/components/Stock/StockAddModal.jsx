@@ -63,29 +63,99 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     try {
       const token = localStorage.getItem("token");
 
-      const [itemsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/StockItems", {
+      // Sadece StockItems'ı çek, geri kalan her şeyi bundan çıkar
+      const itemsRes = await axios.get("http://localhost:5000/api/StockItems", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      let stockItemsData = [];
+      if (Array.isArray(itemsRes.data)) {
+        stockItemsData = itemsRes.data;
+      } else if (itemsRes.data && typeof itemsRes.data === 'object') {
+        if (itemsRes.data.items && Array.isArray(itemsRes.data.items)) {
+          stockItemsData = itemsRes.data.items;
+        } else if (itemsRes.data.data && Array.isArray(itemsRes.data.data)) {
+          stockItemsData = itemsRes.data.data;
+        }
+      }
+      setExistingItems(stockItemsData);
+
+      // Categories'i direkt stockItems'dan çıkar (listedeki gibi)
+      const categoryMap = new Map();
+      stockItemsData.forEach(item => {
+        const catId = item.categoryId || item.CategoryId;
+        const catName = item.category || item.categoryName || item.Category || item.CategoryName;
+        
+        if (catId && catName) {
+          categoryMap.set(catId, catName);
+        }
+      });
+      
+      const categoriesArray = Array.from(categoryMap.entries()).map(([id, name]) => ({
+        id: parseInt(id),
+        name: name
+      }));
+      
+      setCategories(categoriesArray);
+
+      // Units'i direkt stockItems'dan çıkar (listedeki gibi)
+      const unitMap = new Map();
+      stockItemsData.forEach(item => {
+        const unitId = item.unitId || item.UnitId;
+        const unitName = item.unit || item.unitName || item.Unit || item.UnitName;
+        
+        if (unitId && unitName) {
+          unitMap.set(unitId, unitName);
+        }
+      });
+      
+      const unitsArray = Array.from(unitMap.entries()).map(([id, name]) => ({
+        id: parseInt(id),
+        name: name
+      }));
+      
+      setUnits(unitsArray);
+
+      // Locations'ı dene, olmasa da sorun değil
+      let locationData = [];
+      try {
+        const locationsRes = await axios.get("http://localhost:5000/api/StockLocations", {
           headers: { Authorization: `Bearer ${token}` },
-        })
-      ]);
-
-      const items = itemsRes.data;
-      setExistingItems(items);
+        });
+        
+        if (Array.isArray(locationsRes.data)) {
+          locationData = locationsRes.data;
+        }
+      } catch (err) {
+        locationData = [{ id: 1, name: "Ana Depo", code: "MAIN", isActive: true }];
+      }
       
-      // StockItems'dan categories çıkar
-      const uniqueCategories = [...new Set(items.map(item => item.category).filter(Boolean))];
-      setCategories(uniqueCategories.map((cat, index) => ({ id: index + 1, name: cat })));
-      
-      // StockItems'dan units çıkar
-      const uniqueUnits = [...new Set(items.map(item => item.unit).filter(Boolean))];
-      setUnits(uniqueUnits.map((unit, index) => ({ id: index + 1, name: unit })));
+      const activeLocations = locationData.filter(loc => loc.isActive !== false);
+      setLocations(activeLocations);
 
-      // Suppliers ve locations için API endpoint varsa buraya ekle
-      setSuppliers([]);
-      setLocations([]);
 
     } catch (error) {
       console.error("Modal verileri yükleme hatası:", error);
+      
+      // Fallback veriler
+      setCategories([
+        { id: 1, name: "Genel" },
+        { id: 2, name: "Elektronik" },
+        { id: 3, name: "Mekanik" },
+        { id: 4, name: "Kimyasal" },
+        { id: 5, name: "Yedek Parça" }
+      ]);
+      
+      setUnits([
+        { id: 1, name: "Adet" },
+        { id: 2, name: "Kg" },
+        { id: 3, name: "Metre" },
+        { id: 4, name: "Litre" },
+        { id: 5, name: "Kutu" }
+      ]);
+      
+      setLocations([{ id: 1, name: "Ana Depo", code: "MAIN" }]);
+      
     } finally {
       setDataLoading(false);
     }
@@ -175,11 +245,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('Form submit başlatıldı');
-    console.log('Form verileri:', form);
-    
     if (!validateForm()) {
-      console.log('Form validation başarısız:', errors);
       return;
     }
     
@@ -214,11 +280,11 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         throw new Error('Kategori ve birim seçimi zorunludur');
       }
       
-      console.log('API\'ye gönderilecek temiz veri:', stockData);
+
       
       await onSave(stockData);
       
-      console.log('Kaydetme başarılı, form sıfırlanıyor');
+
       
       // Form'u sıfırla
       setForm({
@@ -366,9 +432,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                       }`}
                     >
                       <option value="">Kategori Seçiniz</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>{category.name}</option>
-                      ))}
+                      {Array.isArray(categories) && categories.length > 0 ? (
+                        categories.map((category) => (
+                          <option key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>Kategoriler yükleniyor...</option>
+                      )}
                     </select>
                     {errors.categoryId && (
                       <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
@@ -387,9 +459,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                       }`}
                     >
                       <option value="">Birim Seçiniz</option>
-                      {units.map((unit) => (
-                        <option key={unit.id} value={unit.id}>{unit.name}</option>
-                      ))}
+                      {Array.isArray(units) && units.length > 0 ? (
+                        units.map((unit) => (
+                          <option key={unit.id} value={unit.id.toString()}>
+                            {unit.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>Birimler yükleniyor...</option>
+                      )}
                     </select>
                     {errors.unitId && (
                       <p className="text-red-500 text-xs mt-1">{errors.unitId}</p>
