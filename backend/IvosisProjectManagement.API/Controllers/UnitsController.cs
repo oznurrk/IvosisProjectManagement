@@ -1,10 +1,11 @@
+using IvosisProjectManagement.API.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UnitController : ControllerBase
+public class UnitController : BaseController
 {
     private readonly IUnitService _unitService;
 
