@@ -31,7 +31,6 @@ const ProjectTasks = () => {
   const [projectProcesses, setProjectProcesses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6); // Yeni state
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [processToReassign, setProcessToReassign] = useState(null);
@@ -47,8 +46,12 @@ const ProjectTasks = () => {
     startDate: "",
     endDate: ""
   });
-
   const CARD_HEIGHT = 600;
+  // sayfadaki kayıt sayısını localStorage'dan alan ve dfault olarak 6 olan state
+  const [pageSize,setPageSize] = useState(() => {
+    const stored = localStorage.getItem("pageSize");
+    return stored ? parseInt(stored) : 6;
+  })
   
   // Cache edilmiş veriler
   const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "{}"), []);
@@ -59,8 +62,9 @@ const ProjectTasks = () => {
   // Sayfa boyutu değiştiğinde sayfa numarasını sıfırla
   const handlePageSizeChange = useCallback((newPageSize) => {
     setPageSize(newPageSize);
+    localStorage.setItem("pageSize", newPageSize);
     setCurrentPage(1);
-  }, []);
+  })
 
   // Status helper functions - memoized
   const statusConfig = useMemo(() => ({
@@ -734,35 +738,50 @@ const ProjectTasks = () => {
                       withBorder
                       padding="lg"
                       radius="xl"
-                      className="cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-white border-gray-200 "
+                      className="cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-white border-gray-200"
                       style={{ 
                         height: 400,
                         background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}
                       onClick={() => setSelectedProcess(process)}
                     >
-                      <Stack spacing="md" style={{ height: '100%' }}>
-                        {/* Header Section */}
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <Title order={3} className="text-[#1e293b] mb-2 font-bold">
-                              {process.processName}
-                            </Title>
-                            <Badge 
-                              size="lg" 
-                              variant="light" 
-                              color="blue"
-                              className="mb-3"
-                            >
-                              {completionPercentage}% Tamamlandı
-                            </Badge>
-                          </div>
+                      {/* Header Section - Sabit yükseklik */}
+                      <div className="flex justify-between items-start mb-4" style={{ minHeight: '80px' }}>
+                        <div className="flex-1 overflow-hidden">
+                          <Title 
+                            order={3} 
+                            className="text-[#1e293b] font-bold leading-tight"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              lineHeight: '1.3',
+                              maxHeight: '2.6em',
+                              marginBottom: '8px'
+                            }}
+                            title={process.processName} // Tooltip için tam metin
+                          >
+                            {process.processName}
+                          </Title>
+                          <Badge 
+                            size="lg" 
+                            variant="light" 
+                            color="blue"
+                          >
+                            {completionPercentage}% Tamamlandı
+                          </Badge>
                         </div>
+                      </div>
 
-                        <Divider color="gray.3" />
+                      <Divider color="gray.3" className="mb-4" />
 
-                        {/* Info Section */}
+                      {/* Info Section - Esnek büyüme */}
+                      <div className="flex-1 flex flex-col justify-between">
                         <Stack spacing="sm">
                           <Paper 
                             padding="sm" 
@@ -770,7 +789,7 @@ const ProjectTasks = () => {
                             className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100"
                           >
                             <Group spacing="xs" align="center">
-                              <IconCalendar size={16}  />
+                              <IconCalendar size={16} />
                               <Text size="sm" color="ivosis.6" weight={500}>
                                 Oluşturulma: {formatDate(process.processCreatedDate)}
                               </Text>
@@ -782,9 +801,14 @@ const ProjectTasks = () => {
                             radius="md" 
                           >
                             <Group spacing="xs" align="center" position="apart">
-                              <Group spacing="xs">
-                                <IconUsers size={16}  />
-                                <Text size="sm" weight={500}>
+                              <Group spacing="xs" className="flex-1 min-w-0">
+                                <IconUsers size={16} />
+                                <Text 
+                                  size="sm" 
+                                  weight={500}
+                                  className="truncate"
+                                  title={process.assignedUser}
+                                >
                                   Atanan: {process.assignedUser}
                                 </Text>
                               </Group>
@@ -797,19 +821,20 @@ const ProjectTasks = () => {
                                   setProcessToReassign(process);
                                   setProcessAssignModalOpen(true);
                                 }}
+                                className="flex-shrink-0"
                               >
                                 Değiştir
                               </Button>
                             </Group>
                           </Paper>
 
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 gap-3">
                             <Paper 
                               padding="sm" 
                               radius="md" 
                               className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100"
                             >
-                              <Group spacing="xs" align="center">
+                              <Group spacing="xs" align="center" position="center">
                                 <Text size="lg" weight={700} color="#7c3aed">
                                   {totalTasks}
                                 </Text>
@@ -818,24 +843,11 @@ const ProjectTasks = () => {
                                 </Text>
                               </Group>
                             </Paper>
-
-                            <Paper 
-                              padding="sm" 
-                              radius="md" 
-                              className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100"
-                            >
-                              <Group spacing="xs" align="center">
-                                <IconClock size={16} color="#059669" />
-                                <Text size="sm" color="#059669" weight={500}>
-                                  {completedTasks} Tamamlandı
-                                </Text>
-                              </Group>
-                            </Paper>
                           </div>
                         </Stack>
 
-                        {/* Progress Section */}
-                        <div className="mt-auto">
+                        {/* Progress Section - Alt kısma sabitlendi */}
+                        <div className="mt-4">
                           <Text size="sm" weight={600} color="#475569" className="mb-3">
                             İlerleme Durumu
                           </Text>
@@ -845,7 +857,7 @@ const ProjectTasks = () => {
                             <Text size="xs" color="#64748b">Tamamlanma</Text>
                           </div>
                         </div>
-                      </Stack>
+                      </div>
                     </Card>
                   </Grid.Col>
                 );
@@ -967,6 +979,16 @@ const ProjectTasks = () => {
     currentPage * pageSize
   );
 
+  const getEndDate = (task) => {
+  if (task.endDate) return task.endDate.split("T")[0];
+  if (task.startDate) {
+    const start = new Date(task.startDate);
+    start.setDate(start.getDate() + 15);
+    return start.toISOString().split("T")[0];
+  }
+    return "";
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header
@@ -1074,11 +1096,13 @@ const ProjectTasks = () => {
                       <div>
                         <Text size="xs" color="#007bff" className="mb-1">🎯 Bitiş</Text>
                         <input
-                          type="date"
-                          value={task.endDate?.split("T")[0] || ""}
-                          onChange={(e) => updateTaskInState(task.id, { endDate: e.target.value })}
-                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
-                        />
+  type="date"
+  value={getEndDate(task)}
+  onChange={(e) =>
+    updateTaskInState(task.id, { endDate: e.target.value })
+  }
+  className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+/>
                       </div>
                     </div>
 

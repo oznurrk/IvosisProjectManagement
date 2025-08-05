@@ -93,13 +93,12 @@ personel listesi detay modal tasarımı düzenlenecek +
 personel düzenle modal'ı personel ekle sayfası gibi olacak +
 sil butonu gizlenecek kodlar kalacak +
 ekle sayfasındaki footer sabitlenecek modalda da aynı yapı olacak +
-ekle sayfasındaki header enable ayarları düzenlenecek
 
 belgeler indirilme sorunu var
 Proje düzenleme ekranı tasarlanacak
 
-TaskListModal'da düzenle ve silme işlemleri çalışmıyor
-TaskAddModal ekleme işlemi çalışmıyor.
+TaskListModal'da silme işlemleri çalışmıyor
+TaskAddModal ekleme işlemi çalışmıyor. + (ÇALIŞIR HALE GETİRİLDİ)
 
 Personel Düzenle modalinde düzenle butonu çalışmıyor. (backende update fonksiyonundaki alan kontrolleri tc ve email kontrol edilecek)
 
@@ -109,8 +108,13 @@ süreç ekleme modalı açıldığında imleç texte odaklanacak + (TAMAMLANDI)
 sayfalardaki görüntüleme sayısı seçilebilir olmalı + (TÜM SAYFALARDA GÖRÜNTÜLENDİ)
 dosya ekleme sayısının kontrolü
 dosya yüklenince sıralama yapılacak
-süreçlerde ve taskta bitiş tarihi de atanacak
-task düzenlede tüm değişkenler düzenlenecek
-süreç kartı düzenlenecek(çok yazı olunca kayma oluyor)
+süreçlerde ve taskta bitiş tarihi de atanacak + (TAMAMLANDI 15 GÜN SONRASI GÖRÜNTÜLENİYOR)
+task düzenlede tüm değişkenler düzenlenecek + (TAMAMLANDI AÇIKLAMA DÜZENLEME VE GÖRÜNTÜLEME EKLENDİ, SİLME İŞLEMİ BACKENDDE BAĞLANTILI TABLO HATASI VERİYOR.)
+süreç kartı düzenlenecek(çok yazı olunca kayma oluyor) + (PROCESS KARTLARI SABİT HALE GETİRİLDİ)
 görevlerde dosya alanı boşsa tamamlandı olamaz şekilde ayarlanacak
 
+
+kullanıcıların yaptıkları işlemleri logları sayfanın sol altında anlık görüntülenecek.
+
+
+sayfalandırma yapısı sol tarafta yapılacak. 5-10-15-20 şeklinde artacak.

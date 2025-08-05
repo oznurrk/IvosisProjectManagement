@@ -33,7 +33,11 @@ const MyTasks = () => {
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [uploadingFiles, setUploadingFiles] = useState({});
-  const [pageSize, setPageSize] = useState(6); // Varsayılan sayfa boyutu
+
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = localStorage.getItem("pageSize");
+    return stored ? parseInt(stored) : 6; // yoksa 6 olsun
+  });
   
   const [searchFilters, setSearchFilters] = useState({
     projectName: "",
@@ -53,9 +57,10 @@ const MyTasks = () => {
 
   // Sayfa boyutu değişikliği handler'ı
   const handlePageSizeChange = useCallback((newPageSize) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1); // Sayfa boyutu değiştiğinde ilk sayfaya dön
-  }, []);
+  setPageSize(newPageSize);
+  localStorage.setItem("pageSize", newPageSize); // kalıcı olsun
+  setCurrentPage(1); // sayfa boyutu değişince ilk sayfaya dön
+}, []);
   
   // Auth bilgileri
   const token = localStorage.getItem("token");
@@ -518,6 +523,16 @@ const MyTasks = () => {
     return icons[extension] || '📎';
   };
 
+  const getEndDate = (task) => {
+  if (task.endDate) return task.endDate.split("T")[0];
+  if (task.startDate) {
+    const start = new Date(task.startDate);
+    start.setDate(start.getDate() + 15);
+    return start.toISOString().split("T")[0];
+  }
+    return "";
+  };
+
   // Early returns
   if (!token || !userObj?.id) {
     return (
@@ -596,6 +611,7 @@ const MyTasks = () => {
                   radius="lg"
                 >
                   <Stack spacing="sm" className="h-full">
+                    {/* Görev başlığı ve durumu */}
                     <Group position="apart" align="flex-start">
                       <Text size="sm" weight={500} className="text-[#212529] leading-[1.4] flex-1">
                         {task.taskDetails?.title || 'Görev Başlığı'}
@@ -606,7 +622,7 @@ const MyTasks = () => {
                         </Badge>
                       </div>
                     </Group>
-                    
+                    {/* Atama işlemleri */}
                     <Group position="apart">
                       <Text size="xs" color="dimmed">👤 Atanan: {task.assignedUserName}</Text>
                       <Button
@@ -620,7 +636,7 @@ const MyTasks = () => {
                         Atamayı Değiştir
                       </Button>
                     </Group>
-
+                    {/* Proje ve Süreç bilgileri */}
                     <Stack spacing="xs">
                       <Paper padding="xs" className="bg-[#e3f2fd]">
                         <Text size="xs" color="#1976d2" weight={500}>🏢 Proje: {task.projectName}</Text>
@@ -629,7 +645,7 @@ const MyTasks = () => {
                         <Text size="xs" color="#7b1fa2" weight={500}>⚙️ Süreç: {task.processName}</Text>
                       </Paper>
                     </Stack>
-
+                    {/* Tarihler */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Text size="xs" color="#007bff" className="mb-1">📅 Başlangıç</Text>
@@ -642,12 +658,14 @@ const MyTasks = () => {
                       </div>
                       <div>
                         <Text size="xs" color="#007bff" className="mb-1">🎯 Bitiş</Text>
-                        <input
-                          type="date"
-                          value={task.endDate?.split("T")[0] || ""}
-                          onChange={(e) => updateTaskInState(task.id, { endDate: e.target.value })}
-                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
-                        />
+                       <input
+  type="date"
+  value={getEndDate(task)}
+  onChange={(e) =>
+    updateTaskInState(task.id, { endDate: e.target.value })
+  }
+  className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+/>
                       </div>
                     </div>
 

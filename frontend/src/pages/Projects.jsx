@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
 import { Text, Badge, Card, Group, Stack, Divider, LoadingOverlay, ActionIcon, Tooltip } from "@mantine/core";
@@ -25,11 +25,13 @@ const Projects = () => {
     description: "",
     status: "", // NotStarted, InProgress, Completed, Cancelled veya boş
   });
-  
-  // Pagination state'leri
+
+  const [pageSize, setPageSize] = useState(() => {
+    const stored = localStorage.getItem("pageSize");
+    return stored ? parseInt(stored) : 4; // Varsayılan sayfa boyutu
+  })
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(4); // Varsayılan sayfa boyutu
-  
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -294,10 +296,11 @@ const Projects = () => {
     setCurrentPage(page);
   };
 
-  const handlePageSizeChange = (newPageSize) => {
+  const handlePageSizeChange = useCallback((newPageSize) => {
     setPageSize(newPageSize);
-    setCurrentPage(1); // Sayfa boyutu değişince ilk sayfaya dön
-  };
+    localStorage.setItem("pageSize", newPageSize);
+    setCurrentPage(1);
+  })
 
   // UI için küçük yardımcı bileşenler
   const InfoItem = ({ icon: Icon, label, value, color = "gray" }) => (
