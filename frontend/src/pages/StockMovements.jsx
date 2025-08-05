@@ -14,18 +14,21 @@ import {
 } from "@tabler/icons-react";
 import StockInModal from "../components/Stock/StockInModal";
 import StockOutModal from "../components/Stock/StockOutModal";
+import StockTransferModal from "../components/Stock/StockTransferModal";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 
 const StockMovements = () => {
   const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [movements, setMovements] = useState([]); // Başlangıç değeri empty array
   const [stockItems, setStockItems] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(15);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
   
   const [showStockInModal, setShowStockInModal] = useState(false);
   const [showStockOutModal, setShowStockOutModal] = useState(false);
+  const [showStockTransferModal, setShowStockTransferModal] = useState(false);
 
   const [searchFilters, setSearchFilters] = useState({
     search: "", // Genel arama - hem malzeme adı hem stok kodu
@@ -36,6 +39,7 @@ const StockMovements = () => {
 
   useEffect(() => {
     fetchAllData();
+    fetchLocations();
   }, []);
 
   const fetchAllData = async () => {
@@ -119,6 +123,31 @@ const StockMovements = () => {
     }
   };
 
+  const fetchLocations = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/StockLocations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      let locationData = [];
+      if (Array.isArray(res.data)) {
+        locationData = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        if (res.data.items && Array.isArray(res.data.items)) {
+          locationData = res.data.items;
+        } else if (res.data.data && Array.isArray(res.data.data)) {
+          locationData = res.data.data;
+        } else if (res.data.locations && Array.isArray(res.data.locations)) {
+          locationData = res.data.locations;
+        }
+      }
+      console.log('StockLocations API response:', locationData);
+      setLocations(locationData.filter(loc => loc.isActive !== false));
+    } catch (err) {
+      setLocations([{ id: 1, name: "Ana Depo", code: "MAIN", isActive: true }]);
+    }
+  };
+
   const handleStockIn = async (stockInData) => {
     try {
       const token = localStorage.getItem("token");
@@ -138,7 +167,6 @@ const StockMovements = () => {
         // movementDate, availableQuantity gibi alanları göndermiyoruz
       };
       
-      console.log('StockIn API\'ye temiz veri:', cleanData);
       
       const response = await axios.post("http://localhost:5000/api/StockMovements/stock-in", cleanData, {
         headers: { 
@@ -190,7 +218,7 @@ const StockMovements = () => {
         // movementDate, availableQuantity gibi alanları göndermiyoruz
       };
       
-      console.log('StockOut API\'ye temiz veri:', cleanData);
+
       
       const response = await axios.post("http://localhost:5000/api/StockMovements/stock-out", cleanData, {
         headers: { 
@@ -220,6 +248,28 @@ const StockMovements = () => {
       }
       
       alert('Hata: ' + errorMessage);
+    }
+  };
+
+  const handleStockTransfer = async (transferData) => {
+    try {
+      const token = localStorage.getItem("token");
+      const cleanData = {
+        stockItemId: transferData.stockItemId,
+        fromLocationId: transferData.fromLocationId,
+        toLocationId: transferData.toLocationId,
+        quantity: transferData.quantity,
+        description: transferData.description || null,
+        movementType: "Transfer"
+      };
+      await axios.post("http://localhost:5000/api/StockMovements/transfer", cleanData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      await fetchAllData();
+      setShowStockTransferModal(false);
+      alert('Transfer işlemi başarıyla kaydedildi!');
+    } catch (error) {
+      alert('Transfer işlemi başarısız: ' + (error.message || 'Bilinmeyen hata'));
     }
   };
 
@@ -573,34 +623,37 @@ const StockMovements = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Önceki
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Sonraki
-                </button>
+          {/* Pagination ve Sayfa başına seçim her zaman görünür */}
+          <div className="bg-white px-4 py-3 flex flex-col items-center justify-center border-t border-gray-200">
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 mb-2">
+              {/* Pagination mobilde */}
+              <div className="flex justify-center sm:hidden">
+                {totalPages > 1 && (
+                  <>
+                    <button
+                      onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Önceki
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Sonraki
+                    </button>
+                  </>
+                )}
               </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(startIndex + itemsPerPage, visibleItems.length)}</span> arası,{" "}
-                    toplam <span className="font-medium">{visibleItems.length}</span> kayıt
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+              {/* Masaüstü: Pagination ve Sayfa başına seçim yan yana */}
+              <div className="hidden sm:flex flex-row items-center justify-center w-full gap-4">
+                <p className="text-sm text-gray-700 mb-0">
+                  <span className="font-medium">{startIndex + 1}</span> - <span className="font-medium">{Math.min(startIndex + itemsPerPage, visibleItems.length)}</span> arası, toplam <span className="font-medium">{visibleItems.length}</span> kayıt
+                </p>
+                {totalPages > 1 && (
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px justify-center">
                     <button
                       onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                       disabled={currentPage === 1}
@@ -634,10 +687,24 @@ const StockMovements = () => {
                       Sonraki
                     </button>
                   </nav>
+                )}
+                {/* Sayfa başına gösterilecek kayıt sayısı seçimi */}
+                <div className="flex items-center">
+                  <label htmlFor="itemsPerPageBottom" className="mr-2 text-sm text-gray-700">Sayfa başına:</label>
+                  <select
+                    id="itemsPerPageBottom"
+                    value={itemsPerPage}
+                    onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    {[5, 10, 15, 20].map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -654,6 +721,13 @@ const StockMovements = () => {
         onSubmit={handleStockOut}
         stockItems={Array.isArray(stockItems) ? stockItems : []}
       />
+      <StockTransferModal
+        isOpen={showStockTransferModal}
+        onClose={() => setShowStockTransferModal(false)}
+        onSubmit={handleStockTransfer}
+        stockItems={Array.isArray(stockItems) ? stockItems : []}
+        locations={Array.isArray(locations) ? locations : []}
+      />
 
       {/* Stok Hareketi Ekle */}
       <div className="fixed bottom-4 right-4 flex space-x-2">
@@ -668,6 +742,12 @@ const StockMovements = () => {
           className="bg-red-500 text-white p-3 rounded-full shadow-lg hover:bg-red-600"
         >
           <IconMinus className="h-6 w-6" />
+        </button>
+        <button
+          onClick={() => setShowStockTransferModal(true)}
+          className="bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600"
+        >
+          <IconTransfer className="h-6 w-6" />
         </button>
       </div>
     </div>
