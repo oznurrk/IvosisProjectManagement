@@ -28,9 +28,7 @@ const StockCards = () => {
   const [searchFilters, setSearchFilters] = useState({
     search: "", // Genel arama - hem malzeme adı hem stok kodu
     category: "",
-    status: "",
-    dateFrom: "",
-    dateTo: ""
+    status: ""
   });
 
   useEffect(() => {
@@ -297,9 +295,7 @@ const StockCards = () => {
     setSearchFilters({
       search: "",
       category: "",
-      status: "",
-      dateFrom: "",
-      dateTo: ""
+      status: ""
     });
     setCurrentPage(1);
   };
@@ -377,27 +373,7 @@ function getStockStatus(item) {
     
     const statusMatch = !searchFilters.status || getStockStatus(item) === searchFilters.status;
 
-    // Tarih aralığı filtresi
-    let dateMatch = true;
-    if (searchFilters.dateFrom || searchFilters.dateTo) {
-      const itemDate = new Date(item.createdAt || item.updatedAt || item.createdDate);
-      
-      if (searchFilters.dateFrom && searchFilters.dateTo) {
-        const fromDate = new Date(searchFilters.dateFrom);
-        const toDate = new Date(searchFilters.dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        dateMatch = itemDate >= fromDate && itemDate <= toDate;
-      } else if (searchFilters.dateFrom) {
-        const fromDate = new Date(searchFilters.dateFrom);
-        dateMatch = itemDate >= fromDate;
-      } else if (searchFilters.dateTo) {
-        const toDate = new Date(searchFilters.dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        dateMatch = itemDate <= toDate;
-      }
-    }
-
-    return searchMatch && categoryMatch && statusMatch && dateMatch;
+    return searchMatch && categoryMatch && statusMatch;
   }).sort((a, b) => {
     // ID'ye göre artan sırada sırala
     return (a.id || 0) - (b.id || 0);
@@ -482,16 +458,6 @@ function getStockStatus(item) {
                 { value: "Düşük", label: "Düşük Stok" },
                 { value: "Kritik", label: "Kritik Stok" }
               ]
-            },
-            {
-              key: "dateFrom",
-              type: "date",
-              placeholder: "Başlangıç Tarihi"
-            },
-            {
-              key: "dateTo",
-              type: "date", 
-              placeholder: "Bitiş Tarihi"
             }
           ]}
         />
