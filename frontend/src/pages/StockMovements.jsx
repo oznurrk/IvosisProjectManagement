@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import axios from "axios";
@@ -17,6 +18,7 @@ import StockOutModal from "../components/Stock/StockOutModal";
 import StockTransferModal from "../components/Stock/StockTransferModal";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 
+
 const StockMovements = () => {
   const { isMobile, setIsMobileMenuOpen } = useOutletContext();
   const [movements, setMovements] = useState([]); // Başlangıç değeri empty array
@@ -25,10 +27,80 @@ const StockMovements = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
-  
+
   const [showStockInModal, setShowStockInModal] = useState(false);
   const [showStockOutModal, setShowStockOutModal] = useState(false);
   const [showStockTransferModal, setShowStockTransferModal] = useState(false);
+
+  const [editMovement, setEditMovement] = useState(null);
+  const [editModalType, setEditModalType] = useState(null); // 'in' | 'out' | 'transfer'
+
+  // --- HAREKET GÜNCELLEME ---
+  const handleUpdateMovement = async (formData, oldMovement) => {
+    try {
+      const token = localStorage.getItem("token");
+      // Sadece güncellenebilir alanları gönder
+      const updateData = {
+        stockItemId: formData.stockItemId,
+        locationId: formData.locationId || oldMovement.locationId || 1,
+        quantity: formData.quantity,
+        unitPrice: formData.unitPrice ?? oldMovement.unitPrice ?? 0,
+        totalAmount: formData.totalAmount ?? oldMovement.totalAmount ?? 0,
+        referenceType: formData.referenceType || oldMovement.referenceType || null,
+        referenceNumber: formData.referenceNumber || oldMovement.referenceNumber || null,
+        description: formData.description || oldMovement.description || null,
+        notes: formData.notes || oldMovement.notes || null
+      };
+      // Hareket türüne göre endpoint
+      let url = `http://localhost:5000/api/StockMovements/${oldMovement.id}`;
+      await axios.put(url, updateData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      await fetchAllData();
+      setEditMovement(null);
+      setEditModalType(null);
+      setShowStockInModal(false);
+      setShowStockOutModal(false);
+      setShowStockTransferModal(false);
+      alert('Hareket başarıyla güncellendi!');
+    } catch (error) {
+      alert('Güncelleme başarısız: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // --- HAREKET SİLME ---
+  const handleDeleteMovement = async (movement) => {
+    if (!window.confirm('Bu hareketi silmek istediğinize emin misiniz?')) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:5000/api/StockMovements/${movement.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchAllData();
+      alert('Hareket başarıyla silindi!');
+    } catch (error) {
+      alert('Silme işlemi başarısız: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // --- HAREKET DÜZENLEME ---
+  const handleEditMovement = (movement) => {
+    // Hareket türüne göre modalı aç
+    if (movement.movementType === 'IN' || movement.movementType === 'StockIn') {
+      setEditModalType('in');
+      setShowStockInModal(true);
+    } else if (movement.movementType === 'OUT' || movement.movementType === 'StockOut') {
+      setEditModalType('out');
+      setShowStockOutModal(true);
+    } else if (movement.movementType === 'TRANSFER' || movement.movementType === 'Transfer') {
+      setEditModalType('transfer');
+      setShowStockTransferModal(true);
+    } else {
+      alert('Bu hareket türü düzenlenemiyor.');
+      return;
+    }
+    setEditMovement(movement);
+  };
 
   const [searchFilters, setSearchFilters] = useState({
     search: "", // Genel arama - hem malzeme adı hem stok kodu
@@ -149,9 +221,12 @@ const StockMovements = () => {
   };
 
   const handleStockIn = async (stockInData) => {
+    if (!stockInData.referenceNumber || stockInData.referenceNumber.trim() === "") {
+      alert("Lütfen Referans No alanını doldurun. Stok girişi için Referans No zorunludur.");
+      return;
+    }
     try {
       const token = localStorage.getItem("token");
-      
       // Sadece gerekli alanları gönder, computed column'ları çıkar
       const cleanData = {
         stockItemId: stockInData.stockItemId,
@@ -161,27 +236,23 @@ const StockMovements = () => {
         unitPrice: stockInData.unitPrice,
         totalAmount: stockInData.totalAmount,
         referenceType: "Purchase",
-        referenceNumber: stockInData.referenceNumber || null,
+        referenceNumber: stockInData.referenceNumber,
         description: stockInData.description || null,
         notes: stockInData.notes || null
         // movementDate, availableQuantity gibi alanları göndermiyoruz
       };
-      
-      
       const response = await axios.post("http://localhost:5000/api/StockMovements/stock-in", cleanData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
-
       await fetchAllData();
       setShowStockInModal(false);
       alert('Stok girişi başarıyla kaydedildi!');
     } catch (error) {
       console.error('Stok girişi hatası:', error);
       let errorMessage = 'Stok girişi kaydedilemedi';
-      
       if (error.response?.status === 500) {
         if (error.response?.data?.includes?.('computed column') || 
             error.response?.data?.includes?.('AvailableQuantity')) {
@@ -194,7 +265,6 @@ const StockMovements = () => {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
       alert('Hata: ' + errorMessage);
     }
   };
@@ -490,7 +560,7 @@ const StockMovements = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
-                      #
+                      ID
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Hareket
@@ -516,11 +586,14 @@ const StockMovements = () => {
                     <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
                       Açıklama
                     </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">
+                      İşlemler
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentMovements.map((movement, index) => {
-                    const rowNumber = startIndex + index + 1; // Sayfa başına göre sıra numarası
+                    const rowNumber = startIndex + index + 1;
                     return (
                       <tr key={movement.id} className="hover:bg-gray-50">
                         {/* Sıra Numarası */}
@@ -537,9 +610,6 @@ const StockMovements = () => {
                           <div className="flex items-center justify-center space-x-3">
                             {getMovementIcon(movement.movementType)}
                             <div className="min-w-0 flex-1 text-center">
-                              <div className="text-sm font-medium text-gray-900">
-                                {getMovementTypeName(movement.movementType)}
-                              </div>
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 whitespace-nowrap ${getMovementTypeColor(movement.movementType)}`}>
                                 {getMovementTypeName(movement.movementType)}
                               </span>
@@ -614,6 +684,25 @@ const StockMovements = () => {
                           <div className="max-w-xs truncate text-center">
                             {movement.description || movement.notes || "-"}
                           </div>
+                        </td>
+
+                        {/* Düzenle/Sil Butonları */}
+                        <td className="px-4 py-4 text-center">
+                          <button
+                            className="inline-flex items-center px-2 py-1 mr-2 text-xs font-medium rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+                            title="Düzenle"
+                            onClick={() => handleEditMovement(movement)}
+                          >
+                            <IconEdit className="w-4 h-4 mr-1" /> Düzenle
+                          </button>
+                          <button
+                            className="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-700 hover:bg-red-200"
+                            title="Sil"
+                            onClick={() => handleDeleteMovement(movement)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            Sil
+                          </button>
                         </td>
                       </tr>
                     );
@@ -711,22 +800,25 @@ const StockMovements = () => {
       {/* Stok Giriş/Çıkış Modalları */}
       <StockInModal
         isOpen={showStockInModal}
-        onClose={() => setShowStockInModal(false)}
-        onSubmit={handleStockIn}
+        onClose={() => { setShowStockInModal(false); setEditMovement(null); setEditModalType(null); }}
+        onSubmit={editMovement ? (data) => handleUpdateMovement(data, editMovement) : handleStockIn}
         stockItems={Array.isArray(stockItems) ? stockItems : []}
+        initialValues={editModalType === 'in' ? editMovement : undefined}
       />
       <StockOutModal
         isOpen={showStockOutModal}
-        onClose={() => setShowStockOutModal(false)}
-        onSubmit={handleStockOut}
+        onClose={() => { setShowStockOutModal(false); setEditMovement(null); setEditModalType(null); }}
+        onSubmit={editMovement ? (data) => handleUpdateMovement(data, editMovement) : handleStockOut}
         stockItems={Array.isArray(stockItems) ? stockItems : []}
+        initialValues={editModalType === 'out' ? editMovement : undefined}
       />
       <StockTransferModal
         isOpen={showStockTransferModal}
-        onClose={() => setShowStockTransferModal(false)}
-        onSubmit={handleStockTransfer}
+        onClose={() => { setShowStockTransferModal(false); setEditMovement(null); setEditModalType(null); }}
+        onSubmit={editMovement ? (data) => handleUpdateMovement(data, editMovement) : handleStockTransfer}
         stockItems={Array.isArray(stockItems) ? stockItems : []}
         locations={Array.isArray(locations) ? locations : []}
+        initialValues={editModalType === 'transfer' ? editMovement : undefined}
       />
 
       {/* Stok Hareketi Ekle */}

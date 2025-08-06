@@ -13,6 +13,9 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
     notes: ""
   });
 
+  // Lokasyonlar için state
+  const [locations, setLocations] = useState([]);
+
   // Helper to get category name from categoryId and categories prop
   const getCategoryName = (categoryId, item) => {
     if (item?.category) return item.category;
@@ -46,12 +49,47 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
     "Diğer"
   ];
 
+
   useEffect(() => {
     if (isOpen) {
       resetForm();
+      fetchLocations();
       console.log('StockInModal açıldı, gelen stockItems:', stockItems);
     }
   }, [isOpen, stockItems]);
+
+  // Lokasyonları backend'den çek
+  const fetchLocations = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:5000/api/StockLocations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      let locationData = [];
+      if (Array.isArray(response.data)) {
+        locationData = response.data;
+      } else if (response.data && typeof response.data === 'object') {
+        if (response.data.items && Array.isArray(response.data.items)) {
+          locationData = response.data.items;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          locationData = response.data.data;
+        }
+      }
+      // Sadece aktif lokasyonlar
+      const activeLocations = locationData.filter(loc => loc.isActive !== false);
+      setLocations(activeLocations);
+      // Eğer lokasyonlar varsa ve form.locationId boşsa, ilk aktif lokasyonu seç
+      if (activeLocations.length > 0 && !form.locationId) {
+        setForm(prev => ({ ...prev, locationId: activeLocations[0].id.toString() }));
+      }
+    } catch (error) {
+      setLocations([
+        { id: 1, name: "Ana Depo", code: "MAIN" },
+        { id: 2, name: "Yan Depo", code: "SEC" }
+      ]);
+    }
+  };
 
   const resetForm = () => {
     setForm({
@@ -195,16 +233,7 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[calc(90vh-100px)] overflow-y-auto">
-          
-          {/* Debug Bilgisi - Daha detaylı */}
-          <div className="bg-gray-100 p-3 rounded text-xs text-gray-600">
-            <strong>Debug:</strong><br/>
-            StockItems Count: {stockItems.length}<br/>
-            Selected Item ID: {form.itemId}<br/>
-            Selected Item: {selectedItem ? selectedItem.name : 'None'}<br/>
-            Form Valid: {Object.keys(errors).length === 0 ? 'Yes' : 'No'}<br/>
-            {Object.keys(errors).length > 0 && `Errors: ${Object.keys(errors).join(', ')}`}
-          </div>
+
 
           {/* Malzeme Seçimi */}
           <div className="bg-gray-50 rounded-xl p-6">
@@ -308,9 +337,13 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
                   onChange={(e) => handleChange("locationId", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="1">Ana Depo</option>
-                  <option value="2">Yan Depo</option>
-                  <option value="3">Üretim Alanı</option>
+                  <option value="">Lokasyon Seçiniz</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id.toString()}>
+                      {location.code} - {location.name}
+                      {location.capacity && ` (Kapasite: ${location.capacity} ${location.capacityUnit || ''})`}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -393,7 +426,7 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
               ) : (
                 <>
                   <IconCheck size={16} />
-                  <span>Stok Girişi Yap</span>
+                  <span>Kaydet</span>
                 </>
               )}
             </button>
