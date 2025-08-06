@@ -102,7 +102,7 @@ const StockTransferModal = ({ isOpen, onClose, onSubmit, stockItems = [], locati
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <button type="button" onClick={onClose} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">İptal</button>
             <button type="submit" disabled={loading} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
-              {loading ? (<><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div><span>Transfer Ediliyor...</span></>) : (<><IconTransfer size={16} /><span>Transfer Et</span></>)}
+              {loading ? (<><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div><span>Transfer Ediliyor...</span></>) : (<><IconTransfer size={16} /><span>Kaydet</span></>)}
             </button>
           </div>
         </form>

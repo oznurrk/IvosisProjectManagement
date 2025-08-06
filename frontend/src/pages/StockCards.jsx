@@ -197,39 +197,23 @@ const StockCards = () => {
 
     try {
       const token = localStorage.getItem("token");
-      
       if (!token) {
         alert('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
         return;
       }
-
       const apiUrl = `http://localhost:5000/api/StockItems/${id}`;
-
       const response = await axios.delete(apiUrl, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
-
       // State'i güncelle
-      const initialLength = stockItems.length;
-      
-      setStockItems(prev => {
-        const filteredItems = prev.filter(item => {
-          const shouldKeep = item.id !== id && item.id !== parseInt(id);
-          if (!shouldKeep) {
-          }
-          return shouldKeep;
-        });
-        return filteredItems;
-      });
-
+      setStockItems(prev => prev.filter(item => item.id !== id && item.id !== parseInt(id)));
       // Sayfa sıfırlama kontrolü
       setTimeout(() => {
         setStockItems(current => {
           const newVisibleItems = current.filter(item => {
-            // Use searchFilters.search for general search (itemCode and name)
             const searchTerm = (searchFilters.search || "").toLowerCase();
             const codeMatch = (item.itemCode || "").toLowerCase().includes(searchTerm);
             const nameMatch = (item.name || "").toLowerCase().includes(searchTerm);
@@ -246,9 +230,7 @@ const StockCards = () => {
           return current;
         });
       }, 100);
-
       alert('Stok kartı başarıyla silindi!');
-      
     } catch (error) {
       console.error('Stok kartı silinirken hata:', error);
       console.error('Error details:', {
@@ -258,14 +240,22 @@ const StockCards = () => {
         message: error.message,
         config: error.config
       });
-      
       let errorMessage = 'Stok kartı silinemedi';
+      const backendMsg = (error.response?.data?.message || '').toLowerCase();
       if (error.response?.status === 401) {
         errorMessage = 'Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.';
       } else if (error.response?.status === 404) {
         errorMessage = 'Kayıt bulunamadı veya zaten silinmiş';
       } else if (error.response?.status === 400) {
         errorMessage = 'Geçersiz istek. Kayıt silinemez.';
+      } else if (
+        backendMsg.includes('foreign key') ||
+        backendMsg.includes('constraint') ||
+        backendMsg.includes('related') ||
+        backendMsg.includes('ilişkili') ||
+        backendMsg.includes('bağlı')
+      ) {
+        errorMessage = 'Bu stok kartına ait hareket kaydı olduğu için silinemez. Önce ilgili stok hareketlerini silmelisiniz.';
       } else if (error.response?.status >= 500) {
         errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
       } else if (error.response?.data?.message) {
@@ -273,7 +263,6 @@ const StockCards = () => {
       } else if (error.message.includes('Network Error')) {
         errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.';
       }
-      
       alert('Silme hatası: ' + errorMessage);
     }
   };

@@ -27,7 +27,8 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     rawMaterialQuality: "",
     rawMaterialThickness: "",
     rawMaterialWidth: "",
-    lotTracking: false
+    lotTracking: false,
+    locationId: "1" // Default location
   });
 
   const [errors, setErrors] = useState({});
@@ -47,8 +48,42 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   useEffect(() => {
     if (isOpen) {
       fetchModalData();
+      fetchLocations();
     }
   }, [isOpen]);
+
+  // Lokasyonları backend'den çek
+  const fetchLocations = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:5000/api/StockLocations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      let locationData = [];
+      if (Array.isArray(response.data)) {
+        locationData = response.data;
+      } else if (response.data && typeof response.data === 'object') {
+        if (response.data.items && Array.isArray(response.data.items)) {
+          locationData = response.data.items;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          locationData = response.data.data;
+        }
+      }
+      // Sadece aktif lokasyonlar
+      const activeLocations = locationData.filter(loc => loc.isActive !== false);
+      setLocations(activeLocations);
+      // Eğer lokasyonlar varsa ve form.locationId boşsa, ilk aktif lokasyonu seç
+      if (activeLocations.length > 0 && !form.locationId) {
+        setForm(prev => ({ ...prev, locationId: activeLocations[0].id.toString() }));
+      }
+    } catch (error) {
+      setLocations([
+        { id: 1, name: "Ana Depo", code: "MAIN" },
+        { id: 2, name: "Yan Depo", code: "SEC" }
+      ]);
+    }
+  };
 
   useEffect(() => {
     if (searchTerm) {
@@ -291,6 +326,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         storageConditions: (form.storageConditions || "").trim(),
         shelfLife: parseInt(form.shelfLife) || 0,
         isCriticalItem: Boolean(form.isCriticalItem)
+        // locationId API'ye gönderilmiyor
       };
       
       // NaN kontrolü
@@ -382,6 +418,24 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
               <div className="bg-gray-50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Temel Bilgiler</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Lokasyon (Depo) *
+                    </label>
+                    <select
+                      value={form.locationId}
+                      onChange={e => handleChange("locationId", e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                    >
+                      <option value="">Lokasyon Seçiniz</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id.toString()}>
+                          {location.code} - {location.name}
+                          {location.capacity && ` (Kapasite: ${location.capacity} ${location.capacityUnit || ''})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Stok Kodu

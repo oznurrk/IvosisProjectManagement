@@ -155,22 +155,37 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
       onClose();
       alert('Stok çıkış işlemi başarıyla tamamlandı!');
       if (onSave) onSave();
+      
     } catch (error) {
       console.error("Stok çıkış hatası:", error);
+      console.error("Hata detayları:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
       
       let errorMessage = 'Stok çıkış işlemi başarısız';
       
-      if (error.response?.status === 500) {
-        if (error.response?.data?.includes?.('computed column') || 
-            error.response?.data?.includes?.('AvailableQuantity')) {
-          errorMessage = 'Veritabanı yapı hatası. Lütfen sistem yöneticisine başvurun.';
-        } else if (error.response?.data?.includes?.('FOREIGN KEY constraint')) {
+      if (error.response?.status === 400) {
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          if (typeof errors === 'object') {
+            errorMessage = Object.values(errors).flat().join(', ');
+          } else {
+            errorMessage = errors.toString();
+          }
+        } else {
+          errorMessage = 'Geçersiz veri formatı. Lütfen tüm alanları kontrol edin.';
+        }
+      } else if (error.response?.status === 500) {
+        if (error.response?.data?.includes?.('FOREIGN KEY constraint')) {
           errorMessage = 'Lokasyon bilgisi geçersiz. Lütfen sistem yöneticisine başvurun.';
         } else {
           errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
         }
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
       }
       
       alert('Hata: ' + errorMessage);
@@ -240,7 +255,7 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
                       </option>
                     ))
                   ) : (
-                    <option value="" disabled>Yükleniyor...</option>
+                    <option value="" disabled>Malzeme listesi yükleniyor...</option>
                   )}
                 </select>
                 {errors.itemId && (
@@ -254,10 +269,8 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
                   <div className="text-sm text-blue-700">
                     <p><strong>Kod:</strong> {selectedItem.itemCode}</p>
                     <p><strong>Ad:</strong> {selectedItem.name}</p>
-                    <p><strong>Kategori:</strong> {selectedItem.category}</p>
-                    <p><strong>Mevcut Stok:</strong> {selectedItem.currentStock} {selectedItem.unit}</p>
-                    <p><strong>Minimum Stok:</strong> {selectedItem.minimumStock} {selectedItem.unit}</p>
-                    <p><strong>Kritik Stok:</strong> {selectedItem.reorderLevel} {selectedItem.unit}</p>
+                    <p><strong>Kategori:</strong> {selectedItem.category || '-'} </p>
+                    <p><strong>Mevcut Stok:</strong> {selectedItem.currentStock || 0} {selectedItem.unit || 'Adet'}</p>
                   </div>
                 </div>
               )}
@@ -290,14 +303,12 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lokasyon *
+                  Lokasyon
                 </label>
                 <select
                   value={form.locationId}
                   onChange={(e) => handleChange("locationId", e.target.value)}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                    errors.locationId ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 >
                   <option value="">Lokasyon Seçiniz</option>
                   {locations.map((location) => (
@@ -307,9 +318,6 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
                     </option>
                   ))}
                 </select>
-                {errors.locationId && (
-                  <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>
-                )}
               </div>
 
               <div>
@@ -320,36 +328,11 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
                   type="text"
                   value={form.referenceNumber}
                   onChange={(e) => handleChange("referenceNumber", e.target.value)}
-                  placeholder="İş Emri No, Talep No vb."
+                  placeholder="Çıkış Belgesi, İrsaliye No vb."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 />
               </div>
             </div>
-
-            {/* Stok Durumu Uyarısı */}
-            {selectedItem && form.quantity && (
-              <div className={`mt-4 p-4 border rounded-lg ${getStockStatusColor()}`}>
-                <div className="flex items-center">
-                  <IconAlertTriangle size={20} className="mr-2" />
-                  <div>
-                    <div className="font-semibold">
-                      İşlem Sonrası Kalan Stok: {(selectedItem.currentStock - parseFloat(form.quantity || 0)).toFixed(3)} {selectedItem.unit}
-                    </div>
-                    {(selectedItem.currentStock - parseFloat(form.quantity || 0)) < selectedItem.reorderLevel && (
-                      <div className="text-sm mt-1">
-                        ⚠️ Kritik stok seviyesinin altına düşecek!
-                      </div>
-                    )}
-                    {(selectedItem.currentStock - parseFloat(form.quantity || 0)) < selectedItem.minimumStock && 
-                     (selectedItem.currentStock - parseFloat(form.quantity || 0)) >= selectedItem.reorderLevel && (
-                      <div className="text-sm mt-1">
-                        ⚠️ Minimum stok seviyesinin altına düşecek!
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Açıklama ve Notlar */}
@@ -405,7 +388,7 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
               ) : (
                 <>
                   <IconCheck size={16} />
-                  <span>Stok Çıkışı Yap</span>
+                  <span>Kaydet</span>
                 </>
               )}
             </button>
