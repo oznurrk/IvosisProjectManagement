@@ -14,10 +14,9 @@ public class StockLocation : BaseEntity
     public decimal? Capacity { get; set; }
     public string CapacityUnit { get; set; }
     public bool IsActive { get; set; } = true;
-    public int CreatedByUserId { get; set; }
-    public int UpdatedByUserId { get; set; }
+    
     // Navigation properties - ForeignKey attribute'ları KALDıRıLDı
-    public User CreatedByUser { get; set; }
+    //public User CreatedByUser { get; set; }
     public virtual ICollection<StockBalance> StockBalances { get; set; }
     public virtual ICollection<StockMovement> StockMovements { get; set; }
 }

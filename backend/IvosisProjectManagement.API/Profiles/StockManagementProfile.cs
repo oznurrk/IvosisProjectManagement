@@ -16,7 +16,7 @@ namespace IvosisProjectManagement.API.Profiles
                 .ForMember(dest => dest.CurrentStock, opt => opt.MapFrom(src => src.StockBalances.Sum(b => b.CurrentQuantity)))
                 .ForMember(dest => dest.AvailableStock, opt => opt.MapFrom(src => src.StockBalances.Sum(b => b.AvailableQuantity)))
                 .ForMember(dest => dest.ReservedStock, opt => opt.MapFrom(src => src.StockBalances.Sum(b => b.ReservedQuantity)))
-                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(src => 
+                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(src =>
                     src.StockBalances.Sum(b => b.AvailableQuantity) <= src.MinimumStock ? "LOW_STOCK" :
                     src.StockBalances.Sum(b => b.CurrentQuantity) >= src.MaximumStock ? "OVERSTOCK" : "NORMAL"));
 
@@ -58,7 +58,7 @@ namespace IvosisProjectManagement.API.Profiles
                 .ForMember(dest => dest.UnitName, opt => opt.MapFrom(src => src.StockItem.Unit.Name))
                 .ForMember(dest => dest.MinimumStock, opt => opt.MapFrom(src => src.StockItem.MinimumStock))
                 .ForMember(dest => dest.MaximumStock, opt => opt.MapFrom(src => src.StockItem.MaximumStock))
-                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(src => 
+                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(src =>
                     src.AvailableQuantity <= src.StockItem.MinimumStock ? "LOW_STOCK" :
                     src.CurrentQuantity >= src.StockItem.MaximumStock ? "OVERSTOCK" : "NORMAL"));
 
@@ -78,10 +78,31 @@ namespace IvosisProjectManagement.API.Profiles
 
             // StockLocation Mappings
             CreateMap<StockLocation, StockLocationDto>()
-                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.Name))
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.Name : null))
                 .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser != null ? src.UpdatedByUser.Name : null))
                 .ForMember(dest => dest.ItemCount, opt => opt.MapFrom(src => src.StockBalances.Count))
                 .ForMember(dest => dest.TotalValue, opt => opt.MapFrom(src => src.StockBalances.Sum(b => b.CurrentQuantity * b.StockItem.PurchasePrice)));
+
+            // StockLocation Create/Update Mappings
+            CreateMap<StockLocationDtoCreate, StockLocation>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.StockBalances, opt => opt.Ignore());
+
+            CreateMap<StockLocationDtoUpdate, StockLocation>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.StockBalances, opt => opt.Ignore());
 
             // Unit Mappings
             CreateMap<Unit, UnitDto>()
@@ -91,6 +112,7 @@ namespace IvosisProjectManagement.API.Profiles
             CreateMap<Supplier, SupplierDto>()
                 .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.Name))
                 .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser != null ? src.UpdatedByUser.Name : null));
+         
         }
     }
 

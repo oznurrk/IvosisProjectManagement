@@ -41,6 +41,24 @@ namespace IvosisProjectManagement.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasOne(typeof(User), "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasOne(typeof(User), "UpdatedByUser") 
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+                }
+            }
+
             // Project - Address ilişkileri
             modelBuilder.Entity<Project>()
                 .HasMany(p => p.Address)
@@ -394,7 +412,6 @@ namespace IvosisProjectManagement.API.Data
 
                 entity.HasOne(e => e.CreatedByUser)
                     .WithMany(u => u.CreatedStockLocations)
-                    .HasForeignKey("CreatedByUserId")
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
