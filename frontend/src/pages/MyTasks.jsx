@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useOutletContext } from 'react-router-dom';
 import axios from "axios";
-import { Select, Textarea, Text, Group, Stack, Badge, Button,  Grid, Paper, Modal, Card, ActionIcon, Tooltip } from "@mantine/core";
-import { IconUser, IconCalendarUser, IconX, IconDownload } from '@tabler/icons-react';
+import { Select, Textarea, Text, Group, Stack, Badge, Button, Grid, Paper, Modal, Card, ActionIcon, Tooltip, Alert } from "@mantine/core";
+import { IconUser, IconCalendarUser, IconX, IconDownload, IconAlertCircle, IconFileText } from '@tabler/icons-react';
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
 import PaginationComponent from "../Layout/PaginationComponent";
@@ -33,10 +33,11 @@ const MyTasks = () => {
   const [taskToReassign, setTaskToReassign] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [uploadingFiles, setUploadingFiles] = useState({});
+  const [validationErrors, setValidationErrors] = useState({});
 
   const [pageSize, setPageSize] = useState(() => {
     const stored = localStorage.getItem("pageSize");
-    return stored ? parseInt(stored) : 6; // yoksa 6 olsun
+    return stored ? parseInt(stored) : 6;
   });
   
   const [searchFilters, setSearchFilters] = useState({
@@ -48,7 +49,8 @@ const MyTasks = () => {
     endDate: ""
   });
 
-  const CARD_HEIGHT = 650;
+  // Sabit kart yüksekliği - artırıldı
+  const CARD_HEIGHT = 600;
 
   // Sayfa değişikliği handler'ı
   const handlePageChange = useCallback((page) => {
@@ -57,10 +59,10 @@ const MyTasks = () => {
 
   // Sayfa boyutu değişikliği handler'ı
   const handlePageSizeChange = useCallback((newPageSize) => {
-  setPageSize(newPageSize);
-  localStorage.setItem("pageSize", newPageSize); // kalıcı olsun
-  setCurrentPage(1); // sayfa boyutu değişince ilk sayfaya dön
-}, []);
+    setPageSize(newPageSize);
+    localStorage.setItem("pageSize", newPageSize);
+    setCurrentPage(1);
+  }, []);
   
   // Auth bilgileri
   const token = localStorage.getItem("token");
@@ -69,6 +71,29 @@ const MyTasks = () => {
     return user ? JSON.parse(user) : null;
   }, []);
   const currentUserId = userObj?.id || 1;
+
+  // Dosya kontrolü fonksiyonu
+  const validateTaskCompletion = useCallback((task) => {
+    const hasFiles = task.fileNames && task.fileNames.length > 0;
+    const isCompleting = task.status === "Completed";
+    
+    if (isCompleting && !hasFiles) {
+      return {
+        isValid: false,
+        message: "Görevi tamamlamak için en az bir dosya eklemelisiniz."
+      };
+    }
+    
+    return { isValid: true, message: "" };
+  }, []);
+
+  // Validasyon hatalarını güncelle
+  const updateValidationError = useCallback((taskId, error) => {
+    setValidationErrors(prev => ({
+      ...prev,
+      [taskId]: error
+    }));
+  }, []);
 
   // Task'ı refresh etmek için
   const refreshTaskFiles = useCallback(async (taskId) => {
@@ -84,34 +109,42 @@ const MyTasks = () => {
     }
   }, [token]);
 
-  // Dosya indirme - path kontrolü ile
+  // Düzeltilmiş dosya indirme fonksiyonu
   const handleFileDownload = useCallback(async (taskId, fileName) => {
     try {
       console.log('İndirme isteği:', { taskId, fileName });
       
-      // Önce dosyanın var olup olmadığını kontrol et
+      // Önce dosyanın varlığını kontrol et
       const checkResponse = await axios.get(
-        `http://localhost:5000/api/ProjectTasks/${taskId}/files/${encodeURIComponent(fileName)}/path`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:5000/api/ProjectTasks/${taskId}/files/${encodeURIComponent(fileName)}/stream`,
+        { 
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000 
+        }
       );
       
-      console.log('Dosya path kontrolü:', checkResponse.data);
-      
-      if (!checkResponse.data.Exists) {
-        alert(`Dosya bulunamadı: ${fileName}`);
+      if (!checkResponse.data.exists) {
+        alert(`Dosya sunucuda bulunamadı: ${fileName}. Dosya taşınmış veya silinmiş olabilir.`);
         return;
       }
 
-      // Dosyayı indir
+      // Dosya varsa indirmeye başla
       const response = await axios.get(
-        `http://localhost:5000/api/ProjectTasks/${taskId}/files/${encodeURIComponent(fileName)}`,
+        `http://localhost:5000/api/ProjectTasks/${taskId}/files/${encodeURIComponent(fileName)}/stream`,
         {
           headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob'
+          responseType: 'blob',
+          timeout: 30000 // 30 saniye timeout
         }
       );
 
-      // Blob'u indirilebilir link haline getir
+      // Blob'u kontrol et
+      if (!response.data || response.data.size === 0) {
+        alert(`Dosya içeriği boş: ${fileName}`);
+        return;
+      }
+
+      // İndirme işlemi
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -125,11 +158,19 @@ const MyTasks = () => {
       console.log('Dosya başarıyla indirildi:', fileName);
     } catch (error) {
       console.error('Dosya indirme hatası:', error);
-      if (error.response?.status === 404) {
-        alert(`Dosya bulunamadı: ${fileName}. Dosya silinmiş olabilir.`);
-      } else {
-        alert(`Dosya indirme hatası: ${error.response?.data?.message || error.message}`);
+      let errorMessage = 'Dosya indirilemedi.';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'İndirme zaman aşımına uğradı. Lütfen tekrar deneyin.';
+      } else if (error.response?.status === 404) {
+        errorMessage = `Dosya bulunamadı: ${fileName}. Dosya silinmiş veya taşınmış olabilir.`;
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Sunucu hatası. Lütfen sistem yöneticisiyle iletişime geçin.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       }
+      
+      alert(errorMessage);
     }
   }, [token]);
 
@@ -220,38 +261,60 @@ const MyTasks = () => {
     fetchUsers();
   }, [token]);
 
-  // Geliştirilmiş çoklu dosya yükleme fonksiyonu
+  // Geliştirilmiş çoklu dosya yükleme fonksiyonu - maksimum 10 dosya
   const handleMultipleFileUpload = useCallback(async (taskId, files) => {
     if (!files || files.length === 0) return;
+
+    // Maksimum 10 dosya kontrolü
+    if (files.length > 10) {
+      alert('Bir seferde en fazla 10 dosya yükleyebilirsiniz.');
+      return;
+    }
+
+    // Toplam dosya boyutu kontrolü (100MB)
+    const totalSize = Array.from(files).reduce((acc, file) => acc + file.size, 0);
+    if (totalSize > 100 * 1024 * 1024) {
+      alert('Toplam dosya boyutu 100MB\'ı geçemez.');
+      return;
+    }
 
     setUploadingFiles(prev => ({ ...prev, [taskId]: true }));
 
     try {
-      // Mevcut task'ı bul
       const currentTask = myTasks.find(task => task.id === taskId);
       if (!currentTask) {
         throw new Error('Task bulunamadı');
       }
 
-      // Mevcut dosya path'lerini al
-      const currentFilePaths = currentTask.filePath || [];
-      
-      // Yeni dosyalar için path'ler oluştur
-      const newFilePaths = Array.from(files).map((file, index) => 
-        `uploads/${Date.now()}_${index}_${file.name}`
+      // FormData ile dosya yükleme
+      const formData = new FormData();
+      Array.from(files).forEach((file, index) => {
+        formData.append('files', file);
+      });
+
+      // Önce dosyaları yükle
+      const uploadResponse = await axios.post(
+        `http://localhost:5000/api/ProjectTasks/${taskId}/upload-files`,
+        formData,
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          },
+          timeout: 60000 // 1 dakika timeout
+        }
       );
 
-      // Tüm dosya path'lerini birleştir
-      const allFilePaths = [...currentFilePaths, ...newFilePaths];
-
-      // Task'ı güncelle
+      // Başarılı yükleme sonrası task'ı güncelle
+      const updatedFilePaths = uploadResponse.data.filePaths || [];
+      
       const updateDto = {
         status: currentTask.status,
         startDate: currentTask.startDate ? new Date(currentTask.startDate).toISOString() : new Date().toISOString(),
         assignedUserId: currentTask.assignedUserId,
         endDate: currentTask.endDate ? new Date(currentTask.endDate).toISOString() : null,
         description: currentTask.description || "",
-        filePath: allFilePaths,
+        filePath: [...(currentTask.filePath || []), ...updatedFilePaths],
         updatedByUserId: currentUserId
       };
 
@@ -259,17 +322,18 @@ const MyTasks = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Task'ı backend'den tekrar al (güncel fileNames için)
+      // Task'ı yenile
       const refreshedTask = await refreshTaskFiles(taskId);
       if (refreshedTask) {
-        // State'i güncelle
         setMyTasks(prev => prev.map(task => {
           if (task.id === taskId) {
-            return {
+            const updatedTask = {
               ...task,
               filePath: refreshedTask.filePath,
               fileNames: refreshedTask.fileNames
             };
+            updateValidationError(taskId, null);
+            return updatedTask;
           }
           return task;
         }));
@@ -278,94 +342,68 @@ const MyTasks = () => {
       alert(`${files.length} dosya başarıyla yüklendi!`);
     } catch (error) {
       console.error('Dosya yükleme hatası:', error);
-      alert('Dosya yükleme hatası: ' + (error.response?.data?.message || error.message));
+      let errorMessage = 'Dosya yükleme hatası: ';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage += 'Yükleme zaman aşımına uğradı. Lütfen dosya boyutlarını kontrol edin.';
+      } else if (error.response?.status === 413) {
+        errorMessage += 'Dosyalar çok büyük. Lütfen daha küçük dosyalar seçin.';
+      } else {
+        errorMessage += error.response?.data?.message || error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setUploadingFiles(prev => ({ ...prev, [taskId]: false }));
     }
-  }, [token, myTasks, currentUserId, refreshTaskFiles]);
+  }, [token, myTasks, currentUserId, refreshTaskFiles, updateValidationError]);
 
   // Geliştirilmiş dosya silme fonksiyonu
   const handleFileDelete = useCallback(async (taskId, fileName) => {
     if (!window.confirm(`"${fileName}" dosyasını silmek istediğinizden emin misiniz?`)) return;
 
     try {
-      const currentTask = myTasks.find(task => task.id === taskId);
-      if (!currentTask) {
-        alert('Task bulunamadı');
-        return;
-      }
+      // Backend'e dosya silme isteği gönder
+      await axios.delete(
+        `http://localhost:5000/api/ProjectTasks/${taskId}/files/${encodeURIComponent(fileName)}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
-      // Silinecek dosyayı path listesinden çıkar
-      const updatedFilePaths = (currentTask.filePath || []).filter(path => {
-        // FileHelper.ExtractOriginalFileName mantığını kullan
-        const pathParts = path.split('/').pop().split('_');
-        const extractedFileName = pathParts.length >= 3 ? pathParts.slice(2).join('_') : path;
-        return extractedFileName !== fileName;
-      });
-
-      console.log('Silme işlemi:', {
-        fileName,
-        currentPaths: currentTask.filePath,
-        updatedPaths: updatedFilePaths
-      });
-
-      // Task'ı güncelle
-      const updateDto = {
-        status: currentTask.status,
-        startDate: currentTask.startDate ? new Date(currentTask.startDate).toISOString() : new Date().toISOString(),
-        assignedUserId: currentTask.assignedUserId,
-        endDate: currentTask.endDate ? new Date(currentTask.endDate).toISOString() : null,
-        description: currentTask.description || "",
-        filePath: updatedFilePaths,
-        updatedByUserId: currentUserId
-      };
-
-      await axios.put(`http://localhost:5000/api/projectTasks/${taskId}`, updateDto, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Task'ı backend'den tekrar al (güncel fileNames için)
+      // Task'ı yenile
       const refreshedTask = await refreshTaskFiles(taskId);
       if (refreshedTask) {
-        // State'i güncelle
         setMyTasks(prev => prev.map(task => {
           if (task.id === taskId) {
-            return { 
+            const updatedTask = {
               ...task, 
               filePath: refreshedTask.filePath,
               fileNames: refreshedTask.fileNames
             };
+            const validation = validateTaskCompletion(updatedTask);
+            updateValidationError(taskId, validation.isValid ? null : validation.message);
+            return updatedTask;
           }
           return task;
         }));
         
         alert('Dosya başarıyla silindi!');
-      } else {
-        // Fallback - refresh edilemezse manuel güncelleme
-        setMyTasks(prev => prev.map(task => {
-          if (task.id === taskId) {
-            // Manuel fileNames hesaplama
-            const newFileNames = updatedFilePaths.map(path => {
-              const pathParts = path.split('/').pop().split('_');
-              return pathParts.length >= 3 ? pathParts.slice(2).join('_') : path;
-            });
-            return { 
-              ...task, 
-              filePath: updatedFilePaths,
-              fileNames: newFileNames
-            };
-          }
-          return task;
-        }));
-        
-        alert('Dosya silindi!');
       }
 
     } catch (error) {
       console.error('Dosya silme hatası:', error);
-      alert('Dosya silme hatası: ' + (error.response?.data?.message || error.message));
+      let errorMessage = 'Dosya silme hatası: ';
+      
+      if (error.response?.status === 404) {
+        errorMessage += 'Dosya zaten silinmiş veya bulunamadı.';
+      } else {
+        errorMessage += error.response?.data?.message || error.message;
+      }
+      
+      alert(errorMessage);
     }
-  }, [myTasks, token, currentUserId, refreshTaskFiles]);
+  }, [token, refreshTaskFiles, validateTaskCompletion, updateValidationError]);
 
   // Filtrelenmiş görevler
   const filteredTasks = useMemo(() => {
@@ -381,7 +419,7 @@ const MyTasks = () => {
   }, [myTasks, searchFilters]);
 
   // Sayfalama - pageSize kullanarak dinamik
-  const {  paginatedTasks } = useMemo(() => {
+  const { paginatedTasks } = useMemo(() => {
     const total = Math.ceil(filteredTasks.length / pageSize);
     const paginated = filteredTasks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     return { totalPages: total, paginatedTasks: paginated };
@@ -410,7 +448,7 @@ const MyTasks = () => {
   // Event handlers
   const handleFilterChange = useCallback((key, value) => {
     setSearchFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1); // Filtre değiştiğinde ilk sayfaya dön
+    setCurrentPage(1);
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -426,12 +464,34 @@ const MyTasks = () => {
   }, []);
 
   const updateTaskInState = useCallback((taskId, updates) => {
-    setMyTasks(prev => prev.map(task => task.id === taskId ? { ...task, ...updates } : task));
-  }, []);
+    setMyTasks(prev => prev.map(task => {
+      if (task.id === taskId) {
+        const updatedTask = { ...task, ...updates };
+        
+        if (updates.status) {
+          const validation = validateTaskCompletion(updatedTask);
+          updateValidationError(taskId, validation.isValid ? null : validation.message);
+        }
+        
+        return updatedTask;
+      }
+      return task;
+    }));
+  }, [validateTaskCompletion, updateValidationError]);
 
   // Geliştirilmiş görev güncelleme fonksiyonu
   const handleUpdateTask = useCallback(async (task) => {
     try {
+      const validation = validateTaskCompletion(task);
+      
+      if (!validation.isValid) {
+        updateValidationError(task.id, validation.message);
+        alert(validation.message);
+        return;
+      }
+
+      updateValidationError(task.id, null);
+
       const dto = {
         status: task.status,
         startDate: task.startDate ? new Date(task.startDate).toISOString() : new Date().toISOString(),
@@ -451,7 +511,7 @@ const MyTasks = () => {
       console.error("Güncelleme Hatası: ", err.response?.data || err.message);
       alert("Güncelleme hatası: " + (err.response?.data?.message || err.message));
     }
-  }, [token, currentUserId]);
+  }, [token, currentUserId, validateTaskCompletion, updateValidationError]);
 
   const handleReassign = useCallback(async (newUserIdStr) => {
     const newUserId = parseInt(newUserIdStr);
@@ -503,7 +563,7 @@ const MyTasks = () => {
     };
     return colors[status] || "#6c757d";
   };
-
+  //Ub533541
   const getFileIcon = (fileName) => {
     const extension = fileName.toLowerCase().split('.').pop();
     const icons = {
@@ -524,12 +584,12 @@ const MyTasks = () => {
   };
 
   const getEndDate = (task) => {
-  if (task.endDate) return task.endDate.split("T")[0];
-  if (task.startDate) {
-    const start = new Date(task.startDate);
-    start.setDate(start.getDate() + 15);
-    return start.toISOString().split("T")[0];
-  }
+    if (task.endDate) return task.endDate.split("T")[0];
+    if (task.startDate) {
+      const start = new Date(task.startDate);
+      start.setDate(start.getDate() + 15);
+      return start.toISOString().split("T")[0];
+    }
     return "";
   };
 
@@ -600,184 +660,272 @@ const MyTasks = () => {
           />
 
           <Grid gutter="lg">
-            {paginatedTasks.map((task) => (
-              <Grid.Col key={task.id} span={{ base: 12, sm: 6, lg: 4 }}>
-                <Card
-                  withBorder
-                  padding="md"
-                  style={{ height: CARD_HEIGHT }}
-                  className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
-                  shadow="sm"
-                  radius="lg"
-                >
-                  <Stack spacing="sm" className="h-full">
-                    {/* Görev başlığı ve durumu */}
-                    <Group position="apart" align="flex-start">
-                      <Text size="sm" weight={500} className="text-[#212529] leading-[1.4] flex-1">
-                        {task.taskDetails?.title || 'Görev Başlığı'}
-                      </Text>
-                      <div className="flex gap-2">
-                        <Badge style={{ backgroundColor: getStatusColor(task.status), color: 'white' }} size="sm">
-                          {getStatusLabel(task.status)}
-                        </Badge>
-                      </div>
-                    </Group>
-                    {/* Atama işlemleri */}
-                    <Group position="apart">
-                      <Text size="xs" color="dimmed">👤 Atanan: {task.assignedUserName}</Text>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onClick={() => {
-                          setTaskToReassign(task);
-                          setAssignModalOpen(true);
-                        }}
-                      >
-                        Atamayı Değiştir
-                      </Button>
-                    </Group>
-                    {/* Proje ve Süreç bilgileri */}
-                    <Stack spacing="xs">
-                      <Paper padding="xs" className="bg-[#e3f2fd]">
-                        <Text size="xs" color="#1976d2" weight={500}>🏢 Proje: {task.projectName}</Text>
-                      </Paper>
-                      <Paper padding="xs" className="bg-[#f3e5f5]">
-                        <Text size="xs" color="#7b1fa2" weight={500}>⚙️ Süreç: {task.processName}</Text>
-                      </Paper>
-                    </Stack>
-                    {/* Tarihler */}
-                    <div className="grid grid-cols-2 gap-2">
+            {paginatedTasks.map((task) => {
+              const validationError = validationErrors[task.id];
+              const hasFiles = task.fileNames && task.fileNames.length > 0;
+              
+              return (
+                <Grid.Col key={task.id} span={{ base: 12, sm: 6, lg: 4 }}>
+                  <Card
+                    withBorder
+                    padding="md"
+                    style={{ 
+                      height: CARD_HEIGHT,
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}
+                    className="cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-200"
+                    shadow="sm"
+                    radius="lg"
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Görev başlığı ve durumu - Sabit alan */}
                       <div>
-                        <Text size="xs" color="#007bff" className="mb-1">📅 Başlangıç</Text>
-                        <input
-                          type="date"
-                          value={task.startDate?.split("T")[0] || ""}
-                          readOnly
-                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+                        <Group position="apart" align="flex-start">
+                          <Text 
+                            size="sm" 
+                            weight={500} 
+                            className="leading-[1.4] flex-1 text-lg"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              minHeight: '60px'
+                            }}
+                          >
+                            {task.taskDetails?.title || 'Görev Başlığı'}
+                          </Text>
+                          <Badge style={{ backgroundColor: getStatusColor(task.status), color: 'white' }} size="sm">
+                            {getStatusLabel(task.status)}
+                          </Badge>
+                        </Group>
+                      </div>
+
+                      {/* Atama işlemleri */}
+                      <Group position="apart" className="mb-3">
+                        <Text size="xs" color="dimmed" className="truncate">👤 Atanan: {task.assignedUserName}</Text>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => {
+                            setTaskToReassign(task);
+                            setAssignModalOpen(true);
+                          }}
+                        >
+                          Atamayı Değiştir
+                        </Button>
+                      </Group>
+
+                      {/* Proje ve Süreç bilgileri - Sabit alan */}
+                      <div className="mb-3">
+                        <Paper padding="xs" className="bg-[#e3f2fd] mb-2">
+                          <Text 
+                            size="xs" 
+                            color="#1976d2" 
+                            weight={500}
+                            className="truncate"
+                            title={task.projectName}
+                          >
+                            🏢 Proje: {task.projectName}
+                          </Text>
+                        </Paper>
+                        <Paper padding="xs" className="bg-[#f3e5f5]">
+                          <Text 
+                            size="xs" 
+                            color="#7b1fa2" 
+                            weight={500}
+                            className="truncate"
+                            title={task.processName}
+                          >
+                            ⚙️ Süreç: {task.processName}
+                          </Text>
+                        </Paper>
+                      </div>
+
+                      {/* Tarihler */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div>
+                          <Text size="xs" color="#007bff" className="mb-1">📅 Başlangıç</Text>
+                          <input
+                            type="date"
+                            value={task.startDate?.split("T")[0] || ""}
+                            readOnly
+                            className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+                          />
+                        </div>
+                        <div>
+                          <Text size="xs" color="#007bff" className="mb-1">🎯 Bitiş</Text>
+                          <input
+                            type="date"
+                            value={getEndDate(task)}
+                            onChange={(e) =>
+                              updateTaskInState(task.id, { endDate: e.target.value })
+                            }
+                            className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Durum seçimi */}
+                      <div className="mb-3">
+                        <Select
+                          size="sm"
+                          placeholder="Durum Seçin"
+                          value={task.status}
+                          onChange={(value) => updateTaskInState(task.id, { status: value })}
+                          data={[
+                            { value: "NotStarted", label: "Başlamadı" },
+                            { value: "InProgress", label: "Devam Ediyor" },
+                            { value: "Completed", label: "Tamamlandı" },
+                            { value: "Cancelled", label: "İptal Edildi" },
+                          ]}
+                          error={validationError && task.status === "Completed"}
+                          styles={{
+                            input: {
+                              borderColor: validationError && task.status === "Completed" ? '#dc3545' : undefined,
+                              backgroundColor: validationError && task.status === "Completed" ? '#f8d7da' : undefined
+                            }
+                          }}
                         />
                       </div>
-                      <div>
-                        <Text size="xs" color="#007bff" className="mb-1">🎯 Bitiş</Text>
-                       <input
-  type="date"
-  value={getEndDate(task)}
-  onChange={(e) =>
-    updateTaskInState(task.id, { endDate: e.target.value })
-  }
-  className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
-/>
+
+                      {/* Açıklama alanı - Sabit yükseklik */}
+                      <div className="mb-3">
+                        <Textarea
+                          size="sm"
+                          placeholder="Görev notları ve açıklamaları..."
+                          value={task.description || ""}
+                          onChange={(e) => updateTaskInState(task.id, { description: e.target.value })}
+                          minRows={2}
+                          maxRows={2}
+                        />
                       </div>
-                    </div>
 
-                    <Select
-                      size="sm"
-                      placeholder="Durum Seçin"
-                      value={task.status}
-                      onChange={(value) => updateTaskInState(task.id, { status: value })}
-                      data={[
-                        { value: "NotStarted", label: "Başlamadı" },
-                        { value: "InProgress", label: "Devam Ediyor" },
-                        { value: "Completed", label: "Tamamlandı" },
-                        { value: "Cancelled", label: "İptal Edildi" },
-                      ]}
-                    />
-
-                    <Textarea
-                      size="sm"
-                      placeholder="Görev notları ve açıklamaları..."
-                      value={task.description || ""}
-                      onChange={(e) => updateTaskInState(task.id, { description: e.target.value })}
-                      minRows={2}
-                      maxRows={2}
-                    />
-
-                    {/* Dosya Yönetimi - Backend FileNames ile senkronize */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Text size="xs" color="#007bff" weight={500}>📎 Dosyalar</Text>
-                        <Badge size="xs" color="blue" variant="light">
-                          {task.fileNames?.length || 0}
-                        </Badge>
-                      </div>
-                      
-                      <input
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.zip,.rar"
-                        onChange={(e) => handleMultipleFileUpload(task.id, e.target.files)}
-                        className="w-full text-xs p-1.5 border border-[#ced4da] rounded bg-white hover:bg-gray-50 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                        disabled={uploadingFiles[task.id]}
-                      />
-                      
-                      {uploadingFiles[task.id] && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                          <Text size="xs" color="blue">Dosyalar yükleniyor...</Text>
+                      {/* Dosya Yönetimi - Esnek alan */}
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Text size="xs" color="#007bff" weight={500}>📎 Dosyalar</Text>
+                            <Badge 
+                              size="xs" 
+                              color={hasFiles ? "green" : "yellow"} 
+                              variant="light"
+                            >
+                              {task.fileNames?.length || 0}
+                            </Badge>
+                          </div>
+                          {!hasFiles && task.status === "Completed" && (
+                            <Tooltip label="Tamamlanmış görevler için dosya gereklidir">
+                              <IconAlertCircle size={14} color="#dc3545" />
+                            </Tooltip>
+                          )}
                         </div>
-                      )}
+                        
+                        {/* Dosya yükleme input'u */}
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.zip,.rar"
+                          onChange={(e) => handleMultipleFileUpload(task.id, e.target.files)}
+                          className="w-full text-xs p-1.5 border border-[#ced4da] rounded bg-white hover:bg-gray-50 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-2"
+                          disabled={uploadingFiles[task.id]}
+                        />
+                        
+                        {/* Yükleme durumu */}
+                        {uploadingFiles[task.id] && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                            <Text size="xs" color="blue">Dosyalar yükleniyor... (Max 10 dosya)</Text>
+                          </div>
+                        )}
 
-                      {/* Backend'den gelen dosya adları */}
-                      {task.fileNames && task.fileNames.length > 0 && (
-                        <div className="max-h-24 overflow-y-auto bg-gray-50 rounded p-2 space-y-1">
-                          {task.fileNames.map((fileName, index) => (
-                            <div key={index} className="flex items-center justify-between bg-white rounded px-2 py-1 shadow-sm">
-                              <div className="flex items-center gap-1 flex-1 min-w-0">
-                                <span className="text-xs">{getFileIcon(fileName)}</span>
-                                <Text size="xs" className="truncate" title={fileName}>
-                                  {fileName}
-                                </Text>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Tooltip label="İndir">
-                                  <ActionIcon
-                                    size="xs"
-                                    color="blue"
-                                    variant="light"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleFileDownload(task.id, fileName);
-                                    }}
-                                  >
-                                    <IconDownload size={12} />
-                                  </ActionIcon>
-                                </Tooltip>
-                                <Tooltip label="Sil">
-                                  <ActionIcon
-                                    size="xs"
-                                    color="red"
-                                    variant="light"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleFileDelete(task.id, fileName);
-                                    }}
-                                  >
-                                    <IconX size={12} />
-                                  </ActionIcon>
-                                </Tooltip>
-                              </div>
+                        {/* Dosya listesi - Scrollable alan */}
+                        {task.fileNames && task.fileNames.length > 0 && (
+                          <div className="flex-1 min-h-0 mb-2">
+                            <div className="max-h-32 overflow-y-auto bg-gray-50 rounded p-2 space-y-1">
+                              {task.fileNames.map((fileName, index) => (
+                                <div key={index} className="flex items-center justify-between bg-white rounded px-2 py-1 shadow-sm">
+                                  <div className="flex items-center gap-1 flex-1 min-w-0">
+                                    <span className="text-xs">{getFileIcon(fileName)}</span>
+                                    <Text size="xs" className="truncate" title={fileName}>
+                                      {fileName}
+                                    </Text>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Tooltip label="İndir">
+                                      <ActionIcon
+                                        size="xs"
+                                        color="blue"
+                                        variant="light"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleFileDownload(task.id, fileName);
+                                        }}
+                                      >
+                                        <IconDownload size={12} />
+                                      </ActionIcon>
+                                    </Tooltip>
+                                    <Tooltip label="Sil">
+                                      <ActionIcon
+                                        size="xs"
+                                        color="red"
+                                        variant="light"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleFileDelete(task.id, fileName);
+                                        }}
+                                      >
+                                        <IconX size={12} />
+                                      </ActionIcon>
+                                    </Tooltip>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        )}
 
-                    <Button
-                      size="sm"
-                      onClick={() => handleUpdateTask(task)}
-                      className="border-0 mt-auto"
-                      style={{ background: 'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)' }}
-                      loading={uploadingFiles[task.id]}
-                    >
-                      Güncelle
-                    </Button>
-                  </Stack>
-                </Card>
-              </Grid.Col>
-            ))}
+                        {/* Dosya gerekliliği uyarısı */}
+                        {!hasFiles && (
+                          <Alert 
+                            color="yellow" 
+                            variant="light" 
+                            className="py-1 mb-2"
+                          >
+                            <Text size="xs">
+                              💡 Görevi "Tamamlandı" olarak işaretlemek için en az bir dosya eklemelisiniz. (Max: 10 dosya, 100MB)
+                            </Text>
+                          </Alert>
+                        )}
+
+                        {/* Güncelleme butonu - Her zaman altta */}
+                        <div className="mt-auto">
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateTask(task)}
+                            className="border-0 w-full"
+                            style={{ 
+                              background: validationError ? 
+                                'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' : 
+                                'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)'
+                            }}
+                            loading={uploadingFiles[task.id]}
+                            disabled={!!validationError}
+                          >
+                            {validationError ? 'Dosya Gerekli' : 'Güncelle'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </Grid.Col>
+              );
+            })}
           </Grid>
         </div>
 
-        {/* İyileştirilmiş Pagination Component Entegrasyonu */}
+        {/* Pagination */}
         <PaginationComponent
           totalItems={filteredTasks.length}
           currentPage={currentPage}
