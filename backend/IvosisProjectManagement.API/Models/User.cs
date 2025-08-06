@@ -8,7 +8,6 @@ namespace IvosisProjectManagement.API.Models
         public string? Role { get; set; }
         public int? DepartmentId { get; set; }
         public virtual Department? Department { get; set; }
-
         public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public virtual ICollection<StockItem> CreatedStockItems { get; set; } = new List<StockItem>();
         public virtual ICollection<StockItem> UpdatedStockItems { get; set; } = new List<StockItem>();

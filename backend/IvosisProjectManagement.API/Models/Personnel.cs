@@ -3,10 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IvosisProjectManagement.API.Models
 {
-    public class Personnel
+    public class Personnel : CompanyEntity
     {
-        public int Id { get; set; }
-
         [Required]
         [StringLength(20)]
         public string SicilNo { get; set; } = string.Empty;
@@ -31,8 +29,6 @@ namespace IvosisProjectManagement.API.Models
         [StringLength(100)]
         public string? Department { get; set; }
 
-        // Yeni firma bilgisi
-        public int? CompanyId { get; set; }
         public int? DepartmentId { get; set; }
 
         public DateTime? StartDate { get; set; }
@@ -79,13 +75,6 @@ namespace IvosisProjectManagement.API.Models
 
         [StringLength(20)]
         public string WorkStatus { get; set; } = "Aktif";
-
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
-        public DateTime UpdatedDate { get; set; } = DateTime.Now;
-
-        // Navigation Properties
-        [ForeignKey("CompanyId")]
-        public virtual Company? Company { get; set; }
 
         [ForeignKey("DepartmentId")]
         public virtual Department? DepartmentEntity { get; set; }
