@@ -8,7 +8,7 @@ public abstract class BaseEntity
     public int CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
-    public int? CompanyId { get; set; }
+    //public int? CompanyId { get; set; }
 
     // Navigation properties
     [ForeignKey("CreatedBy")]
@@ -17,6 +17,6 @@ public abstract class BaseEntity
     [ForeignKey("UpdatedBy")]
     public virtual User UpdatedByUser { get; set; }
 
-    [ForeignKey("CompanyId")]
-    public virtual Company? Company { get; set; }
-    }
+    /*[ForeignKey("CompanyId")]
+    public virtual Company? Company { get; set; }*/
+}

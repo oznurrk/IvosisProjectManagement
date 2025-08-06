@@ -13,6 +13,9 @@ namespace IvosisProjectManagement.API.Models
         public DateTime? EndDate { get; set; }
         public string? Description { get; set; }
         public List<string> FilePath { get; set; } = new();
+
+        
+        
         public DateTime CreatedAt { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime? UpdatedAt { get; set; }

@@ -43,7 +43,9 @@ namespace IvosisProjectManagement.API.Data
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
-                if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+                // BaseEntity ilişkileri
+                if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType)&& 
+                    entityType.ClrType != typeof(Unit))
                 {
                     modelBuilder.Entity(entityType.ClrType)
                         .HasOne(typeof(User), "CreatedByUser")
@@ -52,9 +54,17 @@ namespace IvosisProjectManagement.API.Data
                         .OnDelete(DeleteBehavior.Restrict);
 
                     modelBuilder.Entity(entityType.ClrType)
-                        .HasOne(typeof(User), "UpdatedByUser") 
+                        .HasOne(typeof(User), "UpdatedByUser")
                         .WithMany()
                         .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+                }
+                if (typeof(CompanyEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .HasOne(typeof(Company), "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict);
                 }
             }
@@ -280,12 +290,12 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
 
                 // FilePath JSON conversion
-                entity.Property(e => e.FilePath)
-                    .HasConversion(
-                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                        v => string.IsNullOrWhiteSpace(v)
-                            ? new List<string>()
-                            : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null));
+               entity.Property(e => e.FilePath)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => string.IsNullOrWhiteSpace(v)
+                        ? new List<string>()
+                        : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null));
 
                 entity.HasOne(pt => pt.Project)
                     .WithMany(p => p.ProjectTasks)
@@ -443,8 +453,8 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(e => e.CreatedByUser)
-                    .WithMany()
-                    .HasForeignKey("CreatedBy")
+                    .WithMany(u => u.CreatedUnits)
+                    .HasForeignKey(e => e.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
