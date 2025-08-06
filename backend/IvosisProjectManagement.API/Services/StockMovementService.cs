@@ -57,7 +57,7 @@ public class StockMovementService : IStockMovementService
             var movement = await _stockMovementRepository.CreateMovementAsync(dto, userId);
             
             // Update stock balance
-            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, -dto.Quantity, "OUT");
+            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, dto.Quantity, "OUT");
             
             // Check for alerts
             await _stockAlertService.CheckAndCreateAlertsAsync();

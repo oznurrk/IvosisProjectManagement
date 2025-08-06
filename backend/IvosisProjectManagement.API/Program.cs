@@ -11,6 +11,7 @@ using IvosisProjectManagement.API.Services.Interfaces;
 using Serilog;
 using IvosisProjectManagement.API.Repositories.Implementations;
 using IvosisProjectManagement.API.Services.Implementations;
+using IvosisProjectManagement.API.Profiles;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -74,6 +75,7 @@ builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IStockLocationService, StockLocationService>();
+builder.Services.AddAutoMapper(typeof(StockManagementProfile));
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();

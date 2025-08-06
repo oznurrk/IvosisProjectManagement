@@ -21,17 +21,17 @@ public class StockLocationService : IStockLocationService
                 Address = x.Address,
                 City = x.City,
                 District = x.District,
-                PostalCode = x.PostalCode,
+                PostalCode = x.PostalCode ?? string.Empty,
                 ContactPerson = x.ContactPerson,
                 ContactPhone = x.ContactPhone,
-                ContactEmail = x.ContactEmail,
+                ContactEmail = x.ContactEmail ?? string.Empty,
                 Capacity = x.Capacity,
                 CapacityUnit = x.CapacityUnit,
                 IsActive = x.IsActive,
                 CreatedAt = x.CreatedAt,
-                CreatedByUserId = x.CreatedByUserId,
                 ItemCount = x.StockBalances.Count(),
                 TotalValue = x.StockBalances.Sum(sb => sb.CurrentQuantity)
+               
             })
             .ToListAsync();
     }
@@ -52,15 +52,14 @@ public class StockLocationService : IStockLocationService
             Address = x.Address,
             City = x.City,
             District = x.District,
-            PostalCode = x.PostalCode,
+            PostalCode = x.PostalCode ?? string.Empty,
             ContactPerson = x.ContactPerson,
             ContactPhone = x.ContactPhone,
-            ContactEmail = x.ContactEmail,
+            ContactEmail = x.ContactEmail ?? string.Empty,
             Capacity = x.Capacity,
             CapacityUnit = x.CapacityUnit,
             IsActive = x.IsActive,
             CreatedAt = x.CreatedAt,
-            CreatedByUserId = x.CreatedByUserId,
             ItemCount = x.StockBalances.Count(),
             TotalValue = x.StockBalances.Sum(sb => sb.CurrentQuantity)
         };
@@ -80,15 +79,14 @@ public class StockLocationService : IStockLocationService
             Address = entity.Address,
             City = entity.City,
             District = entity.District,
-            PostalCode = entity.PostalCode,
+            PostalCode = entity.PostalCode ?? string.Empty,
             ContactPerson = entity.ContactPerson,
             ContactPhone = entity.ContactPhone,
-            ContactEmail = entity.ContactEmail,
+            ContactEmail = entity.ContactEmail ?? string.Empty,
             Capacity = entity.Capacity,
             CapacityUnit = entity.CapacityUnit,
             IsActive = entity.IsActive,
             CreatedAt = entity.CreatedAt,
-            CreatedByUserId = entity.CreatedByUserId,
             ItemCount = 0,
             TotalValue = 0
         };
@@ -104,15 +102,14 @@ public class StockLocationService : IStockLocationService
         existing.Address = entity.Address;
         existing.City = entity.City;
         existing.District = entity.District;
-        existing.PostalCode = entity.PostalCode;
+        existing.PostalCode = entity.PostalCode ?? string.Empty;
         existing.ContactPerson = entity.ContactPerson;
         existing.ContactPhone = entity.ContactPhone;
-        existing.ContactEmail = entity.ContactEmail;
+        existing.ContactEmail = entity.ContactEmail ?? string.Empty;
         existing.Capacity = entity.Capacity;
         existing.CapacityUnit = entity.CapacityUnit;
         existing.IsActive = entity.IsActive;
         existing.UpdatedAt = DateTime.UtcNow;
-        existing.UpdatedByUserId = entity.UpdatedByUserId;
 
         await _context.SaveChangesAsync();
         return true;

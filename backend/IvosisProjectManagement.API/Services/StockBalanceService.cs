@@ -1,5 +1,3 @@
-using IvosisProjectManagement.API.Services.Interfaces;
-using IvosisProjectManagement.API.DTOs;
 
 namespace IvosisProjectManagement.API.Services.Implementations
 {
