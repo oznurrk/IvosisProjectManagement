@@ -2,13 +2,13 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import { 
   Select, Textarea, Card, Text, Group, Stack, Badge, Button, 
-  Progress, Grid, Paper, Title, Divider, 
-  Modal, ActionIcon, Tooltip
+  Grid, Paper, Modal, ActionIcon, Tooltip, Alert
 } from "@mantine/core";
-import { IconCalendar, IconArrowLeft, IconUsers, IconClock, IconEdit, IconDownload, IconX } from '@tabler/icons-react';
+import { IconArrowLeft, IconEdit, IconDownload, IconX, IconAlertCircle } from '@tabler/icons-react';
 import Header from "../Header/Header";
 import FilterAndSearch from "../../Layout/FilterAndSearch";
 import PaginationComponent from "../../Layout/PaginationComponent";
+import ProjectProcess from "./ProjectProcess";
 
 // ResizeObserver hatası için global error handler
 if (typeof window !== 'undefined') {
@@ -33,38 +33,31 @@ const ProjectTasks = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProcess, setSelectedProcess] = useState(null);
   const [taskToReassign, setTaskToReassign] = useState(null);
-  const [processToReassign, setProcessToReassign] = useState(null);
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [processAssignModalOpen, setProcessAssignModalOpen] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState({});
+  const [validationErrors, setValidationErrors] = useState({}); // Dosya validasyon hatalarını tutar
   const [searchFilters, setSearchFilters] = useState({
-    processName: "",
     taskName: "",
     status: "",
     startDate: "",
     endDate: ""
   });
-  const CARD_HEIGHT = 600;
-  // sayfadaki kayıt sayısını localStorage'dan alan ve dfault olarak 6 olan state
-  const [pageSize,setPageSize] = useState(() => {
+  
+  const CARD_HEIGHT = 680; // MyTasks ile uyumlu yükseklik (uyarı mesajı için)
+  
+  // Sayfa boyutu state'i
+  const [pageSize, setPageSize] = useState(() => {
     const stored = localStorage.getItem("pageSize");
     return stored ? parseInt(stored) : 6;
-  })
+  });
   
   // Cache edilmiş veriler
   const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "{}"), []);
   const currentUserId = user?.id || 1;
   const projectId = localStorage.getItem("selectedProjectId");
   const token = localStorage.getItem("token");
-
-  // Sayfa boyutu değiştiğinde sayfa numarasını sıfırla
-  const handlePageSizeChange = useCallback((newPageSize) => {
-    setPageSize(newPageSize);
-    localStorage.setItem("pageSize", newPageSize);
-    setCurrentPage(1);
-  })
 
   // Status helper functions - memoized
   const statusConfig = useMemo(() => ({
@@ -74,7 +67,91 @@ const ProjectTasks = () => {
     Cancelled: { label: "İptal Edildi", color: "#ff6b6b" }
   }), []);
 
+  // İstatistikler - memoized
+  const calculateStatusStats = useCallback((tasks) => {
+    if (!tasks.length) return { notStarted: 100, inProgress: 0, completed: 0, cancelled: 0 };
+
+    const total = tasks.length;
+    const stats = Object.keys(statusConfig).reduce((acc, status) => {
+      acc[status.toLowerCase()] = tasks.filter(t => t.status === status).length;
+      return acc;
+    }, {});
+
+    return Object.fromEntries(
+      Object.entries(stats).map(([key, count]) => [key, Math.round((count / total) * 100)])
+    );
+  }, [statusConfig]);
+
+  // Filtrelenmiş görevler - useMemo hook'u early return'den ÖNCE tanımlanmalı
+  const filteredTasks = useMemo(() => {
+    if (!selectedProcess?.tasks) return [];
+    
+    let filtered = selectedProcess.tasks;
+
+    if (searchFilters.taskName) {
+      filtered = filtered.filter(task =>
+        task.task?.title.toLowerCase().includes(searchFilters.taskName.toLowerCase())
+      );
+    }
+
+    if (searchFilters.status) {
+      filtered = filtered.filter(task => task.status === searchFilters.status);
+    }
+
+    if (searchFilters.startDate) {
+      filtered = filtered.filter(task => 
+        task.startDate && task.startDate.split('T')[0] >= searchFilters.startDate
+      );
+    }
+
+    if (searchFilters.endDate) {
+      filtered = filtered.filter(task => 
+        task.endDate && task.endDate.split('T')[0] <= searchFilters.endDate
+      );
+    }
+
+    return filtered;
+  }, [selectedProcess?.tasks, searchFilters]);
+
+  // Paginated tasks - useMemo ile optimize edildi
+  const paginatedTasks = useMemo(() => {
+    return filteredTasks.slice(
+      (currentPage - 1) * pageSize, 
+      currentPage * pageSize
+    );
+  }, [filteredTasks, currentPage, pageSize]);
+
+  // Sayfa boyutu değiştiğinde sayfa numarasını sıfırla
+  const handlePageSizeChange = useCallback((newPageSize) => {
+    setPageSize(newPageSize);
+    localStorage.setItem("pageSize", newPageSize);
+    setCurrentPage(1);
+  }, []);
+
   const getStatusLabel = useCallback((status) => statusConfig[status]?.label || status, [statusConfig]);
+
+  // Dosya kontrolü fonksiyonu - MyTasks'dan alındı
+  const validateTaskCompletion = useCallback((task) => {
+    const hasFiles = task.fileNames && task.fileNames.length > 0;
+    const isCompleting = task.status === "Completed";
+    
+    if (isCompleting && !hasFiles) {
+      return {
+        isValid: false,
+        message: "Görevi tamamlamak için en az bir dosya eklemelisiniz."
+      };
+    }
+    
+    return { isValid: true, message: "" };
+  }, []);
+
+  // Validasyon hatalarını güncelle
+  const updateValidationError = useCallback((taskId, error) => {
+    setValidationErrors(prev => ({
+      ...prev,
+      [taskId]: error
+    }));
+  }, []);
 
   // Dosya listesi alma - task'ı refresh etmek için
   const refreshTaskFiles = useCallback(async (taskId) => {
@@ -139,7 +216,7 @@ const ProjectTasks = () => {
     }
   }, [token]);
 
-  // Dosya yükleme - geliştirilmiş
+  // Dosya yükleme - geliştirilmiş ve validasyon ile
   const handleMultipleFileUpload = useCallback(async (taskId, files) => {
     if (!files || files.length === 0) return;
 
@@ -194,11 +271,14 @@ const ProjectTasks = () => {
           ...process,
           tasks: process.tasks.map(task => {
             if (task.id === taskId) {
-              return { 
+              const updatedTask = {
                 ...task, 
                 filePath: refreshedTask.filePath,
                 fileNames: refreshedTask.fileNames // Backend'den gelen güncel fileNames
               };
+              // Dosya eklendikten sonra validasyon hatasını temizle
+              updateValidationError(taskId, null);
+              return updatedTask;
             }
             return task;
           })
@@ -212,9 +292,9 @@ const ProjectTasks = () => {
     } finally {
       setUploadingFiles(prev => ({ ...prev, [taskId]: false }));
     }
-  }, [token, projectProcesses, currentUserId, refreshTaskFiles]);
+  }, [token, projectProcesses, currentUserId, refreshTaskFiles, updateValidationError]);
 
-  // Dosya silme - state güncellemesi düzeltildi
+  // Dosya silme - state güncellemesi düzeltildi ve validasyon eklendi
   const handleFileDelete = useCallback(async (taskId, fileName) => {
     if (!window.confirm(`"${fileName}" dosyasını silmek istediğinizden emin misiniz?`)) return;
 
@@ -271,11 +351,15 @@ const ProjectTasks = () => {
           ...process,
           tasks: process.tasks.map(task => {
             if (task.id === taskId) {
-              return { 
+              const updatedTask = {
                 ...task, 
                 filePath: refreshedTask.filePath,
                 fileNames: refreshedTask.fileNames // Backend'den gelen güncel fileNames
               };
+              // Dosya silindikten sonra validasyonu yeniden kontrol et
+              const validation = validateTaskCompletion(updatedTask);
+              updateValidationError(taskId, validation.isValid ? null : validation.message);
+              return updatedTask;
             }
             return task;
           })
@@ -293,11 +377,15 @@ const ProjectTasks = () => {
                 const pathParts = path.split('/').pop().split('_');
                 return pathParts.length >= 3 ? pathParts.slice(2).join('_') : path;
               });
-              return { 
+              const updatedTask = { 
                 ...task, 
                 filePath: updatedFilePaths,
                 fileNames: newFileNames
               };
+              // Validasyonu yeniden kontrol et
+              const validation = validateTaskCompletion(updatedTask);
+              updateValidationError(taskId, validation.isValid ? null : validation.message);
+              return updatedTask;
             }
             return task;
           })
@@ -310,7 +398,7 @@ const ProjectTasks = () => {
       console.error('Dosya silme hatası:', error);
       alert('Dosya silme hatası: ' + (error.response?.data?.message || error.message));
     }
-  }, [projectProcesses, token, currentUserId, refreshTaskFiles]);
+  }, [projectProcesses, token, currentUserId, refreshTaskFiles, validateTaskCompletion, updateValidationError]);
 
   // Dosya simgesi belirleme fonksiyonu
   const getFileIcon = (fileName) => {
@@ -354,54 +442,7 @@ const ProjectTasks = () => {
     fetchUsers();
   }, [token]);
 
-  // Process atamasını değiştirme fonksiyonu
-  const handleProcessReassign = useCallback(async (newUserIdStr) => {
-    const newUserId = parseInt(newUserIdStr);
-    if (!processToReassign) return;
-
-    try {
-      // Process'in tüm görevlerini yeni kullanıcıya ata
-      const updatePromises = processToReassign.tasks.map(task => {
-        return axios.put(`http://localhost:5000/api/projectTasks/${task.id}`, {
-          status: task.status || "NotStarted",
-          startDate: task.startDate ? new Date(task.startDate).toISOString() : new Date().toISOString(),
-          assignedUserId: newUserId,
-          endDate: task.endDate ? new Date(task.endDate).toISOString() : null,
-          description: task.description || "",
-          filePath: task.filePath || [],
-          updatedByUserId: currentUserId,
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      });
-
-      await Promise.all(updatePromises);
-
-      // State'i güncelle
-      setProjectProcesses(prevProcesses =>
-        prevProcesses.map(process => 
-          process.processId === processToReassign.processId
-            ? {
-                ...process,
-                assignedUser: getUserNameById(newUserId),
-                tasks: process.tasks.map(task => ({ ...task, assignedUserId: newUserId }))
-              }
-            : process
-        )
-      );
-
-      setProcessAssignModalOpen(false);
-      setProcessToReassign(null);
-      setSelectedUserId(null);
-
-      alert("Process ataması başarıyla değiştirildi!");
-    } catch (err) {
-      alert("Process ataması değiştirilemedi");
-      console.error("API HATASI:", err);
-    }
-  }, [processToReassign, token, currentUserId, getUserNameById]);
-
-  // Orijinal API çağrı mantığını koruyarak optimize et
+  // API call optimizasyonu - ProjectProcess'den alındı
   const fetchProjectData = useCallback(async () => {
     if (!projectId) return;
     
@@ -516,56 +557,6 @@ const ProjectTasks = () => {
     }
   }, [projectId, token]);
 
-  // Filtrelenmiş süreçler - memoized
-  const filteredProcesses = useMemo(() => {
-    let filtered = projectProcesses;
-
-    if (searchFilters.processName) {
-      filtered = filtered.filter(process =>
-        process.processName.toLowerCase().includes(searchFilters.processName.toLowerCase())
-      );
-    }
-
-    if (searchFilters.taskName || searchFilters.status || searchFilters.startDate || searchFilters.endDate) {
-      filtered = filtered.map(process => ({
-        ...process,
-        tasks: process.tasks.filter(task => {
-          const matchesTaskName = !searchFilters.taskName ||
-            task.task?.title.toLowerCase().includes(searchFilters.taskName.toLowerCase());
-          const matchesStatus = !searchFilters.status || task.status === searchFilters.status;
-          const matchesStartDate = !searchFilters.startDate ||
-            (task.startDate && task.startDate.split('T')[0] >= searchFilters.startDate);
-          const matchesEndDate = !searchFilters.endDate ||
-            (task.endDate && task.endDate.split('T')[0] <= searchFilters.endDate);
-
-          return matchesTaskName && matchesStatus && matchesStartDate && matchesEndDate;
-        })
-      })).filter(process => process.tasks.length > 0);
-    }
-
-    return filtered;
-  }, [projectProcesses, searchFilters]);
-
-  // İstatistikler - memoized
-  const calculateStatusStats = useCallback((tasks) => {
-    if (!tasks.length) return { notStarted: 100, inProgress: 0, completed: 0, cancelled: 0 };
-
-    const total = tasks.length;
-    const stats = Object.keys(statusConfig).reduce((acc, status) => {
-      acc[status.toLowerCase()] = tasks.filter(t => t.status === status).length;
-      return acc;
-    }, {});
-
-    return Object.fromEntries(
-      Object.entries(stats).map(([key, count]) => [key, Math.round((count / total) * 100)])
-    );
-  }, [statusConfig]);
-
-  const projectStats = useMemo(() => {
-    const allTasks = filteredProcesses.flatMap(p => p.tasks);
-    return calculateStatusStats(allTasks);
-  }, [filteredProcesses, calculateStatusStats]);
-
   // Event handlers
   const handleFilterChange = useCallback((key, value) => {
     setSearchFilters(prev => ({ ...prev, [key]: value }));
@@ -574,12 +565,25 @@ const ProjectTasks = () => {
 
   const clearFilters = useCallback(() => {
     setSearchFilters({
-      processName: "", taskName: "", status: "", startDate: "", endDate: ""
+      taskName: "", status: "", startDate: "", endDate: ""
     });
   }, []);
 
+  // Geliştirilmiş görev güncelleme fonksiyonu - MyTasks'daki validasyon ile
   const handleComplete = useCallback(async (task) => {
     try {
+      // Validasyon kontrolü
+      const validation = validateTaskCompletion(task);
+      
+      if (!validation.isValid) {
+        updateValidationError(task.id, validation.message);
+        alert(validation.message);
+        return;
+      }
+
+      // Validasyon başarılı ise hatayı temizle
+      updateValidationError(task.id, null);
+
       const dto = {
         status: task.status,
         startDate: task.startDate,
@@ -597,8 +601,9 @@ const ProjectTasks = () => {
       alert("Görev başarıyla güncellendi");
     } catch (err) {
       console.error("Güncelleme hatası:", err.response?.data || err.message);
+      alert("Güncelleme hatası: " + (err.response?.data?.message || err.message));
     }
-  }, [currentUserId, token]);
+  }, [currentUserId, token, validateTaskCompletion, updateValidationError]);
 
   const handleReassign = useCallback(async (newUserIdStr) => {
     const newUserId = parseInt(newUserIdStr);
@@ -646,10 +651,23 @@ const ProjectTasks = () => {
     setProjectProcesses(prev =>
       prev.map(p => ({
         ...p,
-        tasks: p.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
+        tasks: p.tasks.map(t => {
+          if (t.id === taskId) {
+            const updatedTask = { ...t, ...updates };
+            
+            // Durum değişikliği durumunda validasyon kontrol et
+            if (updates.status) {
+              const validation = validateTaskCompletion(updatedTask);
+              updateValidationError(taskId, validation.isValid ? null : validation.message);
+            }
+            
+            return updatedTask;
+          }
+          return t;
+        })
       }))
     );
-  }, []);
+  }, [validateTaskCompletion, updateValidationError]);
 
   const formatDate = useCallback((dateString) => {
     return dateString ? new Date(dateString).toLocaleDateString('tr-TR') : "Belirtilmemiş";
@@ -660,33 +678,11 @@ const ProjectTasks = () => {
     fetchProjectData();
   }, [fetchProjectData]);
 
-  // StatusBar component
-  const StatusBar = ({ stats, size = "md", showLabels = true }) => (
-    <div style={{ width: '100%' }}>
-      {showLabels && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-          {Object.entries(statusConfig).map(([key, config]) => {
-            const statKey = key.toLowerCase();
-            return (
-              <Text key={key} size="xs" style={{ color: config.color }}>
-                {config.label}: {stats[statKey] || 0}%
-              </Text>
-            );
-          })}
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 4 }}>
-        {Object.entries(statusConfig).map(([key, config]) => {
-          const statKey = key.toLowerCase();
-          return (
-            <div key={key} style={{ flex: 1 }}>
-              <Progress value={stats[statKey] || 0} color={config.color} size={size} />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  // Process seçim handler'ı
+  const handleProcessSelect = useCallback((process) => {
+    setSelectedProcess(process);
+    setCurrentPage(1); // Görev listesine geçerken sayfa numarasını sıfırla
+  }, []);
 
   if (loading) {
     return (
@@ -699,293 +695,28 @@ const ProjectTasks = () => {
     );
   }
 
-  // Process Cards View
+  // Process Cards View - ProjectProcess componentini kullan
   if (!selectedProcess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-        <Header
-          title="Süreçler"
-          subtitle={`${projectName}`}
-          icon={IconCalendar}
-          stats={projectStats}
-          showStats={true}
-        />
-
-        <div className="px-6 py-4">
-          <FilterAndSearch
-            searchFilters={searchFilters}
-            handleFilterChange={handleFilterChange}
-            clearFilters={clearFilters}
-            filtersConfig={[
-              {key:"processName", type:"text", placeholder: "Süreç adına göre ara..."},
-              {key:"startDate", type:"date"},
-              {key:"endDate", type:"date"}
-            ]}
-          />
-
-          <Grid gutter="xl">
-            {filteredProcesses
-              .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-              .map((process) => {
-                const processStats = calculateStatusStats(process.tasks);
-                const completedTasks = process.tasks.filter(t => t.status === 'Completed').length;
-                const totalTasks = process.tasks.length;
-                const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-                return (
-                  <Grid.Col key={process.processId} span={{ base: 12, sm: 6, lg: 4 }}>
-                    <Card
-                      withBorder
-                      padding="lg"
-                      radius="xl"
-                      className="cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] bg-white border-gray-200"
-                      style={{ 
-                        height: 400,
-                        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                      onClick={() => setSelectedProcess(process)}
-                    >
-                      {/* Header Section - Sabit yükseklik */}
-                      <div className="flex justify-between items-start mb-4" style={{ minHeight: '80px' }}>
-                        <div className="flex-1 overflow-hidden">
-                          <Title 
-                            order={3} 
-                            className="text-[#1e293b] font-bold leading-tight"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              lineHeight: '1.3',
-                              maxHeight: '2.6em',
-                              marginBottom: '8px'
-                            }}
-                            title={process.processName} // Tooltip için tam metin
-                          >
-                            {process.processName}
-                          </Title>
-                          <Badge 
-                            size="lg" 
-                            variant="light" 
-                            color="blue"
-                          >
-                            {completionPercentage}% Tamamlandı
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <Divider color="gray.3" className="mb-4" />
-
-                      {/* Info Section - Esnek büyüme */}
-                      <div className="flex-1 flex flex-col justify-between">
-                        <Stack spacing="sm">
-                          <Paper 
-                            padding="sm" 
-                            radius="md" 
-                            className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100"
-                          >
-                            <Group spacing="xs" align="center">
-                              <IconCalendar size={16} />
-                              <Text size="sm" color="ivosis.6" weight={500}>
-                                Oluşturulma: {formatDate(process.processCreatedDate)}
-                              </Text>
-                            </Group>
-                          </Paper>
-
-                          <Paper 
-                            padding="sm" 
-                            radius="md" 
-                          >
-                            <Group spacing="xs" align="center" position="apart">
-                              <Group spacing="xs" className="flex-1 min-w-0">
-                                <IconUsers size={16} />
-                                <Text 
-                                  size="sm" 
-                                  weight={500}
-                                  className="truncate"
-                                  title={process.assignedUser}
-                                >
-                                  Atanan: {process.assignedUser}
-                                </Text>
-                              </Group>
-                              <Button
-                                size="xs"
-                                variant="outline"
-                                leftIcon={<IconEdit size={12} />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setProcessToReassign(process);
-                                  setProcessAssignModalOpen(true);
-                                }}
-                                className="flex-shrink-0"
-                              >
-                                Değiştir
-                              </Button>
-                            </Group>
-                          </Paper>
-
-                          <div className="grid grid-cols-1 gap-3">
-                            <Paper 
-                              padding="sm" 
-                              radius="md" 
-                              className="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100"
-                            >
-                              <Group spacing="xs" align="center" position="center">
-                                <Text size="lg" weight={700} color="#7c3aed">
-                                  {totalTasks}
-                                </Text>
-                                <Text size="xs" color="#7c3aed">
-                                  Toplam Görev
-                                </Text>
-                              </Group>
-                            </Paper>
-                          </div>
-                        </Stack>
-
-                        {/* Progress Section - Alt kısma sabitlendi */}
-                        <div className="mt-4">
-                          <Text size="sm" weight={600} color="#475569" className="mb-3">
-                            İlerleme Durumu
-                          </Text>
-                          <StatusBar stats={processStats} size="lg" showLabels={false} />
-                          <div className="flex justify-between mt-2">
-                            <Text size="xs" color="#64748b">Başlangıç</Text>
-                            <Text size="xs" color="#64748b">Tamamlanma</Text>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Grid.Col>
-                );
-              })}
-          </Grid>
-
-          {/* Pagination Component for Process Cards */}
-          <PaginationComponent
-            totalItems={filteredProcesses.length}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={handlePageSizeChange}
-            pageSizeOptions={[3, 6, 9, 12]}
-            itemName="süreç"
-          />
-
-          {filteredProcesses.length === 0 && (
-            <Paper 
-              shadow="lg" 
-              padding="xl" 
-              radius="xl" 
-              className="text-center mt-8 bg-white"
-            >
-              <div className="py-8">
-                <Text size="xl" color="#64748b" weight={600} className="mb-4">
-                  🔍 Arama kriterlerinize uygun süreç bulunamadı
-                </Text>
-                <Text size="md" color="#94a3b8" className="mb-6">
-                  Farklı filtreler deneyebilir veya mevcut filtreleri temizleyebilirsiniz.
-                </Text>
-                <Button 
-                  variant="gradient" 
-                  gradient={{ from: '#279ab3', to: '#1d7a8c' }}
-                  onClick={clearFilters} 
-                  size="md"
-                  radius="xl"
-                >
-                  Filtreleri Temizle
-                </Button>
-              </div>
-            </Paper>
-          )}
-        </div>
-
-        {/* Process Assign Modal */}
-        <Modal
-          opened={processAssignModalOpen}
-          onClose={() => {
-            setProcessAssignModalOpen(false);
-            setProcessToReassign(null);
-            setSelectedUserId(null);
-          }}
-          title="Süreç Atamasını Değiştir"
-          centered
-          size="md"
-          radius="lg"
-        >
-          {processToReassign && (
-            <Stack spacing="lg">
-              <div>
-                <Text size="sm" weight={500} className="mb-2">
-                  <span className="font-bold text-blue-600">Süreç: </span> 
-                  {processToReassign.processName}
-                </Text>
-                <Text size="xs" color="dimmed">
-                  Bu süreçteki tüm görevler yeni kullanıcıya atanacaktır.
-                </Text>
-              </div>
-              
-              <Select
-                label="Yeni Atanan Kullanıcı"
-                placeholder="Kullanıcı Seçin"
-                data={users.map(u => ({ value: u.id.toString(), label: u.name }))}
-                value={selectedUserId}
-                onChange={setSelectedUserId}
-                searchable
-                nothingFound="Kullanıcı bulunamadı"
-                radius="md"
-              />
-              
-              <Group position="right" spacing="sm">
-                <Button
-                  variant="outline"
-                  color="red"
-                  onClick={() => {
-                    setProcessAssignModalOpen(false);
-                    setProcessToReassign(null);
-                    setSelectedUserId(null);
-                  }}
-                  radius="md"
-                >
-                  İptal
-                </Button>
-                <Button
-                  onClick={() => selectedUserId && handleProcessReassign(selectedUserId)}
-                  disabled={!selectedUserId}
-                  variant="gradient"
-                  gradient={{ from: '#279ab3', to: '#24809c' }}
-                  radius="md"
-                >
-                  Atamayı Kaydet
-                </Button>
-              </Group>
-            </Stack>
-          )}
-        </Modal>
-      </div>
+      <ProjectProcess 
+        onProcessSelect={handleProcessSelect}
+      />
     );
   }
 
   // Task Details View
-  const currentProcess = filteredProcesses.find(p => p.processId === selectedProcess.processId);
+  const currentProcess = selectedProcess;
   if (!currentProcess) return null;
 
   const processStats = calculateStatusStats(currentProcess.tasks);
-  const paginatedTasks = currentProcess.tasks.slice(
-    (currentPage - 1) * pageSize, 
-    currentPage * pageSize
-  );
 
   const getEndDate = (task) => {
-  if (task.endDate) return task.endDate.split("T")[0];
-  if (task.startDate) {
-    const start = new Date(task.startDate);
-    start.setDate(start.getDate() + 15);
-    return start.toISOString().split("T")[0];
-  }
+    if (task.endDate) return task.endDate.split("T")[0];
+    if (task.startDate) {
+      const start = new Date(task.startDate);
+      start.setDate(start.getDate() + 15);
+      return start.toISOString().split("T")[0];
+    }
     return "";
   };
 
@@ -998,42 +729,46 @@ const ProjectTasks = () => {
         showStats={true}
       />
 
-      <div className="px-4">
+      <div className="px-4 sm:px-6">
         <FilterAndSearch
-            searchFilters={searchFilters}
-            handleFilterChange={handleFilterChange}
-            clearFilters={clearFilters}
-            filtersConfig={[
-              { key: "taskName", type: "text", placeholder: "Görev adına göre ara..." },
-              {
-                key: "status",
-                type: "select",
-                placeholder: "Durum seçin...",
-                options: [
-                  { value: "", label: "Tümü" },
-                  { value: "NotStarted", label: "Başlamadı" },
-                  { value: "InProgress", label: "Devam Ediyor" },
-                  { value: "Completed", label: "Tamamlandı" },
-                  { value: "Cancelled", label: "İptal Edildi" },
-                ],
-              },
-              { key: "startDate", type: "date" },
-              { key: "endDate", type: "date" }
-            ]}
-          />
+          searchFilters={searchFilters}
+          handleFilterChange={handleFilterChange}
+          clearFilters={clearFilters}
+          filtersConfig={[
+            { key: "taskName", type: "text", placeholder: "Görev adına göre ara..." },
+            {
+              key: "status",
+              type: "select",
+              placeholder: "Durum seçin...",
+              options: [
+                { value: "", label: "Tümü" },
+                { value: "NotStarted", label: "Başlamadı" },
+                { value: "InProgress", label: "Devam Ediyor" },
+                { value: "Completed", label: "Tamamlandı" },
+                { value: "Cancelled", label: "İptal Edildi" },
+              ],
+            },
+            { key: "startDate", type: "date" },
+            { key: "endDate", type: "date" }
+          ]}
+        />
         
         <div className="flex justify-start mb-5">
           <Button
             onClick={() => setSelectedProcess(null)}
             className="bg-gradient-to-r from-[#279ab3] to-[#1d7a8c] text-white hover:from-[#1d7a8c] hover:to-[#155b6b]"
+            leftIcon={<IconArrowLeft size={20} />}
           >
-            <IconArrowLeft size={20} />
             Süreçler
           </Button>
         </div>
 
-        <Grid gutter="lg">
-          {paginatedTasks.map((task) => (
+        <Grid gutter={{ base: "md", lg: "lg" }}>
+          {paginatedTasks.map((task) => {
+            const validationError = validationErrors[task.id];
+            const hasFiles = task.fileNames && task.fileNames.length > 0;
+
+            return (
               <Grid.Col key={task.id} span={{ base: 12, sm: 6, lg: 4 }}>
                 <Card
                   withBorder
@@ -1049,29 +784,29 @@ const ProjectTasks = () => {
                       {/* Görev Başlığı */}
                       <Text size="sm" weight={500} className="flex-1" style={{ color: '#112d3b' }}>
                        {task.task?.title || "Görev Adı Yok"}
-                    </Text>
+                      </Text>
                       {/* Görev Status */}
-                    <Badge color="cyan" size="sm" variant="light" radius="sm">
-                      {getStatusLabel(task.status)}
-                    </Badge>
+                      <Badge color="cyan" size="sm" variant="light" radius="sm">
+                        {getStatusLabel(task.status)}
+                      </Badge>
                     </Group>
                     
                     <Group position="apart">
                       {/* Atanan Kullanıcı */}
                       <Text size="xs" color="#279ab3" weight={500}>
-                      👤 Atanan: {getUserNameById(task.assignedUserId)}
-                    </Text>
-                    {/* Atanan Kullanıcı Değiştirme Butonu */}
-                    <Button
-                      size="xs"
-                      variant="outline"
-                      onClick={() => {
-                        setTaskToReassign(task);
-                        setAssignModalOpen(true);
-                      }}
-                    >
-                      Atamayı Değiştir
-                    </Button>
+                        👤 Atanan: {getUserNameById(task.assignedUserId)}
+                      </Text>
+                      {/* Atanan Kullanıcı Değiştirme Butonu */}
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        onClick={() => {
+                          setTaskToReassign(task);
+                          setAssignModalOpen(true);
+                        }}
+                      >
+                        Atamayı Değiştir
+                      </Button>
                     </Group>
 
                     <Stack spacing="xs">
@@ -1083,7 +818,7 @@ const ProjectTasks = () => {
                       </Paper>
                     </Stack>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <Text size="xs" color="#007bff" className="mb-1">📅 Başlangıç</Text>
                         <input
@@ -1096,13 +831,13 @@ const ProjectTasks = () => {
                       <div>
                         <Text size="xs" color="#007bff" className="mb-1">🎯 Bitiş</Text>
                         <input
-  type="date"
-  value={getEndDate(task)}
-  onChange={(e) =>
-    updateTaskInState(task.id, { endDate: e.target.value })
-  }
-  className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
-/>
+                          type="date"
+                          value={getEndDate(task)}
+                          onChange={(e) =>
+                            updateTaskInState(task.id, { endDate: e.target.value })
+                          }
+                          className="w-full px-2 py-1.5 border border-[#ced4da] rounded text-xs bg-[#f8f9fa] text-[#007bff]"
+                        />
                       </div>
                     </div>
 
@@ -1117,6 +852,13 @@ const ProjectTasks = () => {
                         { value: "Completed", label: "Tamamlandı" },
                         { value: "Cancelled", label: "İptal Edildi" },
                       ]}
+                      error={validationError && task.status === "Completed"}
+                      styles={{
+                        input: {
+                          borderColor: validationError && task.status === "Completed" ? '#dc3545' : undefined,
+                          backgroundColor: validationError && task.status === "Completed" ? '#f8d7da' : undefined
+                        }
+                      }}
                     />
 
                     <Textarea
@@ -1128,13 +870,24 @@ const ProjectTasks = () => {
                       maxRows={2}
                     />
 
-                    {/* Dosya Yönetimi - Backend FileNames ile senkronize */}
+                    {/* Dosya Yönetimi - MyTasks ile aynı yapı */}
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Text size="xs" color="#007bff" weight={500}>📎 Dosyalar</Text>
-                        <Badge size="xs" color="blue" variant="light">
-                          {task.fileNames?.length || 0}
-                        </Badge>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Text size="xs" color="#007bff" weight={500}>📎 Dosyalar</Text>
+                          <Badge 
+                            size="xs" 
+                            color={hasFiles ? "green" : "yellow"} 
+                            variant="light"
+                          >
+                            {task.fileNames?.length || 0}
+                          </Badge>
+                        </div>
+                        {!hasFiles && task.status === "Completed" && (
+                          <Tooltip label="Tamamlanmış görevler için dosya gereklidir">
+                            <IconAlertCircle size={14} color="#dc3545" />
+                          </Tooltip>
+                        )}
                       </div>
                       
                       <input
@@ -1196,26 +949,45 @@ const ProjectTasks = () => {
                           ))}
                         </div>
                       )}
+                      
+                      {/* Dosya gerekliliği uyarısı - MyTasks ile aynı */}
+                      {!hasFiles && (
+                        <Alert 
+                          color="yellow" 
+                          variant="light" 
+                          className="py-1"
+                        >
+                          <Text size="xs">
+                            💡 Görevi "Tamamlandı" olarak işaretlemek için en az bir dosya eklemelisiniz.
+                          </Text>
+                        </Alert>
+                      )}
                     </div>
 
                     <Button
                       size="sm"
                       onClick={() => handleComplete(task)}
                       className="border-0 mt-auto"
-                      style={{ background: 'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)' }}
+                      style={{ 
+                        background: validationError ? 
+                          'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' : 
+                          'linear-gradient(135deg, #279ab3 0%, #1d7a8c 100%)'
+                      }}
                       loading={uploadingFiles[task.id]}
+                      disabled={!!validationError}
                     >
-                      Güncelle
+                      {validationError ? 'Dosya Gerekli' : 'Güncelle'}
                     </Button>
                   </Stack>
                 </Card>
               </Grid.Col>
-            ))}
+            );
+          })}
         </Grid>
 
         {/* Pagination Component for Tasks */}
         <PaginationComponent
-          totalItems={currentProcess.tasks.length}
+          totalItems={filteredTasks.length}
           currentPage={currentPage}
           pageSize={pageSize}
           onPageChange={setCurrentPage}

@@ -26,7 +26,7 @@ const PaginationComponent = ({
   }
 
   return (
-    <Stack gap="md" align="center" mt="xl">
+    <Stack gap="md" align="end" mt="xl" className='px-4'>
       {/* Sayfa boyutu seçici */}
       <Group gap="md" align="center">
         <Text size="sm" c="dimmed">
@@ -59,7 +59,7 @@ const PaginationComponent = ({
       )}
 
       {/* Bilgi metni */}
-      <Group gap="xs" justify="center">
+      <Group gap="xs" justify="center" >
         <Text size="sm" c="dimmed">
           {startItem}-{endItem} arası gösteriliyor,
         </Text>

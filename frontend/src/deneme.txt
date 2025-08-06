@@ -111,10 +111,16 @@ dosya yüklenince sıralama yapılacak
 süreçlerde ve taskta bitiş tarihi de atanacak + (TAMAMLANDI 15 GÜN SONRASI GÖRÜNTÜLENİYOR)
 task düzenlede tüm değişkenler düzenlenecek + (TAMAMLANDI AÇIKLAMA DÜZENLEME VE GÖRÜNTÜLEME EKLENDİ, SİLME İŞLEMİ BACKENDDE BAĞLANTILI TABLO HATASI VERİYOR.)
 süreç kartı düzenlenecek(çok yazı olunca kayma oluyor) + (PROCESS KARTLARI SABİT HALE GETİRİLDİ)
-görevlerde dosya alanı boşsa tamamlandı olamaz şekilde ayarlanacak
+görevlerde dosya alanı boşsa tamamlandı olamaz şekilde ayarlanacak + (TAMAMLANDI)
 
 
 kullanıcıların yaptıkları işlemleri logları sayfanın sol altında anlık görüntülenecek.
 
 
 sayfalandırma yapısı sol tarafta yapılacak. 5-10-15-20 şeklinde artacak.
+
+06.08
+1-sayfalandırma sağ'a yaslandı
+2-MyTask sayfasında dosya yükleme işlemi zorunlu hale getirildi
+3-ProjectTask sayfasındaki process ekranı ayrı bir component olarak eklendi
+4-ProjectTask sayfasında dosya yükleme işlemi zorunlu hale getirildi
