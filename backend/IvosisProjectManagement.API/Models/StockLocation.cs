@@ -1,6 +1,4 @@
-using IvosisProjectManagement.API.Models;
-
-public class StockLocation : BaseEntity
+public class StockLocation : CompanyEntity
 {
     public string Name { get; set; }
     public string Code { get; set; }
@@ -14,9 +12,6 @@ public class StockLocation : BaseEntity
     public decimal? Capacity { get; set; }
     public string CapacityUnit { get; set; }
     public bool IsActive { get; set; } = true;
-    
-    // Navigation properties - ForeignKey attribute'ları KALDıRıLDı
-    //public User CreatedByUser { get; set; }
     public virtual ICollection<StockBalance> StockBalances { get; set; }
     public virtual ICollection<StockMovement> StockMovements { get; set; }
 }

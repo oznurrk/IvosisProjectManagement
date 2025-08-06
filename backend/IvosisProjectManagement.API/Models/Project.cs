@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 namespace IvosisProjectManagement.API.Models
 {
-    public class Project
+    public class Project : CompanyEntity
     {
-        public int Id { get; set; }
 
         [StringLength(100)]
         public string? Name { get; set; }
@@ -20,9 +18,6 @@ namespace IvosisProjectManagement.API.Models
 
         [StringLength(50)]
         public string? Status { get; set; }
-
-        // Yeni firma bilgisi
-        public int? CompanyId { get; set; }
 
         // Panel bilgileri
         public int? PanelCount { get; set; }
@@ -46,24 +41,13 @@ namespace IvosisProjectManagement.API.Models
 
         // Proje türü
         public int? ProjectTypeId { get; set; }
+        public string? ProjeGesType { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public int? CreatedByUserId { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public int? UpdatedByUserId { get; set; }
-
-        // Navigation Properties
-        public virtual Company? Company { get; set; }
         public virtual PanelBrand? PanelBrand { get; set; }
         public virtual InverterBrand? InverterBrand { get; set; }
         public virtual ProjectType? ProjectType { get; set; }
-        public virtual User? CreatedByUser { get; set; }
-        public virtual User? UpdatedByUser { get; set; }
-
         public virtual ICollection<ProjectTask> ProjectTasks { get; set; } = new List<ProjectTask>();
-
         public List<ProjectAddress> Address { get; set; } = new(); // Çoklu adres
-
-        public string? ProjeGesType { get; set; }
+        
     }
 }

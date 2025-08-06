@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IvosisProjectManagement.API.Models
 {
-    public class Supplier : BaseEntity
+    public class Supplier : CompanyEntity
     {
         [Required, StringLength(200)]
         public string CompanyName { get; set; }
@@ -44,11 +44,6 @@ namespace IvosisProjectManagement.API.Models
         public decimal? CreditLimit { get; set; }
 
         public bool IsActive { get; set; } = true;
-        public int? CreatedBy { get; set; }
-        public User? CreatedByUser { get; set; }
-
-        public int? UpdatedBy { get; set; }
-        public User? UpdatedByUser { get; set; }
         public virtual ICollection<SupplierCompany> SupplierCompanies { get; set; } = new List<SupplierCompany>();
     }
 }
