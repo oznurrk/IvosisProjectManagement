@@ -1,4 +1,4 @@
-public class CompanyDto
+public class CompanyDto:BaseDto
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
