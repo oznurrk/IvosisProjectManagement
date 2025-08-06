@@ -44,7 +44,7 @@ namespace IvosisProjectManagement.API.Data
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 // BaseEntity ilişkileri
-                if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType)&& 
+                if (typeof(CommonBaseEntity).IsAssignableFrom(entityType.ClrType)&& 
                     entityType.ClrType != typeof(Unit))
                 {
                     modelBuilder.Entity(entityType.ClrType)

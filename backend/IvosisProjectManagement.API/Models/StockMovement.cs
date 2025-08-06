@@ -1,8 +1,5 @@
-using IvosisProjectManagement.API.Models;
-
-public class StockMovement
+public class StockMovement : CompanyEntity
 {
-    public int Id { get; set; }
     public int StockItemId { get; set; }
     public int LocationId { get; set; }
     public string MovementType { get; set; } // IN, OUT, TRANSFER, ADJUSTMENT
@@ -15,11 +12,6 @@ public class StockMovement
     public string Description { get; set; }
     public string Notes { get; set; }
     public DateTime MovementDate { get; set; } = DateTime.Now;
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
-    public int CreatedBy { get; set; }
-
-    // Navigation properties - ForeignKey attribute'ları KALDıRıLDı
     public virtual StockItem StockItem { get; set; }
     public virtual StockLocation Location { get; set; }
-    public virtual User CreatedByUser { get; set; }
 }

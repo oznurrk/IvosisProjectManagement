@@ -1,13 +1,9 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-public class StockItem : BaseEntity
+public class StockItem : CompanyEntity
 {
     public string ItemCode { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public int CategoryId { get; set; }
-    public int? CompanyId { get; set; }
     public int UnitId { get; set; }
     public decimal MinimumStock { get; set; } = 0;
     public decimal MaximumStock { get; set; } = 0;

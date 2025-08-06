@@ -1,4 +1,4 @@
-public class StockCategory : BaseEntity
+public class StockCategory : CompanyEntity
 {
     public string Name { get; set; }
     public string Code { get; set; }

@@ -1,8 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class StockBalance
+public class StockBalance : CompanyEntity
     {
-        public int Id { get; set; }
         public int StockItemId { get; set; }
         public int LocationId { get; set; }
         public decimal CurrentQuantity { get; set; } = 0;
