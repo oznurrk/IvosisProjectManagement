@@ -253,10 +253,10 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.InverterPower).HasPrecision(18, 2);
                 entity.Property(e => e.PanelPower).HasPrecision(18, 2);
 
-                entity.HasOne(p => p.Company)
+                /*entity.HasOne(p => p.Company)
                     .WithMany(c => c.Projects)
                     .HasForeignKey(p => p.CompanyId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Restrict);*/
 
                 entity.HasOne(p => p.PanelBrand)
                     .WithMany()
@@ -273,7 +273,7 @@ namespace IvosisProjectManagement.API.Data
                     .HasForeignKey(p => p.ProjectTypeId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(p => p.CreatedByUser)
+                /*entity.HasOne(p => p.CreatedByUser)
                     .WithMany(u => u.CreatedProjects)
                     .HasForeignKey(p => p.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
@@ -281,7 +281,7 @@ namespace IvosisProjectManagement.API.Data
                 entity.HasOne(p => p.UpdatedByUser)
                     .WithMany(u => u.UpdatedProjects)
                     .HasForeignKey(p => p.UpdatedBy)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Restrict);*/
             });
 
             // ProjectTask Configuration

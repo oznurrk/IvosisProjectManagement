@@ -75,6 +75,9 @@ builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
 builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IStockLocationService, StockLocationService>();
+builder.Services.AddScoped<IStockCategoryService, StockCategoryService>();
+
+
 builder.Services.AddAutoMapper(typeof(StockManagementProfile));
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization();

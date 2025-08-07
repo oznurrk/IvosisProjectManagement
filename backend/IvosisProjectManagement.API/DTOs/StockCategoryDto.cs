@@ -1,4 +1,4 @@
- public class StockCategoryDto : BaseDto
+ public class StockCategoryDto : CompanyDto
     {
         public string Name { get; set; }= "";
         public string Code { get; set; }= "";
