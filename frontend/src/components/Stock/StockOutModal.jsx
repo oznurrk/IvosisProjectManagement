@@ -2,7 +2,22 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { IconX, IconCheck, IconAlertTriangle, IconTruck } from "@tabler/icons-react";
 
-const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
+const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues }) => {
+  // Helper to get category name from categoryId and item
+  const getCategoryName = (categoryId, item) => {
+    if (item?.category) return item.category;
+    if (!categoryId || !Array.isArray(stockItems)) return '';
+    // Try to find category name from stockItems array
+    const found = stockItems.find(i =>
+      i.categoryId === categoryId ||
+      i.categoryId === parseInt(categoryId) ||
+      i.categoryId?.toString() === categoryId?.toString() ||
+      i.category?.toString() === categoryId?.toString()
+    );
+    if (found && found.category) return found.category;
+    if (found && (found.categoryName || found.CategoryName)) return found.categoryName || found.CategoryName;
+    return '';
+  };
   const [form, setForm] = useState({
     itemId: "",
     locationId: "1", // Default location
@@ -29,7 +44,21 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
 
   useEffect(() => {
     if (isOpen) {
-      resetForm();
+      if (initialValues) {
+        setForm({
+          itemId: initialValues?.itemId?.toString() || initialValues?.stockItemId?.toString() || "",
+          locationId: initialValues?.locationId?.toString() || "1",
+          quantity: initialValues?.quantity?.toString() || "",
+          referenceNumber: initialValues?.referenceNumber || "",
+          description: initialValues?.description || "",
+          notes: initialValues?.notes || ""
+        });
+        const item = stockItems.find(i => i.id.toString() === (initialValues?.itemId?.toString() || initialValues?.stockItemId?.toString()));
+        setSelectedItem(item || null);
+      } else {
+        resetForm();
+        setSelectedItem(null);
+      }
       fetchLocations(); // Lokasyonları yükle
       console.log('StockOutModal açıldı, gelen stockItems:', stockItems);
     }
@@ -269,7 +298,7 @@ const StockOutModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
                   <div className="text-sm text-blue-700">
                     <p><strong>Kod:</strong> {selectedItem.itemCode}</p>
                     <p><strong>Ad:</strong> {selectedItem.name}</p>
-                    <p><strong>Kategori:</strong> {selectedItem.category || '-'} </p>
+                    <p><strong>Kategori:</strong> {getCategoryName(selectedItem.categoryId, selectedItem)}</p>
                     <p><strong>Mevcut Stok:</strong> {selectedItem.currentStock || 0} {selectedItem.unit || 'Adet'}</p>
                   </div>
                 </div>

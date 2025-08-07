@@ -2,15 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { IconX, IconCheck, IconSearch, IconPackage } from "@tabler/icons-react";
 
-const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
+const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues }) => {
   const [form, setForm] = useState({
-    itemId: "",
-    locationId: "1", // Default location
-    quantity: "",
-    unitPrice: "",
-    referenceNumber: "",
-    description: "",
-    notes: ""
+    itemId: initialValues?.itemId?.toString() || initialValues?.stockItemId?.toString() || "",
+    locationId: initialValues?.locationId?.toString() || "1",
+    quantity: initialValues?.quantity?.toString() || "",
+    unitPrice: initialValues?.unitPrice?.toString() || "",
+    referenceNumber: initialValues?.referenceNumber || "",
+    description: initialValues?.description || "",
+    notes: initialValues?.notes || ""
   });
 
   // Lokasyonlar için state
@@ -52,7 +52,22 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [] }) => {
 
   useEffect(() => {
     if (isOpen) {
-      resetForm();
+      if (initialValues) {
+        setForm({
+          itemId: initialValues?.itemId?.toString() || initialValues?.stockItemId?.toString() || "",
+          locationId: initialValues?.locationId?.toString() || "1",
+          quantity: initialValues?.quantity?.toString() || "",
+          unitPrice: initialValues?.unitPrice?.toString() || "",
+          referenceNumber: initialValues?.referenceNumber || "",
+          description: initialValues?.description || "",
+          notes: initialValues?.notes || ""
+        });
+        const item = stockItems.find(i => i.id.toString() === (initialValues?.itemId?.toString() || initialValues?.stockItemId?.toString()));
+        setSelectedItem(item || null);
+      } else {
+        resetForm();
+        setSelectedItem(null);
+      }
       fetchLocations();
       console.log('StockInModal açıldı, gelen stockItems:', stockItems);
     }

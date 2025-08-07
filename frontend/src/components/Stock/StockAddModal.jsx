@@ -37,6 +37,16 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
 
   const [existingItems, setExistingItems] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({
+    id: '',
+    name: '',
+    code: '',
+    description: '',
+    parentId: '',
+    isActive: true
+  });
+  const [categoryEditMode, setCategoryEditMode] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [locations, setLocations] = useState([]);
   const [units, setUnits] = useState([]);
@@ -103,11 +113,10 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     try {
       const token = localStorage.getItem("token");
 
-      // Sadece StockItems'ı çek, geri kalan her şeyi bundan çıkar
+      // StockItems'ı çek
       const itemsRes = await axios.get("http://localhost:5000/api/StockItems", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       let stockItemsData = [];
       if (Array.isArray(itemsRes.data)) {
         stockItemsData = itemsRes.data;
@@ -120,23 +129,34 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
       }
       setExistingItems(stockItemsData);
 
-      // Categories'i direkt stockItems'dan çıkar (listedeki gibi)
-      const categoryMap = new Map();
-      stockItemsData.forEach(item => {
-        const catId = item.categoryId || item.CategoryId;
-        const catName = item.category || item.categoryName || item.Category || item.CategoryName;
-        
-        if (catId && catName) {
-          categoryMap.set(catId, catName);
+      // Kategorileri /api/StockCategories'den çek
+      try {
+        const catRes = await axios.get("http://localhost:5000/api/StockCategories", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        let categoriesArray = [];
+        if (Array.isArray(catRes.data)) {
+          categoriesArray = catRes.data;
+        } else if (catRes.data && typeof catRes.data === 'object') {
+          if (catRes.data.items && Array.isArray(catRes.data.items)) {
+            categoriesArray = catRes.data.items;
+          } else if (catRes.data.data && Array.isArray(catRes.data.data)) {
+            categoriesArray = catRes.data.data;
+          }
         }
-      });
-      
-      const categoriesArray = Array.from(categoryMap.entries()).map(([id, name]) => ({
-        id: parseInt(id),
-        name: name
-      }));
-      
-      setCategories(categoriesArray);
+        // Map to always have id and name
+        const mappedCategories = categoriesArray.map(cat => ({
+          id: cat.id ?? cat.Id,
+          name: cat.name ?? cat.Name,
+          code: cat.code ?? cat.Code,
+          description: cat.description ?? cat.Description,
+          parentId: cat.parentId ?? cat.ParentId ?? '',
+          isActive: cat.isActive ?? cat.IsActive
+        }));
+        setCategories(mappedCategories);
+      } catch (catErr) {
+        setCategories([]);
+      }
 
       // Units'i /api/Unit GET API'sinden çek
       try {
@@ -226,13 +246,65 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
-    
     if (field === "name") {
       setSearchTerm(value);
     }
-    
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  // Kategori ekle/düzenle modalı için değişiklikler
+  const handleCategoryFormChange = (field, value) => {
+    setCategoryForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCategorySave = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      if (categoryEditMode) {
+        // Düzenle
+        await axios.put(`http://localhost:5000/api/StockCategories/${categoryForm.id}`, categoryForm, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        // Ekle
+        await axios.post("http://localhost:5000/api/StockCategories", categoryForm, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      setShowCategoryModal(false);
+      setCategoryForm({ id: '', name: '', code: '', description: '', parentId: '', isActive: true });
+      setCategoryEditMode(false);
+      fetchModalData();
+    } catch (err) {
+      alert("Kategori kaydedilemedi: " + (err.message || "Bilinmeyen hata"));
+    }
+  };
+
+  const handleCategoryEdit = (cat) => {
+    setCategoryForm({
+      id: cat.id,
+      name: cat.name,
+      code: cat.code,
+      description: cat.description,
+      parentId: cat.parentId || '',
+      isActive: cat.isActive
+    });
+    setCategoryEditMode(true);
+    setShowCategoryModal(true);
+  };
+
+  const handleCategoryDelete = async (catId) => {
+    if (!window.confirm("Kategoriyi silmek istediğinize emin misiniz?")) return;
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`http://localhost:5000/api/StockCategories/${catId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchModalData();
+    } catch (err) {
+      alert("Kategori silinemedi: " + (err.message || "Bilinmeyen hata"));
     }
   };
 
@@ -417,25 +489,27 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
               {/* Temel Bilgiler */}
               <div className="bg-gray-50 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Temel Bilgiler</h3>
+                {/* Lokasyon yukarıda tek satırda */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Lokasyon (Depo) *
+                  </label>
+                  <select
+                    value={form.locationId}
+                    onChange={e => handleChange("locationId", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
+                  >
+                    <option value="">Lokasyon Seçiniz</option>
+                    {locations.map((location) => (
+                      <option key={location.id} value={location.id.toString()}>
+                        {location.code} - {location.name}
+                        {location.capacity && ` (Kapasite: ${location.capacity} ${location.capacityUnit || ''})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {/* Diğer alanlar yan yana */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lokasyon (Depo) *
-                    </label>
-                    <select
-                      value={form.locationId}
-                      onChange={e => handleChange("locationId", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent"
-                    >
-                      <option value="">Lokasyon Seçiniz</option>
-                      {locations.map((location) => (
-                        <option key={location.id} value={location.id.toString()}>
-                          {location.code} - {location.name}
-                          {location.capacity && ` (Kapasite: ${location.capacity} ${location.capacityUnit || ''})`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Stok Kodu
@@ -460,7 +534,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
 
                   <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Malzeme Adı * <IconSearch size={14} className="inline ml-1 text-gray-400" />
+                      Stok Adı * <IconSearch size={14} className="inline ml-1 text-gray-400" />
                     </label>
                     <input
                       type="text"
@@ -493,8 +567,11 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Stok Türü *
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
+                      <span>Stok Türü *</span>
+                      <button type="button" className="ml-2 px-2 py-1 text-xs bg-ivosis-100 text-ivosis-700 rounded hover:bg-ivosis-200" onClick={() => { setShowCategoryModal(true); setCategoryEditMode(false); setCategoryForm({ id: '', name: '', code: '', description: '', parentId: '', isActive: true }); }}>
+                        Kategori Ekle
+                      </button>
                     </label>
                     <select
                       value={form.categoryId}
@@ -505,15 +582,31 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     >
                       <option value="">Kategori Seçiniz</option>
                       {Array.isArray(categories) && categories.length > 0 ? (
-                        categories.map((category) => (
+                        categories.filter(cat => cat.isActive !== false).map((category) => (
                           <option key={category.id} value={category.id.toString()}>
-                            {category.name}
+                            {category.code ? `${category.code} - ` : ""}{category.name}
                           </option>
                         ))
                       ) : (
                         <option value="" disabled>Kategoriler yükleniyor...</option>
                       )}
                     </select>
+                    {/* Alt kategori seçimi */}
+                    {form.categoryId && categories.some(cat => cat.parentId && cat.parentId.toString() === form.categoryId) && (
+                      <div className="mt-2">
+                        <label className="block text-xs text-gray-600 mb-1">Alt Kategori Seçiniz</label>
+                        <select
+                          value={form.subCategoryId || ''}
+                          onChange={e => handleChange("subCategoryId", e.target.value)}
+                          className="w-full px-2 py-1 border border-gray-300 rounded-lg"
+                        >
+                          <option value="">Alt Kategori Seçiniz</option>
+                          {categories.filter(cat => cat.parentId && cat.parentId.toString() === form.categoryId).map(subCat => (
+                            <option key={subCat.id} value={subCat.id.toString()}>{subCat.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     {errors.categoryId && (
                       <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
                     )}
@@ -551,6 +644,48 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                       }
                       return null;
                     })()}
+                    {/* Kategori yönetimi modalı */}
+                    {showCategoryModal && (
+                      <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+                          <h3 className="text-lg font-bold mb-4">{categoryEditMode ? "Kategori Düzenle" : "Yeni Kategori Ekle"}</h3>
+                          <div className="space-y-3">
+                            <input type="text" value={categoryForm.name} onChange={e => handleCategoryFormChange('name', e.target.value)} placeholder="Kategori Adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                            <input type="text" value={categoryForm.code} onChange={e => handleCategoryFormChange('code', e.target.value)} placeholder="Kategori Kodu" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                            <textarea value={categoryForm.description} onChange={e => handleCategoryFormChange('description', e.target.value)} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                            <select value={categoryForm.parentId} onChange={e => handleCategoryFormChange('parentId', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                              <option value="">Üst Kategori Yok</option>
+                              {categories.filter(cat => cat.id !== categoryForm.id).map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                              ))}
+                            </select>
+                            <div className="flex items-center">
+                              <input type="checkbox" checked={categoryForm.isActive} onChange={e => handleCategoryFormChange('isActive', e.target.checked)} className="h-4 w-4 text-ivosis-600 border-gray-300 rounded" />
+                              <label className="ml-2 text-sm">Aktif</label>
+                            </div>
+                          </div>
+                          <div className="flex justify-end space-x-2 mt-6">
+                            {categoryEditMode && (
+                              <button type="button" className="px-4 py-2 bg-red-100 text-red-700 rounded" onClick={() => handleCategoryDelete(categoryForm.id)}>Sil</button>
+                            )}
+                            <button type="button" className="px-4 py-2 bg-gray-100 text-gray-700 rounded" onClick={() => { setShowCategoryModal(false); setCategoryEditMode(false); }}>İptal</button>
+                            <button type="button" className="px-4 py-2 bg-ivosis-600 text-white rounded" onClick={handleCategorySave}>{categoryEditMode ? "Güncelle" : "Ekle"}</button>
+                          </div>
+                          {/* Kategori listesi */}
+                          <div className="mt-6">
+                            <h4 className="text-sm font-semibold mb-2">Mevcut Kategoriler</h4>
+                            <ul className="max-h-32 overflow-y-auto">
+                              {categories.map(cat => (
+                                <li key={cat.id} className="flex justify-between items-center py-1 border-b border-gray-100">
+                                  <span>{cat.code ? `${cat.code} - ` : ""}{cat.name}</span>
+                                  <button type="button" className="text-xs text-ivosis-600 hover:underline" onClick={() => handleCategoryEdit(cat)}>Düzenle</button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>

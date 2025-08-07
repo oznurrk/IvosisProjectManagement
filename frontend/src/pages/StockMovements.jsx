@@ -249,7 +249,8 @@ const StockMovements = () => {
       });
       await fetchAllData();
       setShowStockInModal(false);
-      alert('Stok girişi başarıyla kaydedildi!');
+      window.location.reload();
+      // alert('Stok girişi başarıyla kaydedildi!');
     } catch (error) {
       console.error('Stok girişi hatası:', error);
       let errorMessage = 'Stok girişi kaydedilemedi';
@@ -299,7 +300,8 @@ const StockMovements = () => {
 
       await fetchAllData();
       setShowStockOutModal(false);
-      alert('Stok çıkışı başarıyla kaydedildi!');
+      window.location.reload();
+      // alert('Stok çıkışı başarıyla kaydedildi!');
     } catch (error) {
       console.error('Stok çıkışı hatası:', error);
       let errorMessage = 'Stok çıkışı kaydedilemedi';
@@ -337,7 +339,8 @@ const StockMovements = () => {
       });
       await fetchAllData();
       setShowStockTransferModal(false);
-      alert('Transfer işlemi başarıyla kaydedildi!');
+      window.location.reload();
+      // alert('Transfer işlemi başarıyla kaydedildi!');
     } catch (error) {
       alert('Transfer işlemi başarısız: ' + (error.message || 'Bilinmeyen hata'));
     }
@@ -821,26 +824,44 @@ const StockMovements = () => {
         initialValues={editModalType === 'transfer' ? editMovement : undefined}
       />
 
-      {/* Stok Hareketi Ekle */}
-      <div className="fixed bottom-4 right-4 flex space-x-2">
-        <button
-          onClick={() => setShowStockInModal(true)}
-          className="bg-green-500 text-white p-3 rounded-full shadow-lg hover:bg-green-600"
-        >
-          <IconPlus className="h-6 w-6" />
-        </button>
-        <button
-          onClick={() => setShowStockOutModal(true)}
-          className="bg-red-500 text-white p-3 rounded-full shadow-lg hover:bg-red-600"
-        >
-          <IconMinus className="h-6 w-6" />
-        </button>
-        <button
-          onClick={() => setShowStockTransferModal(true)}
-          className="bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600"
-        >
-          <IconTransfer className="h-6 w-6" />
-        </button>
+      {/* Stok Hareketi Ekle - Responsive FAB Butonları */}
+      <div className="fixed bottom-4 right-4 flex flex-row items-end space-x-2 z-50 md:bottom-6 md:right-6 md:space-x-4">
+        {/* Stok Girişi */}
+        <div className="relative group">
+          <button
+            onClick={() => setShowStockInModal(true)}
+            className="bg-green-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-green-600 transition-all duration-300"
+          >
+            <IconPlus className="h-5 w-5 md:h-6 md:w-6" />
+          </button>
+          <span className="absolute bottom-14 right-1/2 translate-x-1/2 px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm bg-gray-900 text-white rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+            Stok Girişi
+          </span>
+        </div>
+        {/* Stok Çıkışı */}
+        <div className="relative group">
+          <button
+            onClick={() => setShowStockOutModal(true)}
+            className="bg-red-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-red-600 transition-all duration-300"
+          >
+            <IconMinus className="h-5 w-5 md:h-6 md:w-6" />
+          </button>
+          <span className="absolute bottom-14 right-1/2 translate-x-1/2 px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm bg-gray-900 text-white rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+            Stok Çıkışı
+          </span>
+        </div>
+        {/* Stok Transferi */}
+        <div className="relative group">
+          <button
+            onClick={() => setShowStockTransferModal(true)}
+            className="bg-blue-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300"
+          >
+            <IconTransfer className="h-5 w-5 md:h-6 md:w-6" />
+          </button>
+          <span className="absolute bottom-14 right-1/2 translate-x-1/2 px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm bg-gray-900 text-white rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+            Stok Transferi
+          </span>
+        </div>
       </div>
     </div>
   );
