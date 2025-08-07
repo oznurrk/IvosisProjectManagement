@@ -44,7 +44,7 @@ namespace IvosisProjectManagement.API.Data
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 // BaseEntity ilişkileri
-                if (typeof(CommonBaseEntity).IsAssignableFrom(entityType.ClrType)&& 
+                if (typeof(CommonBaseEntity).IsAssignableFrom(entityType.ClrType) &&
                     entityType.ClrType != typeof(Unit))
                 {
                     modelBuilder.Entity(entityType.ClrType)
@@ -98,39 +98,39 @@ namespace IvosisProjectManagement.API.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             // User Configuration
-           modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).HasMaxLength(100);
-                entity.Property(e => e.Email).HasMaxLength(100);
-                entity.Property(e => e.Password).HasMaxLength(500);
-                entity.Property(e => e.Role).HasMaxLength(50);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
-                entity.HasIndex(e => e.Email).IsUnique();
+            modelBuilder.Entity<User>(entity =>
+             {
+                 entity.HasKey(e => e.Id);
+                 entity.Property(e => e.Name).HasMaxLength(100);
+                 entity.Property(e => e.Email).HasMaxLength(100);
+                 entity.Property(e => e.Password).HasMaxLength(500);
+                 entity.Property(e => e.Role).HasMaxLength(50);
+                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                 entity.HasIndex(e => e.Email).IsUnique();
 
-                // Company relationship
-                entity.HasOne(u => u.Company)
-                    .WithMany(c => c.Users)
-                    .HasForeignKey(u => u.CompanyId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                 // Company relationship
+                 entity.HasOne(u => u.Company)
+                     .WithMany(c => c.Users)
+                     .HasForeignKey(u => u.CompanyId)
+                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Department relationship
-                entity.HasOne(u => u.Department)
-                    .WithMany(d => d.Users)
-                    .HasForeignKey(u => u.DepartmentId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                 // Department relationship
+                 entity.HasOne(u => u.Department)
+                     .WithMany(d => d.Users)
+                     .HasForeignKey(u => u.DepartmentId)
+                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Self-referencing relationships
-                entity.HasOne(u => u.CreatedByUser)
-                    .WithMany()
-                    .HasForeignKey(u => u.CreatedBy)
-                    .OnDelete(DeleteBehavior.Restrict);
+                 // Self-referencing relationships
+                 entity.HasOne(u => u.CreatedByUser)
+                     .WithMany()
+                     .HasForeignKey(u => u.CreatedBy)
+                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(u => u.UpdatedByUser)
-                    .WithMany()
-                    .HasForeignKey(u => u.UpdatedBy)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
+                 entity.HasOne(u => u.UpdatedByUser)
+                     .WithMany()
+                     .HasForeignKey(u => u.UpdatedBy)
+                     .OnDelete(DeleteBehavior.Restrict);
+             });
 
             // Personnel Configuration
             modelBuilder.Entity<Personnel>(entity =>
@@ -245,7 +245,7 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.Priority).HasMaxLength(50);
                 entity.Property(e => e.Status).HasMaxLength(50);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
-                
+
                 // Decimal precision ayarları
                 entity.Property(e => e.AcValue).HasPrecision(18, 2);
                 entity.Property(e => e.AdditionalPanelPower).HasPrecision(18, 2);
@@ -293,12 +293,12 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
 
                 // FilePath JSON conversion
-               entity.Property(e => e.FilePath)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                    v => string.IsNullOrWhiteSpace(v)
-                        ? new List<string>()
-                        : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null));
+                entity.Property(e => e.FilePath)
+                 .HasConversion(
+                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                     v => string.IsNullOrWhiteSpace(v)
+                         ? new List<string>()
+                         : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null));
 
                 entity.HasOne(pt => pt.Project)
                     .WithMany(p => p.ProjectTasks)
@@ -470,6 +470,12 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.Currency).HasDefaultValue("TRY");
 
+                entity.Property(e => e.MinimumStock).HasPrecision(18, 2);
+                entity.Property(e => e.MaximumStock).HasPrecision(18, 2);
+                entity.Property(e => e.ReorderLevel).HasPrecision(18, 2);
+                entity.Property(e => e.PurchasePrice).HasPrecision(18, 2);
+                entity.Property(e => e.SalePrice).HasPrecision(18, 2);
+
                 entity.HasOne(e => e.Category)
                     .WithMany(e => e.StockItems)
                     .HasForeignKey(e => e.CategoryId)
@@ -478,11 +484,6 @@ namespace IvosisProjectManagement.API.Data
                 entity.HasOne(e => e.Unit)
                     .WithMany(e => e.StockItems)
                     .HasForeignKey(e => e.UnitId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(e => e.CreatedByUser)
-                    .WithMany(e => e.CreatedStockItems)
-                    .HasForeignKey("CreatedBy")
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -520,40 +521,40 @@ namespace IvosisProjectManagement.API.Data
             modelBuilder.Entity<StockBalance>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                
+
                 entity.Property(e => e.StockItemId)
                     .IsRequired();
-                    
+
                 entity.Property(e => e.LocationId)
                     .IsRequired();
-                    
+
                 entity.Property(e => e.CurrentQuantity)
                     .HasColumnType("decimal(18,2)")
                     .HasDefaultValue(0);
-                    
+
                 entity.Property(e => e.ReservedQuantity)
                     .HasColumnType("decimal(18,2)")
                     .HasDefaultValue(0);
-                    
+
                 // AvailableQuantity'yi veritabanı kolonu olarak tanımla
                 entity.Property(e => e.AvailableQuantity)
                     .HasComputedColumnSql("[CurrentQuantity] - [ReservedQuantity]")
                     .HasColumnType("decimal(18,2)");
-                            
+
                 entity.Property(e => e.LastUpdateDate)
                     .HasDefaultValueSql("GETDATE()");
-                    
+
                 // Foreign Key relationships
                 entity.HasOne(e => e.StockItem)
                     .WithMany(s => s.StockBalances)
                     .HasForeignKey(e => e.StockItemId)
                     .OnDelete(DeleteBehavior.Restrict);
-                    
+
                 entity.HasOne(e => e.Location)
                     .WithMany(l => l.StockBalances)
                     .HasForeignKey(e => e.LocationId)
                     .OnDelete(DeleteBehavior.Restrict);
-                    
+
                 // Index'ler
                 entity.HasIndex(e => new { e.StockItemId, e.LocationId })
                     .IsUnique()
@@ -611,6 +612,12 @@ namespace IvosisProjectManagement.API.Data
 
                 entity.HasIndex(e => new { e.SupplierId, e.CompanyId }).IsUnique();
             });
+            modelBuilder.Entity<UserActivityLog>()
+                    .HasOne(u => u.User)
+                    .WithMany(u => u.ActivityLogs)
+                    .HasForeignKey(u => u.UserId);
+
+               
         }
 
     }

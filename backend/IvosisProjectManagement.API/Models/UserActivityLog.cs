@@ -19,6 +19,7 @@ namespace IvosisProjectManagement.API.Models
         public string? AdditionalInfo { get; set; }
 
         // Navigation property
+        [ForeignKey("UserId")]
         public User User { get; set; } = null!;
     }
 }

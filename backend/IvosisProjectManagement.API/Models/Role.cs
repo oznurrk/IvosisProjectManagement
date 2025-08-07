@@ -41,6 +41,7 @@ namespace IvosisProjectManagement.API.Models
 
         [ForeignKey("DepartmentId")]
         public virtual Department? Department { get; set; }
+        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
     }
 }
