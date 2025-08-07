@@ -90,10 +90,10 @@ namespace IvosisProjectManagement.API.Controllers
                 dtos = new List<ProjectTaskCreateDto> { single };
             }
 
-            // Hepsine CreatedByUserId ekle
+            // Hepsine CreatedBy ekle
             foreach (var dto in dtos)
             {
-                dto.CreatedByUserId = userId;
+                dto.CreatedBy = userId;
             }
 
             var result = await _service.CreateManyAsync(dtos);
@@ -104,8 +104,8 @@ namespace IvosisProjectManagement.API.Controllers
         [LogActivity(ActivityType.Update, "ProjectTask")]
         public async Task<IActionResult> Update(int id, ProjectTaskUpdateDto dto)
         {
-            // UpdatedByUserId'yi set et
-            dto.UpdatedByUserId = GetCurrentUserId();
+            // UpdatedBy'yi set et
+            dto.UpdatedBy = GetCurrentUserId();
             
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();

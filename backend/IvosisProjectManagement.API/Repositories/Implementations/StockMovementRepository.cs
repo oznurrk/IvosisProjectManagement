@@ -84,7 +84,7 @@ public class StockMovementRepository : BaseRepository<StockMovement>, IStockMove
                 MovementDate = x.MovementDate,
                 CategoryName = x.StockItem.Category.Name,
                 CreatedAt = x.CreatedAt,
-                CreatedBy = x.CreatedBy,
+                CreatedBy = x.CreatedBy ?? 0,
                 CreatedByName = x.CreatedByUser.Name
             }).ToListAsync();
 

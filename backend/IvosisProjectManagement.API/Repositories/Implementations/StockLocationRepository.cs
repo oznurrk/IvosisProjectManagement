@@ -33,7 +33,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     ItemCount = x.StockBalances.Count,
                     TotalValue = x.StockBalances.Sum(b => b.CurrentQuantity * (b.StockItem != null ? b.StockItem.PurchasePrice : 0)),
                     CreatedAt = x.CreatedAt,
-                    CreatedBy = x.CreatedBy,
+                    CreatedBy = x.CreatedBy ?? 0,
                     CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name : ""
                 })
                 .ToListAsync();

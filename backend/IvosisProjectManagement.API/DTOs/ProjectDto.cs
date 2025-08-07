@@ -53,10 +53,10 @@ namespace IvosisProjectManagement.API.DTOs
 
         // Audit bilgileri
         public DateTime CreatedAt { get; set; }
-        public int? CreatedByUserId { get; set; }
+        public int? CreatedBy { get; set; }
         public string? CreatedByUserName { get; set; } // EKSİKTİ
         public DateTime? UpdatedAt { get; set; }
-        public int? UpdatedByUserId { get; set; }
+        public int? UpdatedBy { get; set; }
         public string? UpdatedByUserName { get; set; } // EKSİKTİ
         public List<ProjectAddressDto> Address { get; set; } = new(); // Çoklu adres
          

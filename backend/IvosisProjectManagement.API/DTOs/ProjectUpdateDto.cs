@@ -18,7 +18,7 @@ namespace IvosisProjectManagement.API.DTOs
         public int? AdditionalPanelCount { get; set; }
         public int? AdditionalInverterCount { get; set; }
         public decimal? AdditionalPanelPower { get; set; }
-        public int UpdatedByUserId { get; set; }
+        public int UpdatedBy { get; set; }
         public decimal ACValue { get; set; }
         public decimal DCValue { get; set; }
         public int ProjectTypeId { get; set; }

@@ -48,7 +48,7 @@ namespace IvosisProjectManagement.API.Services
                 Description = dto.Description ?? string.Empty,
                 ParentProcessId = dto.ParentProcessId,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = dto.CreatedByUserId
+                CreatedBy = dto.CreatedBy
             };
 
             _context.Processes.Add(process);
@@ -61,7 +61,7 @@ namespace IvosisProjectManagement.API.Services
                 Description = process.Description,
                 ParentProcessId = process.ParentProcessId,
                 CreatedAt = DateTime.UtcNow,
-                CreatedByUserId = process.CreatedBy
+                CreatedBy = process.CreatedBy ?? 0
             };
         }
 
@@ -73,7 +73,7 @@ namespace IvosisProjectManagement.API.Services
             process.Name = dto.Name;
             process.Description = dto.Description ?? string.Empty;
             process.UpdatedAt = DateTime.Now;
-            process.UpdatedBy = dto.UpdatedByUserId;
+            process.UpdatedBy = dto.UpdatedBy;
 
             _context.Processes.Update(process);
             return await _context.SaveChangesAsync() > 0;
@@ -105,10 +105,10 @@ namespace IvosisProjectManagement.API.Services
                     ParentProcessName = p.ParentProcess != null ? p.ParentProcess.Name : null,
                     CompanyId = p.CompanyId,
                     CreatedAt = p.CreatedAt,
-                    CreatedByUserId = p.CreatedBy,
+                    CreatedBy = p.CreatedBy ?? 0,
                     CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
                     UpdatedAt = p.UpdatedAt,
-                    UpdatedByUserId = p.UpdatedBy,
+                    UpdatedBy = p.UpdatedBy,
                     UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null
                 })
                 .ToListAsync();

@@ -52,7 +52,7 @@ namespace IvosisProjectManagement.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(TaskItemCreateDto dto)
         {
-            dto.CreatedByUserId = GetCurrentUserId();
+            dto.CreatedBy = GetCurrentUserId();
 
             var created = await _taskService.CreateAsync(dto);
 
@@ -68,7 +68,7 @@ namespace IvosisProjectManagement.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, TaskItemUpdateDto dto)
         {
-            dto.UpdatedByUserId = GetCurrentUserId();
+            dto.UpdatedBy = GetCurrentUserId();
 
             var oldTask = await _taskService.GetByIdAsync(id);
             if (oldTask == null) return NotFound();

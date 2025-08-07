@@ -13,6 +13,6 @@ namespace IvosisProjectManagement.API.DTOs
         public List<string> FilePath { get; set; }
         public List<string> FileNames =>
             FilePath?.Select(IvosisProjectManagement.API.Helpers.FileHelper.ExtractOriginalFileName).ToList() ?? new();
-        public int CreatedByUserId { get; set; }
+        public int CreatedBy { get; set; }
     }
 }

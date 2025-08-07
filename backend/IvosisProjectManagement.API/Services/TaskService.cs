@@ -24,9 +24,9 @@ namespace IvosisProjectManagement.API.Services
                     Title = t.Title,
                     Description = t.Description,
                     CreatedAt = t.CreatedAt,
-                    CreatedByUserId = t.CreatedBy,
+                    CreatedBy = t.CreatedBy ?? 0,
                     UpdatedAt = t.UpdatedAt,
-                    UpdatedByUserId = t.UpdatedBy
+                    UpdatedBy = t.UpdatedBy
                 })
                 .ToListAsync();
         }
@@ -43,9 +43,9 @@ namespace IvosisProjectManagement.API.Services
                 Title = task.Title,
                 Description = task.Description,
                 CreatedAt = task.CreatedAt,
-                CreatedByUserId = task.CreatedBy,
+                CreatedBy = task.CreatedBy ?? 0,
                 UpdatedAt = task.UpdatedAt,
-                UpdatedByUserId = task.UpdatedBy
+                UpdatedBy = task.UpdatedBy
             };
         }
 
@@ -60,9 +60,9 @@ namespace IvosisProjectManagement.API.Services
                     Title = t.Title,
                     Description = t.Description,
                     CreatedAt = t.CreatedAt,
-                    CreatedByUserId = t.CreatedBy,
+                    CreatedBy = t.CreatedBy ?? 0,
                     UpdatedAt = t.UpdatedAt,
-                    UpdatedByUserId = t.UpdatedBy
+                    UpdatedBy = t.UpdatedBy
                 })
                 .ToListAsync();
 
@@ -77,7 +77,7 @@ namespace IvosisProjectManagement.API.Services
                 Title = dto.Title,
                 Description = dto.Description,
                 CreatedAt = DateTime.Now,
-                CreatedBy = dto.CreatedByUserId
+                CreatedBy = dto.CreatedBy
             };
 
             _context.Tasks.Add(task);
@@ -90,7 +90,7 @@ namespace IvosisProjectManagement.API.Services
                 Title = task.Title,
                 Description = task.Description,
                 CreatedAt = task.CreatedAt,
-                CreatedByUserId = task.CreatedBy
+                CreatedBy = task.CreatedBy ?? 0
             };
         }
 
@@ -102,7 +102,7 @@ namespace IvosisProjectManagement.API.Services
             task.Title = dto.Title;
             task.Description = dto.Description;
             task.UpdatedAt = DateTime.Now;
-            task.UpdatedBy = dto.UpdatedByUserId;
+            task.UpdatedBy = dto.UpdatedBy;
 
             _context.Tasks.Update(task);
             return await _context.SaveChangesAsync() > 0;

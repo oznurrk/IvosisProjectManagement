@@ -16,9 +16,9 @@ namespace IvosisProjectManagement.API.DTOs
             FilePath?.Select(IvosisProjectManagement.API.Helpers.FileHelper.ExtractOriginalFileName).ToList() ?? new();
 
         public DateTime CreatedAt { get; set; }
-        public int CreatedByUserId { get; set; }
+        public int CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        public int? UpdatedByUserId { get; set; }
+        public int? UpdatedBy { get; set; }
         public string? ProjectName { get; set; }
         public string? TaskTitle { get; set; }
         public string? ProcessName { get; set; }

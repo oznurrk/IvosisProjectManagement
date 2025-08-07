@@ -31,10 +31,6 @@ namespace IvosisProjectManagement.API.Controllers
         {
             // Kullanıcıyı firma ve departman bilgileri ile birlikte al
             var user = await _context.Users
-                .Include(u => u.Company)
-                .Include(u => u.Department)
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
             if (user == null)
@@ -43,6 +39,34 @@ namespace IvosisProjectManagement.API.Controllers
             bool passwordMatches = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password);
             if (!passwordMatches)
                 return Unauthorized("Geçersiz şifre.");
+                 Company? company = null;
+
+            if (user.CompanyId.HasValue)
+            {
+                company = await _context.Companies
+                    .FirstOrDefaultAsync(c => c.Id == user.CompanyId.Value);
+            }
+
+            // Department bilgilerini ayrı sorgu ile al
+            Department? department = null;
+            if (user.DepartmentId.HasValue)
+            {
+                department = await _context.Departments
+                    .FirstOrDefaultAsync(d => d.Id == user.DepartmentId.Value);
+            }
+
+            var userRoles = await _context.UserRoles
+                .Where(ur => ur.UserId == user.Id && ur.IsActive)
+                .Join(_context.Roles,
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => new { 
+                        roleId = r.Id,
+                        roleName = r.Name,
+                        roleCode = r.Code,
+                        scope = r.Scope
+                    })
+                .ToListAsync();
 
             var token = GenerateJwtToken(user);
             

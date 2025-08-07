@@ -27,7 +27,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     IsActive = x.IsActive,
                     ItemCount = x.StockItems.Count,
                     CreatedAt = x.CreatedAt,
-                    CreatedBy = x.CreatedBy,
+                    CreatedBy = x.CreatedBy ?? 0,
                     CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name : "",
                     UpdatedAt = x.UpdatedAt,
                     UpdatedBy = x.UpdatedBy,
@@ -55,7 +55,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     IsActive = x.IsActive,
                     ItemCount = x.StockItems.Count,
                     CreatedAt = x.CreatedAt,
-                    CreatedBy = x.CreatedBy,
+                    CreatedBy = x.CreatedBy ?? 0,
                     CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name : ""
                 })
                 .FirstOrDefaultAsync();

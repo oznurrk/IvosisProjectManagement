@@ -98,7 +98,7 @@ namespace IvosisProjectManagement.API.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             // User Configuration
-            modelBuilder.Entity<User>(entity =>
+           modelBuilder.Entity<User>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).HasMaxLength(100);
@@ -108,24 +108,27 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
                 entity.HasIndex(e => e.Email).IsUnique();
 
+                // Company relationship
                 entity.HasOne(u => u.Company)
                     .WithMany(c => c.Users)
                     .HasForeignKey(u => u.CompanyId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                // Department relationship
                 entity.HasOne(u => u.Department)
                     .WithMany(d => d.Users)
                     .HasForeignKey(u => u.DepartmentId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                // Self-referencing relationships
                 entity.HasOne(u => u.CreatedByUser)
                     .WithMany()
-                    .HasForeignKey("CreatedByUserId")
+                    .HasForeignKey(u => u.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(u => u.UpdatedByUser)
                     .WithMany()
-                    .HasForeignKey("UpdatedByUserId")
+                    .HasForeignKey(u => u.UpdatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

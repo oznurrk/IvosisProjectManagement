@@ -112,7 +112,7 @@ namespace IvosisProjectManagement.API.Controllers
         public async Task<IActionResult> Create(ProjectCreateDto dto)
         {
             var userId = GetCurrentUserId();
-            dto.CreatedByUserId = userId;
+            dto.CreatedBy = userId;
             
             // CompanyId kontrolü - eğer belirtilmemişse kullanıcının firmasını kullan
             if (!dto.CompanyId.HasValue)
@@ -135,7 +135,7 @@ namespace IvosisProjectManagement.API.Controllers
         [LogActivity(ActivityType.Update, "Project")]
         public async Task<IActionResult> Update(int id, ProjectUpdateDto dto)
         {
-            dto.UpdatedByUserId = GetCurrentUserId();
+            dto.UpdatedBy = GetCurrentUserId();
 
             var updated = await _projectService.UpdateAsync(id, dto);
             if (!updated) return NotFound();
