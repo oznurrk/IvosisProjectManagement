@@ -140,8 +140,8 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.Email).HasMaxLength(150);
                 entity.Property(e => e.IBAN).HasMaxLength(26);
                 entity.Property(e => e.WorkStatus).HasMaxLength(20).HasDefaultValue("Aktif");
-                entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETDATE()");
-                entity.Property(e => e.UpdatedDate).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.Salary).HasPrecision(18, 2);
 
                 entity.HasIndex(e => e.SicilNo).IsUnique();
@@ -272,12 +272,12 @@ namespace IvosisProjectManagement.API.Data
 
                 entity.HasOne(p => p.CreatedByUser)
                     .WithMany(u => u.CreatedProjects)
-                    .HasForeignKey(p => p.CreatedByUserId)
+                    .HasForeignKey(p => p.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(p => p.UpdatedByUser)
                     .WithMany(u => u.UpdatedProjects)
-                    .HasForeignKey(p => p.UpdatedByUserId)
+                    .HasForeignKey(p => p.UpdatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -319,17 +319,17 @@ namespace IvosisProjectManagement.API.Data
 
                 entity.HasOne(pt => pt.CreatedByUser)
                     .WithMany(u => u.CreatedProjectTasks)
-                    .HasForeignKey(pt => pt.CreatedByUserId)
+                    .HasForeignKey(pt => pt.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(pt => pt.UpdatedByUser)
                     .WithMany(u => u.UpdatedProjectTasks)
-                    .HasForeignKey(pt => pt.UpdatedByUserId)
+                    .HasForeignKey(pt => pt.UpdatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(e => e.ProjectId);
                 entity.HasIndex(e => e.AssignedUserId);
-                entity.HasIndex(e => e.CreatedByUserId);
+                entity.HasIndex(e => e.CreatedBy);
             });
 
             // Process Configuration
@@ -347,12 +347,12 @@ namespace IvosisProjectManagement.API.Data
 
                 entity.HasOne(p => p.CreatedByUser)
                     .WithMany(u => u.CreatedProcesses)
-                    .HasForeignKey(p => p.CreatedByUserId)
+                    .HasForeignKey(p => p.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(p => p.UpdatedByUser)
                     .WithMany(u => u.UpdatedProcesses)
-                    .HasForeignKey(p => p.UpdatedByUserId)
+                    .HasForeignKey(p => p.UpdatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(p => p.Company)
@@ -374,12 +374,12 @@ namespace IvosisProjectManagement.API.Data
 
                 entity.HasOne(e => e.CreatedByUser)
                     .WithMany(u => u.CreatedTasks)
-                    .HasForeignKey(e => e.CreatedByUserId)
+                    .HasForeignKey(e => e.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.UpdatedByUser)
                     .WithMany(u => u.UpdatedTasks)
-                    .HasForeignKey(e => e.UpdatedByUserId)
+                    .HasForeignKey(e => e.UpdatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.Company)

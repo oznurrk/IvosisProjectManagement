@@ -44,8 +44,8 @@ namespace IvosisProjectManagement.API.Services
                     IBAN = p.IBAN,
                     Photo = p.Photo,
                     WorkStatus = p.WorkStatus,
-                    CreatedDate = p.CreatedDate,
-                    UpdatedDate = p.UpdatedDate
+                    CreatedDate = p.CreatedAt,
+                    UpdatedDate = p.UpdatedAt
                 })
                 .ToListAsync();
         }
@@ -81,8 +81,8 @@ namespace IvosisProjectManagement.API.Services
                 IBAN = personnel.IBAN,
                 Photo = personnel.Photo,
                 WorkStatus = personnel.WorkStatus,
-                CreatedDate = personnel.CreatedDate,
-                UpdatedDate = personnel.UpdatedDate
+                CreatedDate = personnel.CreatedAt,
+                UpdatedDate = personnel.UpdatedAt
             };
         }
 
@@ -117,8 +117,8 @@ namespace IvosisProjectManagement.API.Services
                 IBAN = personnel.IBAN,
                 Photo = personnel.Photo,
                 WorkStatus = personnel.WorkStatus,
-                CreatedDate = personnel.CreatedDate,
-                UpdatedDate = personnel.UpdatedDate
+                CreatedDate = personnel.CreatedAt,
+                UpdatedDate = personnel.UpdatedAt
             };
         }
 
@@ -151,8 +151,8 @@ namespace IvosisProjectManagement.API.Services
                 IBAN = dto.IBAN,
                 Photo = dto.Photo,
                 WorkStatus = dto.WorkStatus,
-                CreatedDate = DateTime.Now,
-                UpdatedDate = DateTime.Now
+                CreatedAt = DateTime.Now,
+                UpdatedAt= DateTime.Now
             };
 
             _context.Personnel.Add(personnel);
@@ -188,8 +188,8 @@ namespace IvosisProjectManagement.API.Services
                 IBAN = personnel.IBAN,
                 Photo = personnel.Photo,
                 WorkStatus = personnel.WorkStatus,
-                CreatedDate = personnel.CreatedDate,
-                UpdatedDate = personnel.UpdatedDate
+                CreatedDate = personnel.CreatedAt,
+                UpdatedDate = personnel.UpdatedAt
             };
         }
 
@@ -221,7 +221,7 @@ namespace IvosisProjectManagement.API.Services
             personnel.IBAN = dto.IBAN;
             personnel.Photo = dto.Photo;
             personnel.WorkStatus = dto.WorkStatus;
-            personnel.UpdatedDate = DateTime.Now;
+            personnel.UpdatedAt = DateTime.Now;
 
             _context.Personnel.Update(personnel);
             return await _context.SaveChangesAsync() > 0;
@@ -283,8 +283,8 @@ namespace IvosisProjectManagement.API.Services
                     IBAN = p.IBAN,
                     Photo = p.Photo,
                     WorkStatus = p.WorkStatus,
-                    CreatedDate = p.CreatedDate,
-                    UpdatedDate = p.UpdatedDate
+                    CreatedDate = p.CreatedAt,
+                    UpdatedDate = p.UpdatedAt
                 })
                 .ToListAsync();
         }
@@ -319,8 +319,8 @@ namespace IvosisProjectManagement.API.Services
                     IBAN = p.IBAN,
                     Photo = p.Photo,
                     WorkStatus = p.WorkStatus,
-                    CreatedDate = p.CreatedDate,
-                    UpdatedDate = p.UpdatedDate
+                    CreatedDate = p.CreatedAt,
+                    UpdatedDate = p.UpdatedAt
                 })
                 .ToListAsync();
         }

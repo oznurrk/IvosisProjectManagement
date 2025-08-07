@@ -50,7 +50,7 @@ namespace IvosisProjectManagement.API.Services
                     AdditionalInverterCount = p.AdditionalInverterCount,
                     AdditionalPanelPower = p.AdditionalPanelPower,
                     CreatedAt = p.CreatedAt,
-                    CreatedByUserId = p.CreatedByUserId,
+                    CreatedByUserId = p.CreatedBy,
                     UpdatedAt = p.UpdatedAt,
                     ProjeGesType = p.ProjeGesType
                 }).ToListAsync();
@@ -95,7 +95,7 @@ namespace IvosisProjectManagement.API.Services
                 AdditionalInverterCount = project.AdditionalInverterCount,
                 AdditionalPanelPower = project.AdditionalPanelPower,
                 CreatedAt = project.CreatedAt,
-                CreatedByUserId = project.CreatedByUserId,
+                CreatedByUserId = project.CreatedBy,
                 UpdatedAt = project.UpdatedAt,
                 ProjeGesType = project.ProjeGesType
             };
@@ -111,7 +111,7 @@ namespace IvosisProjectManagement.API.Services
                 EndDate = dto.EndDate ?? DateTime.Now.AddDays(15), 
                 Priority = dto.Priority,
                 Status = dto.Status,
-                CreatedByUserId = dto.CreatedByUserId,
+                CreatedBy = dto.CreatedByUserId,
                 CreatedAt = DateTime.UtcNow,
                 AcValue = dto.ACValue,
                 DcValue = dto.DCValue,
@@ -172,7 +172,7 @@ namespace IvosisProjectManagement.API.Services
                 AdditionalInverterCount = project.AdditionalInverterCount,
                 AdditionalPanelPower = project.AdditionalPanelPower,
                 CreatedAt = project.CreatedAt,
-                CreatedByUserId = project.CreatedByUserId ?? 0
+                CreatedByUserId = project.CreatedBy
             };
         }
 
@@ -193,7 +193,7 @@ namespace IvosisProjectManagement.API.Services
             project.AcValue = dto.ACValue;
             project.DcValue = dto.DCValue;
             project.UpdatedAt = DateTime.UtcNow;
-            project.UpdatedByUserId = dto.UpdatedByUserId;
+            project.UpdatedBy = dto.UpdatedByUserId;
             project.PanelCount = dto.PanelCount;
             project.PanelPower = dto.PanelPower;
             project.PanelBrandId = dto.PanelBrandId;
@@ -272,10 +272,10 @@ namespace IvosisProjectManagement.API.Services
                     ProjectTypeId = p.ProjectTypeId,
                     ProjectTypeName = p.ProjectType != null ? p.ProjectType.Name : null,
                     CreatedAt = p.CreatedAt,
-                    CreatedByUserId = p.CreatedByUserId,
+                    CreatedByUserId = p.CreatedBy,
                     CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
                     UpdatedAt = p.UpdatedAt,
-                    UpdatedByUserId = p.UpdatedByUserId,
+                    UpdatedByUserId = p.UpdatedBy,
                     UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null,
                     ProjeGesType= p.ProjeGesType
                 })
@@ -329,10 +329,10 @@ namespace IvosisProjectManagement.API.Services
                     ProjectTypeId = p.ProjectTypeId,
                     ProjectTypeName = p.ProjectType != null ? p.ProjectType.Name : null,
                     CreatedAt = p.CreatedAt,
-                    CreatedByUserId = p.CreatedByUserId,
+                    CreatedByUserId = p.CreatedBy,
                     CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
                     UpdatedAt = p.UpdatedAt,
-                    UpdatedByUserId = p.UpdatedByUserId,
+                    UpdatedByUserId = p.UpdatedBy,
                     UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null,
                     ProjeGesType = p.ProjeGesType
                 })

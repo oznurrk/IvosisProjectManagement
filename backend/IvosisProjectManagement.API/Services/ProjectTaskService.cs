@@ -31,9 +31,9 @@ namespace IvosisProjectManagement.API.Services
                     Description = pt.Description,
                     FilePath = pt.FilePath ?? new List<string>(),
                     CreatedAt = pt.CreatedAt,
-                    CreatedByUserId = pt.CreatedByUserId,
+                    CreatedByUserId = pt.CreatedBy,
                     UpdatedAt = pt.UpdatedAt,
-                    UpdatedByUserId = pt.UpdatedByUserId
+                    UpdatedByUserId = pt.UpdatedBy
                 }).ToListAsync();
 
             foreach (var item in items)
@@ -66,9 +66,9 @@ namespace IvosisProjectManagement.API.Services
                 Description = pt.Description,
                 FilePath = FileHelper.NormalizeFilePaths(pt.FilePath ?? new List<string>()),
                 CreatedAt = pt.CreatedAt,
-                CreatedByUserId = pt.CreatedByUserId,
+                CreatedByUserId = pt.CreatedBy,
                 UpdatedAt = pt.UpdatedAt,
-                UpdatedByUserId = pt.UpdatedByUserId,
+                UpdatedByUserId = pt.UpdatedBy,
                 ProjectName = pt.Project?.Name,
                 TaskTitle = pt.Task?.Title,
                 ProcessName = pt.Process?.Name
@@ -124,9 +124,9 @@ namespace IvosisProjectManagement.API.Services
                 Description = pt.Description,
                 FilePath = FileHelper.NormalizeFilePaths(pt.FilePath ?? new List<string>()),
                 CreatedAt = pt.CreatedAt,
-                CreatedByUserId = pt.CreatedByUserId,
+                CreatedByUserId = pt.CreatedBy,
                 UpdatedAt = pt.UpdatedAt,
-                UpdatedByUserId = pt.UpdatedByUserId,
+                UpdatedByUserId = pt.UpdatedBy,
                 ProjectName = pt.Project?.Name,
                 TaskTitle = pt.Task?.Title,
                 ProcessName = pt.Process?.Name
@@ -156,9 +156,9 @@ namespace IvosisProjectManagement.API.Services
                 Description = pt.Description,
                 FilePath = FileHelper.NormalizeFilePaths(pt.FilePath ?? new List<string>()),
                 CreatedAt = pt.CreatedAt,
-                CreatedByUserId = pt.CreatedByUserId,
+                CreatedByUserId = pt.CreatedBy,
                 UpdatedAt = pt.UpdatedAt,
-                UpdatedByUserId = pt.UpdatedByUserId,
+                UpdatedByUserId = pt.UpdatedBy,
                 ProjectName = pt.Project?.Name,
                 TaskTitle = pt.Task?.Title,
                 ProcessName = pt.Process?.Name
@@ -179,7 +179,7 @@ namespace IvosisProjectManagement.API.Services
                 Description = dto.Description,
                 FilePath = FileHelper.NormalizeFilePaths(dto.FilePath ?? new List<string>()),
                 CreatedAt = DateTime.Now,
-                CreatedByUserId = dto.CreatedByUserId
+                CreatedBy = dto.CreatedByUserId
             };
             _context.ProjectTasks.Add(pt);
             await _context.SaveChangesAsync();
@@ -201,7 +201,7 @@ namespace IvosisProjectManagement.API.Services
                 Description = dto.Description,
                 FilePath = FileHelper.NormalizeFilePaths(dto.FilePath ?? new List<string>()),
                 CreatedAt = DateTime.Now,
-                CreatedByUserId = dto.CreatedByUserId
+                CreatedBy = dto.CreatedByUserId
             }).ToList();
 
             _context.ProjectTasks.AddRange(entities);
@@ -220,7 +220,7 @@ namespace IvosisProjectManagement.API.Services
                 Description = entity.Description,
                 FilePath = FileHelper.NormalizeFilePaths(entity.FilePath ?? new List<string>()),
                 CreatedAt = entity.CreatedAt,
-                CreatedByUserId = entity.CreatedByUserId
+                CreatedByUserId = entity.CreatedBy
             }).ToList();
         }
 
@@ -236,7 +236,7 @@ namespace IvosisProjectManagement.API.Services
             pt.AssignedUserId = dto.AssignedUserId;
             pt.FilePath = FileHelper.NormalizeFilePaths(dto.FilePath ?? new List<string>());
             pt.UpdatedAt = DateTime.Now;
-            pt.UpdatedByUserId = dto.UpdatedByUserId;
+            pt.UpdatedBy = dto.UpdatedByUserId;
 
             _context.ProjectTasks.Update(pt);
             await _context.SaveChangesAsync();

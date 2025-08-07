@@ -87,6 +87,7 @@ public class AuthorizationService : IAuthorizationService
 
             // Önce erişilebilir firmaları al
             var accessibleCompanies = await GetUserAccessibleCompaniesAsync(userId);
+            
 
             foreach (var userRole in user.UserRoles)
             {
@@ -98,7 +99,7 @@ public class AuthorizationService : IAuthorizationService
                     case "COMPANY":
                         // Grup ve firma seviyesi - erişilebilir firmaların tüm departmanlarını görebilir
                         var departments = await _context.Departments
-                            .Where(d => d.IsActive && accessibleCompanies.Contains(d.CompanyId))
+                            .Where(d => d.IsActive && d.CompanyId.HasValue && accessibleCompanies.Contains(d.CompanyId.Value))
                             .Select(d => d.Id)
                             .ToListAsync();
                         foreach (var deptId in departments)

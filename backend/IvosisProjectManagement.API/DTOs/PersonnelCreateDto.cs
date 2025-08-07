@@ -31,7 +31,7 @@ namespace IvosisProjectManagement.API.DTOs
         public string? Photo { get; set; }
         public string WorkStatus { get; set; } = "Aktif";
         public DateTime CreatedDate { get; set; }
-        public DateTime UpdatedDate { get; set; }
+        public DateTime? UpdatedDate { get; set; }
         public int? CompanyId { get; set; }
         public int? DepartmentId { get; set; }
 
