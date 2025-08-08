@@ -54,6 +54,10 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredItems, setFilteredItems] = useState([]);
+  // Hammadde modal state
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [materialModalType, setMaterialModalType] = useState(""); // "name", "type", "quality"
+  const [materialModalForm, setMaterialModalForm] = useState({ code: "", name: "", description: "", isActive: true });
 
   useEffect(() => {
     if (isOpen) {
@@ -245,6 +249,11 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   };
 
   const handleChange = (field, value) => {
+    // Hammadde inputları için
+    if (["rawMaterialName", "rawMaterialType", "rawMaterialQuality"].includes(field)) {
+      setForm(prev => ({ ...prev, [field]: value }));
+      return;
+    }
     setForm(prev => ({ ...prev, [field]: value }));
     if (field === "name") {
       setSearchTerm(value);
@@ -369,13 +378,12 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    console.log('handleSubmit çalıştı');
     if (!validateForm()) {
+      console.log('Form validation hatası:', errors);
       return;
     }
-    
     setLoading(true);
-    
     try {
       // Veri formatını kontrol et ve temizle
       const stockData = {
@@ -397,27 +405,30 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         certificateNumbers: (form.certificateNumbers || "").trim(),
         storageConditions: (form.storageConditions || "").trim(),
         shelfLife: parseInt(form.shelfLife) || 0,
-        isCriticalItem: Boolean(form.isCriticalItem)
+        isCriticalItem: Boolean(form.isCriticalItem),
+        // Hammadde alanları eklendi
+        rawMaterialType: (form.rawMaterialType || "").trim(),
+        rawMaterialQuality: (form.rawMaterialQuality || "").trim(),
+        rawMaterialThickness: (form.rawMaterialThickness || "").trim(),
+        rawMaterialWidth: (form.rawMaterialWidth || "").trim(),
+        lotTracking: Boolean(form.lotTracking)
         // locationId API'ye gönderilmiyor
       };
-      
+
       // NaN kontrolü
       if (isNaN(stockData.categoryId) || isNaN(stockData.unitId)) {
+        console.log('Kategori veya birim NaN!');
         throw new Error('Kategori ve birim seçimi zorunludur');
       }
-      
-
-      
+      console.log('onSave çağrılacak veri:', stockData);
       await onSave(stockData);
-      
-
-      
       // Form'u sıfırla
       setForm({
         itemCode: "",
         name: "",
         description: "",
         categoryId: "",
+        subCategoryId: "",
         unitId: "",
         minimumStock: "",
         maximumStock: "",
@@ -432,11 +443,17 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         certificateNumbers: "",
         storageConditions: "",
         shelfLife: "",
-        isCriticalItem: false
+        isCriticalItem: false,
+        rawMaterialType: "",
+        rawMaterialQuality: "",
+        rawMaterialThickness: "",
+        rawMaterialWidth: "",
+        lotTracking: false,
+        locationId: "1"
       });
       setSearchTerm("");
       setErrors({});
-      
+
     } catch (error) {
       console.error("Stok kartı ekleme hatası:", error);
       alert('Kaydetme hatası: ' + (error.message || 'Bilinmeyen hata'));
@@ -567,30 +584,35 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
-                      <span>Stok Türü *</span>
-                      <button type="button" className="ml-2 px-2 py-1 text-xs bg-ivosis-100 text-ivosis-700 rounded hover:bg-ivosis-200" onClick={() => { setShowCategoryModal(true); setCategoryEditMode(false); setCategoryForm({ id: '', name: '', code: '', description: '', parentId: '', isActive: true }); }}>
-                        Kategori Ekle
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stok Türü *</label>
+                    <div className="flex space-x-2 items-center">
+                      <select
+                        value={form.categoryId}
+                        onChange={(e) => handleChange("categoryId", e.target.value)}
+                        className={`flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
+                          errors.categoryId ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Kategori Seçiniz</option>
+                        {Array.isArray(categories) && categories.length > 0 ? (
+                          categories.filter(cat => cat.isActive !== false).map((category) => (
+                            <option key={category.id} value={category.id.toString()}>
+                              {category.code ? `${category.code} - ` : ""}{category.name}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="" disabled>Kategoriler yükleniyor...</option>
+                        )}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => { setShowCategoryModal(true); setCategoryEditMode(false); setCategoryForm({ id: '', name: '', code: '', description: '', parentId: '', isActive: true }); }}
+                        className="px-3 py-3 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200 transition-colors"
+                        title="Kategori Ekle"
+                      >
+                        <IconPlus size={16} />
                       </button>
-                    </label>
-                    <select
-                      value={form.categoryId}
-                      onChange={(e) => handleChange("categoryId", e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent ${
-                        errors.categoryId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Kategori Seçiniz</option>
-                      {Array.isArray(categories) && categories.length > 0 ? (
-                        categories.filter(cat => cat.isActive !== false).map((category) => (
-                          <option key={category.id} value={category.id.toString()}>
-                            {category.code ? `${category.code} - ` : ""}{category.name}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="" disabled>Kategoriler yükleniyor...</option>
-                      )}
-                    </select>
+                    </div>
                     {/* Alt kategori seçimi */}
                     {form.categoryId && categories.some(cat => cat.parentId && cat.parentId.toString() === form.categoryId) && (
                       <div className="mt-2">
@@ -610,40 +632,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                     {errors.categoryId && (
                       <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
                     )}
-                    {/* Hammadde seçildiyse ek pencere */}
-                    {(() => {
-                      const selectedCategory = categories.find(cat => cat.id.toString() === form.categoryId);
-                      if (selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde")) {
-                        return (
-                          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                            <h4 className="text-md font-semibold text-gray-800 mb-2">Hammadde Özellikleri</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Türü</label>
-                                <input type="text" value={form.rawMaterialType} onChange={e => handleChange("rawMaterialType", e.target.value)} placeholder="Malzeme türü" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Kalitesi</label>
-                                <input type="text" value={form.rawMaterialQuality} onChange={e => handleChange("rawMaterialQuality", e.target.value)} placeholder="Malzeme kalitesi" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Kalınlığı</label>
-                                <input type="text" value={form.rawMaterialThickness} onChange={e => handleChange("rawMaterialThickness", e.target.value)} placeholder="Kalınlık" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Malzeme Genişliği (mm)</label>
-                                <input type="text" value={form.rawMaterialWidth} onChange={e => handleChange("rawMaterialWidth", e.target.value)} placeholder="Genişlik (mm)" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ivosis-500 focus:border-transparent" />
-                              </div>
-                            </div>
-                            <div className="flex items-center mt-4">
-                              <input type="checkbox" checked={form.lotTracking} onChange={e => handleChange("lotTracking", e.target.checked)} className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded" />
-                              <label className="ml-2 text-sm text-gray-700">Lot Takibi Yapılsın</label>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
+                    
                     {/* Kategori yönetimi modalı */}
                     {showCategoryModal && (
                       <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex items-center justify-center z-50">
@@ -653,15 +642,11 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                             <input type="text" value={categoryForm.name} onChange={e => handleCategoryFormChange('name', e.target.value)} placeholder="Kategori Adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                             <input type="text" value={categoryForm.code} onChange={e => handleCategoryFormChange('code', e.target.value)} placeholder="Kategori Kodu" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                             <textarea value={categoryForm.description} onChange={e => handleCategoryFormChange('description', e.target.value)} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                            <select value={categoryForm.parentId} onChange={e => handleCategoryFormChange('parentId', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                              <option value="">Üst Kategori Yok</option>
-                              {categories.filter(cat => cat.id !== categoryForm.id).map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                              ))}
-                            </select>
                             <div className="flex items-center">
                               <input type="checkbox" checked={categoryForm.isActive} onChange={e => handleCategoryFormChange('isActive', e.target.checked)} className="h-4 w-4 text-ivosis-600 border-gray-300 rounded" />
                               <label className="ml-2 text-sm">Aktif</label>
+                              <input type="checkbox" checked={!categoryForm.isActive} onChange={e => handleCategoryFormChange('isActive', !e.target.checked)} className="h-4 w-4 text-red-600 border-gray-300 rounded ml-4" />
+                              <label className="ml-2 text-sm">Pasif</label>
                             </div>
                           </div>
                           <div className="flex justify-end space-x-2 mt-6">
@@ -742,9 +727,112 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   </div>
                 </div>
               </div>
+              {/* Hammadde seçildiyse ek pencere */}
+                    {(() => {
+                      const selectedCategory = categories.find(cat => cat.id.toString() === form.categoryId);
+                      if (selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde")) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mt-4 w-full">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Hammadde Bilgileri</h3>
+        <div className="flex flex-row items-end gap-4 w-auto">
+          {/* Malzeme Adı */}
+          <div className="flex flex-col gap-2 min-w-[180px]">
+            <label className="block text-sm font-medium text-gray-700">Malzeme Adı</label>
+            <div className="flex gap-2">
+              <input type="text" value={form.rawMaterialName || ""} disabled placeholder="Malzeme adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
+              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => { setMaterialModalType("name"); setShowMaterialModal(true); setMaterialModalForm({ code: '', name: '', description: '', isActive: true }); }}><IconPlus size={16} /></button>
+            </div>
+          </div>
+          {/* Malzeme Türü */}
+          {form.rawMaterialName && (
+            <div className="flex flex-col gap-2 min-w-[180px]">
+              <label className="block text-sm font-medium text-gray-700">Malzeme Türü</label>
+              <div className="flex gap-2">
+                <input type="text" value={form.rawMaterialType || ""} disabled placeholder="Malzeme türü" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
+                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => { setMaterialModalType("type"); setShowMaterialModal(true); setMaterialModalForm({ code: '', name: '', description: '', isActive: true }); }} disabled={!form.rawMaterialName}><IconPlus size={16} /></button>
+              </div>
+            </div>
+          )}
+          {/* Malzeme Kalitesi */}
+          {form.rawMaterialType && (
+            <div className="flex flex-col gap-2 min-w-[180px]">
+              <label className="block text-sm font-medium text-gray-700">Malzeme Kalitesi</label>
+              <div className="flex gap-2">
+                <input type="text" value={form.rawMaterialQuality || ""} disabled placeholder="Malzeme kalitesi" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
+                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => { setMaterialModalType("quality"); setShowMaterialModal(true); setMaterialModalForm({ code: '', name: '', description: '', isActive: true }); }} disabled={!form.rawMaterialType}><IconPlus size={16} /></button>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Lot Takibi yeni satırda */}
+        <div className="flex flex-col gap-2 min-w-[180px] justify-center mt-4">
+          <label className="block text-sm font-medium text-gray-700">Lot Takibi</label>
+          <div className="flex items-center mt-2">
+            <input type="checkbox" checked={form.lotTracking} onChange={e => handleChange("lotTracking", e.target.checked)} className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded" />
+            <label className="ml-2 text-sm text-gray-700">Lot Takibi Yapılsın</label>
+          </div>
+        </div>
+        {/* Hammadde modalı */}
+        {showMaterialModal && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-bold mb-4">{materialModalType === "name" ? "Malzeme Adı Ekle" : materialModalType === "type" ? "Malzeme Türü Ekle" : "Malzeme Kalitesi Ekle"}</h3>
+              <div className="space-y-3">
+                <input type="text" value={materialModalForm.code} onChange={e => setMaterialModalForm(f => ({ ...f, code: e.target.value }))} placeholder="Kod" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <input type="text" value={materialModalForm.name} onChange={e => setMaterialModalForm(f => ({ ...f, name: e.target.value }))} placeholder="Adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <textarea value={materialModalForm.description} onChange={e => setMaterialModalForm(f => ({ ...f, description: e.target.value }))} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <div className="flex items-center">
+                  <input type="checkbox" checked={materialModalForm.isActive} onChange={e => setMaterialModalForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 text-ivosis-600 border-gray-300 rounded" />
+                  <label className="ml-2 text-sm">Aktif</label>
+                  <input type="checkbox" checked={!materialModalForm.isActive} onChange={e => setMaterialModalForm(f => ({ ...f, isActive: !e.target.checked }))} className="h-4 w-4 text-red-600 border-gray-300 rounded ml-4" />
+                  <label className="ml-2 text-sm">Pasif</label>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <button type="button" className="px-4 py-2 bg-gray-100 text-gray-700 rounded" onClick={() => { setShowMaterialModal(false); setMaterialModalForm({ code: "", name: "", description: "", isActive: true }); }}>İptal</button>
+                <button type="button" className="px-4 py-2 bg-ivosis-600 text-white rounded" onClick={() => {
+                  // Modal kaydet mantığı ve localStorage'a ekle
+                  let key = "hammaddeTree";
+                  let tree = JSON.parse(localStorage.getItem(key) || "{}") || {};
+                  if (materialModalType === "name") {
+                    setForm(f => ({ ...f, rawMaterialName: materialModalForm.name }));
+                    tree[materialModalForm.name] = tree[materialModalForm.name] || { types: {} };
+                  }
+                  if (materialModalType === "type") {
+                    setForm(f => ({ ...f, rawMaterialType: materialModalForm.name }));
+                    if (form.rawMaterialName) {
+                      tree[form.rawMaterialName] = tree[form.rawMaterialName] || { types: {} };
+                      tree[form.rawMaterialName].types[materialModalForm.name] = tree[form.rawMaterialName].types[materialModalForm.name] || { qualities: {} };
+                    }
+                  }
+                  if (materialModalType === "quality") {
+                    setForm(f => ({ ...f, rawMaterialQuality: materialModalForm.name }));
+                    if (form.rawMaterialName && form.rawMaterialType) {
+                      tree[form.rawMaterialName] = tree[form.rawMaterialName] || { types: {} };
+                      tree[form.rawMaterialName].types[form.rawMaterialType] = tree[form.rawMaterialName].types[form.rawMaterialType] || { qualities: {} };
+                      tree[form.rawMaterialName].types[form.rawMaterialType].qualities[materialModalForm.name] = {
+                        code: materialModalForm.code,
+                        description: materialModalForm.description,
+                        isActive: materialModalForm.isActive
+                      };
+                    }
+                  }
+                  localStorage.setItem(key, JSON.stringify(tree));
+                  setShowMaterialModal(false);
+                  setMaterialModalForm({ code: "", name: "", description: "", isActive: true });
+                }}>{"Ekle"}</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+                      }
+                      return null;
+                    })()}
 
               {/* Stok Bilgileri */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 w-full">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Stok Bilgileri
                   <span className="text-sm font-normal text-gray-600 ml-2">(Kritik &lt; Min &lt; Max)</span>
