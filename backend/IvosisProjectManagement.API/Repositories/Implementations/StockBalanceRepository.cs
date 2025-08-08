@@ -90,7 +90,7 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                 .ToListAsync();
         }
 
-      public async Task UpdateBalanceAsync(int stockItemId, int locationId, decimal quantity, string movementType)
+      public async Task UpdateBalanceAsync(int stockItemId, int locationId, decimal quantity, string movementType, int userId)
         {
             var balance = await _context.StockBalances
                 .FirstOrDefaultAsync(x => x.StockItemId == stockItemId && x.LocationId == locationId);
@@ -102,7 +102,11 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
                     StockItemId = stockItemId,
                     LocationId = locationId,
                     CurrentQuantity = 0,
-                    ReservedQuantity = 0
+                    ReservedQuantity = 0,
+                    CreatedBy = userId,             
+                    CreatedAt = DateTime.Now,       
+                    LastMovementDate = DateTime.Now,
+                    LastUpdateDate = DateTime.Now  
                 };
                 await _context.StockBalances.AddAsync(balance);
             }
@@ -117,7 +121,13 @@ namespace IvosisProjectManagement.API.Repositories.Implementations
             }
 
             //Her değişiklik sonrası AvailableQuantity'yi güncelle
-           //balance.AvailableQuantity = balance.CurrentQuantity - balance.ReservedQuantity;
+            //balance.AvailableQuantity = balance.CurrentQuantity - balance.ReservedQuantity;
+           
+            if (balance.Id != 0)
+            {
+                balance.UpdatedBy = userId;
+                balance.UpdatedAt = DateTime.Now;
+            }
             
             balance.LastMovementDate = DateTime.Now;
             balance.LastUpdateDate = DateTime.Now;

@@ -37,7 +37,7 @@ public class StockMovementService : IStockMovementService
             var movement = await _stockMovementRepository.CreateMovementAsync(dto, userId);
             
             // Update stock balance
-            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, dto.Quantity, "IN");
+            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, dto.Quantity, "IN", userId);
             
             // Check for alerts
             await _stockAlertService.CheckAndCreateAlertsAsync();
@@ -57,7 +57,7 @@ public class StockMovementService : IStockMovementService
             var movement = await _stockMovementRepository.CreateMovementAsync(dto, userId);
             
             // Update stock balance
-            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, dto.Quantity, "OUT");
+            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, dto.Quantity, "OUT", userId);
             
             // Check for alerts
             await _stockAlertService.CheckAndCreateAlertsAsync();
@@ -90,7 +90,7 @@ public class StockMovementService : IStockMovementService
             };
 
             var outMovement = await _stockMovementRepository.CreateMovementAsync(outDto, userId);
-            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, fromLocationId, -dto.Quantity, "OUT");
+            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, fromLocationId, -dto.Quantity, "OUT",userId);
 
             // Create IN movement at destination location
             var inDto = new CreateStockMovementDto
@@ -107,7 +107,7 @@ public class StockMovementService : IStockMovementService
             };
 
             var inMovement = await _stockMovementRepository.CreateMovementAsync(inDto, userId);
-            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, toLocationId, dto.Quantity, "IN");
+            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, toLocationId, dto.Quantity, "IN", userId);
 
             // Check for alerts
             await _stockAlertService.CheckAndCreateAlertsAsync();
@@ -122,7 +122,7 @@ public class StockMovementService : IStockMovementService
             var movement = await _stockMovementRepository.CreateMovementAsync(dto, userId);
             
             // Update stock balance with adjustment quantity
-            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, dto.Quantity, "ADJUSTMENT");
+            await _stockBalanceRepository.UpdateBalanceAsync(dto.StockItemId, dto.LocationId, dto.Quantity, "ADJUSTMENT", userId);
             
             // Check for alerts
             await _stockAlertService.CheckAndCreateAlertsAsync();

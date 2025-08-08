@@ -39,10 +39,9 @@ namespace IvosisProjectManagement.API.Services.Implementations
         {
             return await _stockBalanceRepository.GetTotalStockAsync(stockItemId);
         }
-
-        public async Task UpdateBalanceAsync(int stockItemId, int locationId, decimal quantity, string movementType)
+        public async Task UpdateBalanceAsync(int stockItemId, int locationId, decimal quantity, string movementType, int userId)
         {
-            await _stockBalanceRepository.UpdateBalanceAsync(stockItemId, locationId, quantity, movementType);
+            await _stockBalanceRepository.UpdateBalanceAsync(stockItemId, locationId, quantity, movementType, userId);
         }
     }
 }
