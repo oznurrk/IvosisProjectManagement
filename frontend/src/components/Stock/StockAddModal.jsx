@@ -58,6 +58,8 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const [showMaterialModal, setShowMaterialModal] = useState(false);
   const [materialModalType, setMaterialModalType] = useState(""); // "name", "type", "quality"
   const [materialModalForm, setMaterialModalForm] = useState({ code: "", name: "", description: "", isActive: true });
+  // Malzeme Adı modalında girilen kodu sakla
+  const [lastMaterialCode, setLastMaterialCode] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -735,34 +737,66 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mt-4 w-full">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Hammadde Bilgileri</h3>
         <div className="flex flex-row items-end gap-4 w-auto">
-          {/* Malzeme Adı */}
+          {/* Malzeme Adı Combo */}
           <div className="flex flex-col gap-2 min-w-[180px]">
             <label className="block text-sm font-medium text-gray-700">Malzeme Adı</label>
             <div className="flex gap-2">
-              <input type="text" value={form.rawMaterialName || ""} disabled placeholder="Malzeme adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
+              <select value={form.rawMaterialName || ""} onChange={e => handleChange("rawMaterialName", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
+                <option value="">Malzeme adı seçiniz</option>
+                {/* Malzeme adları için örnek seçenekler, localStorage'dan veya sabit dizi ile doldurulabilir */}
+                {Object.keys(JSON.parse(localStorage.getItem("hammaddeTree") || "{}")).map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
               <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => { setMaterialModalType("name"); setShowMaterialModal(true); setMaterialModalForm({ code: '', name: '', description: '', isActive: true }); }}><IconPlus size={16} /></button>
             </div>
           </div>
-          {/* Malzeme Türü */}
-          {form.rawMaterialName && (
-            <div className="flex flex-col gap-2 min-w-[180px]">
-              <label className="block text-sm font-medium text-gray-700">Malzeme Türü</label>
-              <div className="flex gap-2">
-                <input type="text" value={form.rawMaterialType || ""} disabled placeholder="Malzeme türü" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
-                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => { setMaterialModalType("type"); setShowMaterialModal(true); setMaterialModalForm({ code: '', name: '', description: '', isActive: true }); }} disabled={!form.rawMaterialName}><IconPlus size={16} /></button>
-              </div>
+          {/* Malzeme Türü Combo (her zaman görünür, ama disabled olabilir) */}
+          <div className="flex flex-col gap-2 min-w-[180px]">
+            <label className="block text-sm font-medium text-gray-700">Malzeme Türü</label>
+            <div className="flex gap-2">
+              <select value={form.rawMaterialType || ""} onChange={e => handleChange("rawMaterialType", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700"
+                disabled={!form.rawMaterialName || !isNaN(form.rawMaterialName)}>
+                <option value="">Malzeme türü seçiniz</option>
+                {form.rawMaterialName && !isNaN(form.rawMaterialName) ? (
+                  <option value="Otomatik">Otomatik</option>
+                ) : (
+                  form.rawMaterialName && Object.keys((JSON.parse(localStorage.getItem("hammaddeTree") || "{}")?.[form.rawMaterialName]?.types || {})).map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))
+                )}
+              </select>
+              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                setMaterialModalType("type");
+                setShowMaterialModal(true);
+                setMaterialModalForm({ code: lastMaterialCode, name: '', description: '', isActive: true });
+              }} disabled={!form.rawMaterialName || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
             </div>
-          )}
-          {/* Malzeme Kalitesi */}
-          {form.rawMaterialType && (
-            <div className="flex flex-col gap-2 min-w-[180px]">
-              <label className="block text-sm font-medium text-gray-700">Malzeme Kalitesi</label>
-              <div className="flex gap-2">
-                <input type="text" value={form.rawMaterialQuality || ""} disabled placeholder="Malzeme kalitesi" className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500" />
-                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => { setMaterialModalType("quality"); setShowMaterialModal(true); setMaterialModalForm({ code: '', name: '', description: '', isActive: true }); }} disabled={!form.rawMaterialType}><IconPlus size={16} /></button>
-              </div>
+          </div>
+          {/* Malzeme Kalitesi Combo (her zaman görünür, ama disabled olabilir) */}
+          <div className="flex flex-col gap-2 min-w-[180px]">
+            <label className="block text-sm font-medium text-gray-700">Malzeme Kalitesi</label>
+            <div className="flex gap-2">
+              <select value={form.rawMaterialQuality || ""} onChange={e => handleChange("rawMaterialQuality", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700"
+                disabled={!form.rawMaterialType || !isNaN(form.rawMaterialName)}>
+                <option value="">Malzeme kalitesi seçiniz</option>
+                {form.rawMaterialName && !isNaN(form.rawMaterialName) ? (
+                  <option value="Otomatik">Otomatik</option>
+                ) : (
+                  form.rawMaterialName && form.rawMaterialType && Object.keys((JSON.parse(localStorage.getItem("hammaddeTree") || "{}")?.[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {})).map(quality => (
+                    <option key={quality} value={quality}>{quality}</option>
+                  ))
+                )}
+              </select>
+              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                setMaterialModalType("quality");
+                setShowMaterialModal(true);
+                setMaterialModalForm({ code: lastMaterialCode, name: '', description: '', isActive: true });
+              }} disabled={!form.rawMaterialType || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
             </div>
-          )}
+          </div>
         </div>
         {/* Lot Takibi yeni satırda */}
         <div className="flex flex-col gap-2 min-w-[180px] justify-center mt-4">
@@ -775,17 +809,25 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         {/* Hammadde modalı */}
         {showMaterialModal && (
           <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative">
+              <div className="absolute top-4 right-4 cursor-pointer" onClick={() => { setShowMaterialModal(false); setMaterialModalForm({ code: "", name: "", description: "", isActive: true }); }}>
+                <IconX size={24} className="text-gray-400 hover:text-gray-600" />
+              </div>
               <h3 className="text-lg font-bold mb-4">{materialModalType === "name" ? "Malzeme Adı Ekle" : materialModalType === "type" ? "Malzeme Türü Ekle" : "Malzeme Kalitesi Ekle"}</h3>
               <div className="space-y-3">
-                <input type="text" value={materialModalForm.code} onChange={e => setMaterialModalForm(f => ({ ...f, code: e.target.value }))} placeholder="Kod" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                <input
+                  type="text"
+                  value={materialModalForm.code}
+                  onChange={e => setMaterialModalForm(f => ({ ...f, code: e.target.value }))}
+                  placeholder="Kod"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  disabled={materialModalType === "type" || materialModalType === "quality"}
+                />
                 <input type="text" value={materialModalForm.name} onChange={e => setMaterialModalForm(f => ({ ...f, name: e.target.value }))} placeholder="Adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                 <textarea value={materialModalForm.description} onChange={e => setMaterialModalForm(f => ({ ...f, description: e.target.value }))} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                 <div className="flex items-center">
                   <input type="checkbox" checked={materialModalForm.isActive} onChange={e => setMaterialModalForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 text-ivosis-600 border-gray-300 rounded" />
                   <label className="ml-2 text-sm">Aktif</label>
-                  <input type="checkbox" checked={!materialModalForm.isActive} onChange={e => setMaterialModalForm(f => ({ ...f, isActive: !e.target.checked }))} className="h-4 w-4 text-red-600 border-gray-300 rounded ml-4" />
-                  <label className="ml-2 text-sm">Pasif</label>
                 </div>
               </div>
               <div className="flex justify-end space-x-2 mt-6">
@@ -797,6 +839,8 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   if (materialModalType === "name") {
                     setForm(f => ({ ...f, rawMaterialName: materialModalForm.name }));
                     tree[materialModalForm.name] = tree[materialModalForm.name] || { types: {} };
+                    // Kod bilgisini sakla
+                    setLastMaterialCode(materialModalForm.code);
                   }
                   if (materialModalType === "type") {
                     setForm(f => ({ ...f, rawMaterialType: materialModalForm.name }));
@@ -820,7 +864,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   localStorage.setItem(key, JSON.stringify(tree));
                   setShowMaterialModal(false);
                   setMaterialModalForm({ code: "", name: "", description: "", isActive: true });
-                }}>{"Ekle"}</button>
+                }}>{"Kaydet"}</button>
               </div>
             </div>
           </div>
