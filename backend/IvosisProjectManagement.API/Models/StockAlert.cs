@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using IvosisProjectManagement.API.Models;
 
 public class StockAlert : CompanyEntity
@@ -13,5 +14,7 @@ public class StockAlert : CompanyEntity
     public int? ReadBy { get; set; }
     public virtual StockItem StockItem { get; set; }
     public virtual StockLocation Location { get; set; }
+    
+    [ForeignKey("ReadBy")]
     public virtual User? ReadByUser { get; set; } 
     }

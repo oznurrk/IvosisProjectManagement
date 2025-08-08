@@ -75,6 +75,8 @@ namespace IvosisProjectManagement.API.Profiles
                 .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.Name))
                 .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser != null ? src.UpdatedByUser.Name : null))
                 .ForMember(dest => dest.ItemCount, opt => opt.MapFrom(src => src.StockItems.Count));
+                
+            CreateMap<StockCategoryCreateDto, StockCategory>();
 
             // StockLocation Mappings
             CreateMap<StockLocation, StockLocationDto>()

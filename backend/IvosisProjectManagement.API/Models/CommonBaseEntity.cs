@@ -9,10 +9,6 @@ public abstract class CommonBaseEntity
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
 
-    // Navigation properties
-    [ForeignKey("CreatedBy")]
     public virtual User? CreatedByUser { get; set; }
-    
-    [ForeignKey("UpdatedBy")]
     public virtual User? UpdatedByUser { get; set; }
 }

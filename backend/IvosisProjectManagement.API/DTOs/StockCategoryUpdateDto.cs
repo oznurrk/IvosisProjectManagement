@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-public class StockCategoryUpdateDto
+public class StockCategoryUpdateDto : CompanyDto
     {
         [Required(ErrorMessage = "Kategori adı zorunludur.")]
         [StringLength(200, ErrorMessage = "Kategori adı maksimum 200 karakter olabilir.")]
@@ -14,8 +14,6 @@ public class StockCategoryUpdateDto
         public string? Description { get; set; }
 
         public int? ParentCategoryId { get; set; }
-
-        public int? CompanyId { get; set; }
 
         public bool IsActive { get; set; } = true;
     }

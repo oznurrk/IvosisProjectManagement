@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using IvosisProjectManagement.API.Services;
-using IvosisProjectManagement.API.DTOs;
-using IvosisProjectManagement.API.Controllers;
 
 namespace IvosisProjectManagement.API.Controllers
 {
@@ -140,6 +138,7 @@ namespace IvosisProjectManagement.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] StockCategoryCreateDto createDto)
         {
+            
             try
             {
                 if (!ModelState.IsValid)

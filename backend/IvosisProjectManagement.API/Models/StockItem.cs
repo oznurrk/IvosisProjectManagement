@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 public class StockItem : CompanyEntity
 {
     public string ItemCode { get; set; }
@@ -26,4 +28,5 @@ public class StockItem : CompanyEntity
     public virtual ICollection<StockBalance> StockBalances { get; set; }
     public virtual ICollection<StockMovement> StockMovements { get; set; }
     public virtual ICollection<StockAlert> StockAlerts { get; set; }
+
 }
