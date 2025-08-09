@@ -748,7 +748,14 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   <option key={name} value={name}>{name}</option>
                 ))}
               </select>
-              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => { setMaterialModalType("name"); setShowMaterialModal(true); setMaterialModalForm({ code: '', name: '', description: '', isActive: true }); }}><IconPlus size={16} /></button>
+                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                  setMaterialModalType("name");
+                  setShowMaterialModal(true);
+                  // Hammadde adları sayısı + 1
+                  const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
+                  const count = Object.keys(tree).length + 1;
+                  setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
+                }}><IconPlus size={16} /></button>
             </div>
           </div>
           {/* Malzeme Türü Combo (her zaman görünür, ama disabled olabilir) */}
@@ -767,11 +774,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   ))
                 )}
               </select>
-              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                setMaterialModalType("type");
-                setShowMaterialModal(true);
-                setMaterialModalForm({ code: lastMaterialCode, name: '', description: '', isActive: true });
-              }} disabled={!form.rawMaterialName || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
+                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                  setMaterialModalType("type");
+                  setShowMaterialModal(true);
+                  // Seçili adın türleri sayısı + 1
+                  const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
+                  const types = tree[form.rawMaterialName]?.types || {};
+                  const count = Object.keys(types).length + 1;
+                  setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
+                }} disabled={!form.rawMaterialName || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
             </div>
           </div>
           {/* Malzeme Kalitesi Combo (her zaman görünür, ama disabled olabilir) */}
@@ -790,11 +801,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                   ))
                 )}
               </select>
-              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                setMaterialModalType("quality");
-                setShowMaterialModal(true);
-                setMaterialModalForm({ code: lastMaterialCode, name: '', description: '', isActive: true });
-              }} disabled={!form.rawMaterialType || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
+                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                  setMaterialModalType("quality");
+                  setShowMaterialModal(true);
+                  // Seçili ad ve türün kaliteleri sayısı + 1
+                  const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
+                  const qualities = tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {};
+                  const count = Object.keys(qualities).length + 1;
+                  setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
+                }} disabled={!form.rawMaterialType || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
             </div>
           </div>
         </div>
@@ -818,10 +833,10 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                 <input
                   type="text"
                   value={materialModalForm.code}
-                  onChange={e => setMaterialModalForm(f => ({ ...f, code: e.target.value }))}
+                  onChange={e => setMaterialModalForm(f => ({ ...f, code: f.code }))}
                   placeholder="Kod"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  disabled={materialModalType === "type" || materialModalType === "quality"}
+                  disabled
                 />
                 <input type="text" value={materialModalForm.name} onChange={e => setMaterialModalForm(f => ({ ...f, name: e.target.value }))} placeholder="Adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                 <textarea value={materialModalForm.description} onChange={e => setMaterialModalForm(f => ({ ...f, description: e.target.value }))} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
