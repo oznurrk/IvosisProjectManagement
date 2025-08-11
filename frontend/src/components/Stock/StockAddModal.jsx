@@ -23,8 +23,12 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     storageConditions: "",
     shelfLife: "",
     isCriticalItem: false,
+    rawMaterialName: "",
+    rawMaterialNameId: "",
     rawMaterialType: "",
+    rawMaterialTypeId: "",
     rawMaterialQuality: "",
+    rawMaterialQualityId: "",
     rawMaterialThickness: "",
     rawMaterialWidth: "",
     lotTracking: false,
@@ -251,9 +255,29 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   };
 
   const handleChange = (field, value) => {
-    // Hammadde inputları için
-    if (["rawMaterialName", "rawMaterialType", "rawMaterialQuality"].includes(field)) {
-      setForm(prev => ({ ...prev, [field]: value }));
+    // Hammadde selectleri için hem ad hem id'yi tut
+    if (field === "rawMaterialName") {
+      setForm(prev => ({
+        ...prev,
+        rawMaterialName: value.name,
+        rawMaterialNameId: value.id
+      }));
+      return;
+    }
+    if (field === "rawMaterialType") {
+      setForm(prev => ({
+        ...prev,
+        rawMaterialType: value.name,
+        rawMaterialTypeId: value.id
+      }));
+      return;
+    }
+    if (field === "rawMaterialQuality") {
+      setForm(prev => ({
+        ...prev,
+        rawMaterialQuality: value.name,
+        rawMaterialQualityId: value.id
+      }));
       return;
     }
     setForm(prev => ({ ...prev, [field]: value }));
@@ -388,6 +412,9 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     setLoading(true);
     try {
       // Veri formatını kontrol et ve temizle
+      // Hammadde mi kontrolü
+      const selectedCategory = categories.find(cat => cat.id.toString() === form.categoryId);
+      const isRawMaterial = selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde");
       const stockData = {
         itemCode: (form.itemCode || generateItemCode()).trim(),
         name: form.name.trim(),
@@ -408,12 +435,15 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         storageConditions: (form.storageConditions || "").trim(),
         shelfLife: parseInt(form.shelfLife) || 0,
         isCriticalItem: Boolean(form.isCriticalItem),
-        // Hammadde alanları eklendi
+        // Hammadde alanları ve DB'ye uygun id'ler
         rawMaterialType: (form.rawMaterialType || "").trim(),
         rawMaterialQuality: (form.rawMaterialQuality || "").trim(),
         rawMaterialThickness: (form.rawMaterialThickness || "").trim(),
         rawMaterialWidth: (form.rawMaterialWidth || "").trim(),
-        lotTracking: Boolean(form.lotTracking)
+        hasLotTracking: isRawMaterial ? Boolean(form.lotTracking) : false,
+        materialNameId: isRawMaterial ? form.rawMaterialNameId || null : null,
+        materialTypeId: isRawMaterial ? form.rawMaterialTypeId || null : null,
+        materialQualityId: isRawMaterial ? form.rawMaterialQualityId || null : null
         // locationId API'ye gönderilmiyor
       };
 
@@ -732,7 +762,9 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
               {/* Hammadde seçildiyse ek pencere */}
                     {(() => {
                       const selectedCategory = categories.find(cat => cat.id.toString() === form.categoryId);
-                      if (selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde")) {
+      if (selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde")) {
+    // Hammadde verilerini localStorage'dan id'li olarak oku
+    const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mt-4 w-full">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Hammadde Bilgileri</h3>
@@ -741,75 +773,69 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
           <div className="flex flex-col gap-2 min-w-[180px]">
             <label className="block text-sm font-medium text-gray-700">Malzeme Adı</label>
             <div className="flex gap-2">
-              <select value={form.rawMaterialName || ""} onChange={e => handleChange("rawMaterialName", e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
+              <select value={form.rawMaterialNameId || ""} onChange={e => {
+                const id = e.target.value;
+                const name = Object.keys(tree).find(n => tree[n].id?.toString() === id || n === id) || "";
+                handleChange("rawMaterialName", { id, name });
+              }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
                 <option value="">Malzeme adı seçiniz</option>
-                {/* Malzeme adları için örnek seçenekler, localStorage'dan veya sabit dizi ile doldurulabilir */}
-                {Object.keys(JSON.parse(localStorage.getItem("hammaddeTree") || "{}")).map(name => (
-                  <option key={name} value={name}>{name}</option>
+                {Object.entries(tree).map(([name, obj]) => (
+                  <option key={obj.id || name} value={obj.id || name}>{name}</option>
                 ))}
               </select>
-                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                  setMaterialModalType("name");
-                  setShowMaterialModal(true);
-                  // Hammadde adları sayısı + 1
-                  const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
-                  const count = Object.keys(tree).length + 1;
-                  setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
-                }}><IconPlus size={16} /></button>
+              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                setMaterialModalType("name");
+                setShowMaterialModal(true);
+                const count = Object.keys(tree).length + 1;
+                setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
+              }}><IconPlus size={16} /></button>
             </div>
           </div>
-          {/* Malzeme Türü Combo (her zaman görünür, ama disabled olabilir) */}
+          {/* Malzeme Türü Combo */}
           <div className="flex flex-col gap-2 min-w-[180px]">
             <label className="block text-sm font-medium text-gray-700">Malzeme Türü</label>
             <div className="flex gap-2">
-              <select value={form.rawMaterialType || ""} onChange={e => handleChange("rawMaterialType", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700"
-                disabled={!form.rawMaterialName || !isNaN(form.rawMaterialName)}>
+              <select value={form.rawMaterialTypeId || ""} onChange={e => {
+                const id = e.target.value;
+                const name = tree[form.rawMaterialName]?.types && Object.keys(tree[form.rawMaterialName].types).find(t => tree[form.rawMaterialName].types[t].id?.toString() === id || t === id) || "";
+                handleChange("rawMaterialType", { id, name });
+              }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700" disabled={!form.rawMaterialNameId}>
                 <option value="">Malzeme türü seçiniz</option>
-                {form.rawMaterialName && !isNaN(form.rawMaterialName) ? (
-                  <option value="Otomatik">Otomatik</option>
-                ) : (
-                  form.rawMaterialName && Object.keys((JSON.parse(localStorage.getItem("hammaddeTree") || "{}")?.[form.rawMaterialName]?.types || {})).map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))
-                )}
+                {form.rawMaterialName && tree[form.rawMaterialName]?.types && Object.entries(tree[form.rawMaterialName].types).map(([type, obj]) => (
+                  <option key={obj.id || type} value={obj.id || type}>{type}</option>
+                ))}
               </select>
-                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                  setMaterialModalType("type");
-                  setShowMaterialModal(true);
-                  // Seçili adın türleri sayısı + 1
-                  const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
-                  const types = tree[form.rawMaterialName]?.types || {};
-                  const count = Object.keys(types).length + 1;
-                  setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
-                }} disabled={!form.rawMaterialName || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
+              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                setMaterialModalType("type");
+                setShowMaterialModal(true);
+                const types = tree[form.rawMaterialName]?.types || {};
+                const count = Object.keys(types).length + 1;
+                setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
+              }} disabled={!form.rawMaterialNameId}><IconPlus size={16} /></button>
             </div>
           </div>
-          {/* Malzeme Kalitesi Combo (her zaman görünür, ama disabled olabilir) */}
+          {/* Malzeme Kalitesi Combo */}
           <div className="flex flex-col gap-2 min-w-[180px]">
             <label className="block text-sm font-medium text-gray-700">Malzeme Kalitesi</label>
             <div className="flex gap-2">
-              <select value={form.rawMaterialQuality || ""} onChange={e => handleChange("rawMaterialQuality", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700"
-                disabled={!form.rawMaterialType || !isNaN(form.rawMaterialName)}>
+              <select value={form.rawMaterialQualityId || ""} onChange={e => {
+                const id = e.target.value;
+                const qualities = tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {};
+                const name = Object.keys(qualities).find(q => qualities[q].id?.toString() === id || q === id) || "";
+                handleChange("rawMaterialQuality", { id, name });
+              }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700" disabled={!form.rawMaterialTypeId}>
                 <option value="">Malzeme kalitesi seçiniz</option>
-                {form.rawMaterialName && !isNaN(form.rawMaterialName) ? (
-                  <option value="Otomatik">Otomatik</option>
-                ) : (
-                  form.rawMaterialName && form.rawMaterialType && Object.keys((JSON.parse(localStorage.getItem("hammaddeTree") || "{}")?.[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {})).map(quality => (
-                    <option key={quality} value={quality}>{quality}</option>
-                  ))
-                )}
+                {form.rawMaterialName && form.rawMaterialType && tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities && Object.entries(tree[form.rawMaterialName].types[form.rawMaterialType].qualities).map(([quality, obj]) => (
+                  <option key={obj.id || quality} value={obj.id || quality}>{quality}</option>
+                ))}
               </select>
-                <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                  setMaterialModalType("quality");
-                  setShowMaterialModal(true);
-                  // Seçili ad ve türün kaliteleri sayısı + 1
-                  const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
-                  const qualities = tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {};
-                  const count = Object.keys(qualities).length + 1;
-                  setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
-                }} disabled={!form.rawMaterialType || !isNaN(form.rawMaterialName)}><IconPlus size={16} /></button>
+              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
+                setMaterialModalType("quality");
+                setShowMaterialModal(true);
+                const qualities = tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {};
+                const count = Object.keys(qualities).length + 1;
+                setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
+              }} disabled={!form.rawMaterialTypeId}><IconPlus size={16} /></button>
             </div>
           </div>
         </div>
