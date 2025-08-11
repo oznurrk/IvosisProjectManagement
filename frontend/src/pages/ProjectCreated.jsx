@@ -37,7 +37,7 @@ const ProjectCreated = () => {
     additionalInverterCount: 0,
     acValue: 0,
     dcValue: 0,
-    createdByUserId: 1,
+    CreatedBy: 1,
     projectTypeId: 1,
     address: [
       {
@@ -263,7 +263,7 @@ const ProjectCreated = () => {
         additionalInverterCount: 0,
         acValue: 0,
         dcValue: 0,
-        createdByUserId: 1,
+        CreatedBy: 1,
         projectTypeId: null,
         address: [
           {

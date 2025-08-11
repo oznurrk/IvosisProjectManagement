@@ -96,7 +96,7 @@ const TaskAdd = () => {
       processId: formData.processId,
       title: formData.title,
       description: formData.description,
-      createdByUserId: currentUser?.id || 1
+      CreatedBy: currentUser?.id || 1
     };
 
     try {

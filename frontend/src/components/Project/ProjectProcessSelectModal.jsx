@@ -98,9 +98,9 @@ const ProjectProcessSelectModal = ({ opened, onClose, projectId }) => {
           description: task.description || "",
           filePath: null,
           createdAt: new Date().toISOString(),
-          createdByUserId: 1,
+          CreatedBy: 1,
           updatedAt: null,
-          updatedByUserId: null,
+          UpdatedBy: null,
         }));
 
         allPayloads.push(...payloads);

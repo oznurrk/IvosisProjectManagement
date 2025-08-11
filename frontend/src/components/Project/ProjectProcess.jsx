@@ -85,7 +85,7 @@ const ProjectProcess = ({ onProcessSelect }) => {
           endDate: task.endDate ? new Date(task.endDate).toISOString() : null,
           description: task.description || "",
           filePath: task.filePath || [],
-          updatedByUserId: currentUserId,
+          UpdatedBy: currentUserId,
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });

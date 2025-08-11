@@ -89,7 +89,7 @@ const TaskAddModal = ({ opened, onClose, process, onTaskAdded }) => {
         processId: parseInt(process.id), // number olarak gönder
         title: formData.title.trim(),
         description: formData.description.trim() || "",
-        createdByUserId: 0 // Bu değer genellikle backend'de token'dan alınır
+        CreatedBy: 0 // Bu değer genellikle backend'de token'dan alınır
       };
 
       console.log("Gönderilen veri:", taskData); // Debug için

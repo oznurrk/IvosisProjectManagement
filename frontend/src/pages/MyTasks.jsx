@@ -315,7 +315,7 @@ const MyTasks = () => {
         endDate: currentTask.endDate ? new Date(currentTask.endDate).toISOString() : null,
         description: currentTask.description || "",
         filePath: [...(currentTask.filePath || []), ...updatedFilePaths],
-        updatedByUserId: currentUserId
+        UpdatedBy: currentUserId
       };
 
       await axios.put(`http://localhost:5000/api/projectTasks/${taskId}`, updateDto, {
@@ -499,7 +499,7 @@ const MyTasks = () => {
         endDate: task.endDate ? new Date(task.endDate).toISOString() : null,
         description: task.description || "",
         filePath: task.filePath || [],
-        updatedByUserId: currentUserId
+        UpdatedBy: currentUserId
       };
 
       await axios.put(`http://localhost:5000/api/projectTasks/${task.id}`, dto, {
@@ -525,7 +525,7 @@ const MyTasks = () => {
         endDate: taskToReassign.endDate ? new Date(taskToReassign.endDate).toISOString() : null,
         description: taskToReassign.description || "",
         filePath: taskToReassign.filePath || [],
-        updatedByUserId: userObj?.id || 0,
+        UpdatedBy: userObj?.id || 0,
       };
 
       await axios.put(`http://localhost:5000/api/projectTasks/${taskToReassign.id}`, payload, {
