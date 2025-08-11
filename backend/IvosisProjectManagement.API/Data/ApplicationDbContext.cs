@@ -36,6 +36,11 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<SupplierCompany> SupplierCompanies { get; set; }
+        public DbSet<StockLot> StockLots { get; set; }
+        public DbSet<MaterialName> MaterialNames { get; set; }
+        public DbSet<MaterialType> MaterialTypes { get; set; }
+        public DbSet<MaterialQuality> MaterialQualities { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -563,6 +568,20 @@ namespace IvosisProjectManagement.API.Data
                     .WithMany(e => e.StockItems)
                     .HasForeignKey(e => e.UnitId)
                     .OnDelete(DeleteBehavior.Restrict);
+                     entity.HasOne(e => e.MaterialName)
+                  .WithMany(e => e.StockItems)
+                  .HasForeignKey(e => e.MaterialNameId)
+                  .OnDelete(DeleteBehavior.SetNull);
+                    
+                entity.HasOne(e => e.MaterialType)
+                    .WithMany(e => e.StockItems)
+                    .HasForeignKey(e => e.MaterialTypeId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                    
+                entity.HasOne(e => e.MaterialQuality)
+                  .WithMany(e => e.StockItems)
+                  .HasForeignKey(e => e.MaterialQualityId)
+                  .OnDelete(DeleteBehavior.SetNull);
             });
 
             // ✅ StockMovement Configuration - EXPLICIT İLİŞKİLER
@@ -571,7 +590,7 @@ namespace IvosisProjectManagement.API.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
                 entity.Property(e => e.MovementDate).HasDefaultValueSql("GETDATE()");
-                
+
                 entity.Property(e => e.Quantity).HasPrecision(18, 2);
                 entity.Property(e => e.UnitPrice).HasPrecision(18, 2);
                 entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
@@ -605,9 +624,20 @@ namespace IvosisProjectManagement.API.Data
                     .HasForeignKey(e => e.LocationId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(e => e.StockLot)
+                  .WithMany(s => s.StockMovements)
+                  .HasForeignKey(e => e.StockLotId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(e => new { e.StockItemId, e.MovementDate });
                 entity.HasIndex(e => e.LocationId);
                 entity.HasIndex(e => e.MovementType);
+                entity.HasIndex(e => e.StockLotId);
+                entity.HasIndex(e => e.ReferenceType);
+
+            // Check constraint for MovementType
+                entity.HasCheckConstraint("CK_StockMovements_MovementType", 
+                    "MovementType IN ('IN', 'OUT', 'TRANSFER', 'ADJUSTMENT')");
             });
 
             // StockBalance Configuration
@@ -751,6 +781,144 @@ namespace IvosisProjectManagement.API.Data
                 .HasOne(u => u.User)
                 .WithMany(u => u.ActivityLogs)
                 .HasForeignKey(u => u.UserId);
+            
+            // StockLot configuration
+            modelBuilder.Entity<StockLot>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.LotNumber).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.InternalLotNumber).HasMaxLength(50);
+                entity.Property(e => e.LabelNumber).HasMaxLength(50);
+                entity.Property(e => e.Barcode).HasMaxLength(100);
+                entity.Property(e => e.CertificateNumber).HasMaxLength(100);
+                entity.Property(e => e.QualityGrade).HasMaxLength(50);
+                entity.Property(e => e.TestResults).HasMaxLength(500);
+                entity.Property(e => e.StoragePosition).HasMaxLength(100);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.BlockReason).HasMaxLength(250);
+
+                // Decimal precision
+                entity.Property(e => e.InitialWeight).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.CurrentWeight).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.InitialLength).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.CurrentLength).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.Width).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.Thickness).HasColumnType("decimal(18,4)");
+
+                // Indexes
+                entity.HasIndex(e => e.LotNumber).IsUnique();
+                entity.HasIndex(e => e.LabelNumber);
+                entity.HasIndex(e => e.StockItemId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.IsBlocked);
+
+                // Relationships
+                entity.HasOne(e => e.StockItem)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Supplier)
+                    .WithMany()
+                    .HasForeignKey(e => e.SupplierId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Location)
+                    .WithMany()
+                    .HasForeignKey(e => e.LocationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(sc => sc.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(sc => sc.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(sc => sc.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(sc => sc.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(sc => sc.Company)
+                    .WithMany()
+                    .HasForeignKey(sc => sc.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.SupplierId, e.CompanyId }).IsUnique();
+            });
+            //Material Configuration
+            modelBuilder.Entity<MaterialName>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                // EXPLICIT Foreign Key Configuration
+                entity.HasOne(m => m.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(m => m.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(m => m.UpdatedByUser)
+                    .WithMany() 
+                    .HasForeignKey(m => m.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+            });
+            modelBuilder.Entity<MaterialType>(entity =>
+            {
+                entity.ToTable("MaterialTypes");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.TechnicalSpecs).HasMaxLength(2000);
+                entity.HasIndex(e => e.Code).IsUnique();
+                
+                entity.HasOne(e => e.MaterialName)
+                    .WithMany(e => e.MaterialTypes)
+                    .HasForeignKey(e => e.MaterialNameId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+               // EXPLICIT Foreign Key Configuration
+                entity.HasOne(mt => mt.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(mt => mt.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(mt => mt.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(mt => mt.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+                  
+            });
+             modelBuilder.Entity<MaterialQuality>(entity =>
+        {
+            entity.ToTable("MaterialQualities");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.QualitySpecs).HasMaxLength(2000);
+            entity.HasIndex(e => e.Code).IsUnique();
+            
+            entity.HasOne(e => e.MaterialType)
+                  .WithMany(e => e.MaterialQualities)
+                  .HasForeignKey(e => e.MaterialTypeId)
+                  .OnDelete(DeleteBehavior.Restrict); 
+                 
+            entity.HasOne(mq => mq.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(mq => mq.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(mq => mq.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(mq => mq.UpdatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+                });
         }
     }
 }

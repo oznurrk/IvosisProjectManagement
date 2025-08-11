@@ -23,9 +23,19 @@ public class StockItemDto : CompanyDto
         public bool IsActive { get; set; }
         public bool IsDiscontinued { get; set; }
         public bool IsCriticalItem { get; set; }
+        public bool HasLotTracking { get; set; }
+        public int? MaterialNameId { get; set; }
+        public string MaterialNameName { get; set; } = "";
+        public string MaterialNameCode { get; set; } = "";
+        public int? MaterialTypeId { get; set; }
+        public string MaterialTypeName { get; set; } = "";
+        public string MaterialTypeCode { get; set; } = "";
+        public int? MaterialQualityId { get; set; }
+        public string MaterialQualityName { get; set; } = "";
+        public string MaterialQualityCode { get; set; } = "";
         
         // Current stock information
-        public decimal CurrentStock { get; set; }
+    public decimal CurrentStock { get; set; }
         public decimal AvailableStock { get; set; }
         public decimal ReservedStock { get; set; }
         public string StockStatus { get; set; }= ""; // LOW_STOCK, NORMAL, OVERSTOCK

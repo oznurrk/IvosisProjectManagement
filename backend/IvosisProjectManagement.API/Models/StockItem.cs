@@ -23,10 +23,18 @@ public class StockItem : CompanyEntity
     public bool IsActive { get; set; } = true;
     public bool IsDiscontinued { get; set; } = false;
     public bool IsCriticalItem { get; set; } = false;
+    public bool HasLotTracking { get; set; }  // lot takibi var mı?
+    public int? MaterialNameId { get; set; }
+    public int? MaterialTypeId { get; set; }
+    public int? MaterialQualityId { get; set; }
     public virtual StockCategory Category { get; set; }
     public virtual Unit Unit { get; set; }
     public virtual ICollection<StockBalance> StockBalances { get; set; }
     public virtual ICollection<StockMovement> StockMovements { get; set; }
     public virtual ICollection<StockAlert> StockAlerts { get; set; }
+    // Navigation property eklemek istersen:
+    public MaterialName MaterialName { get; set; }
+    public MaterialType MaterialType { get; set; }
+    public MaterialQuality MaterialQuality { get; set; }
 
 }

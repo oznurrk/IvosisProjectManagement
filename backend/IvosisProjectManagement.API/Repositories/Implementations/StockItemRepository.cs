@@ -326,4 +326,217 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             _ => x => x.Name
         };
     }
-}
+    
+
+    public async Task<IEnumerable<StockItemDto>> GetByMaterialNameIdAsync(int materialNameId)
+    {
+        return await _context.StockItems
+            .Include(x => x.Category)
+            .Include(x => x.Unit)
+            .Include(x => x.MaterialName)
+            .Include(x => x.MaterialType)
+            .Include(x => x.MaterialQuality)
+            .Include(x => x.StockBalances)
+            .Where(x => x.MaterialNameId == materialNameId && x.IsActive)
+            .Select(x => new StockItemDto
+            {
+                Id = x.Id,
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",
+                CategoryId = x.CategoryId,
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                HasLotTracking = x.HasLotTracking,
+                MinimumStock = x.MinimumStock,
+                MaximumStock = x.MaximumStock,
+                ReorderLevel = x.ReorderLevel,
+                PurchasePrice = x.PurchasePrice,
+                SalePrice = x.SalePrice,
+                Currency = x.Currency ?? "",
+                Brand = x.Brand ?? "",
+                Model = x.Model ?? "",
+                IsActive = x.IsActive,
+                IsDiscontinued = x.IsDiscontinued,
+                IsCriticalItem = x.IsCriticalItem,
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
+                StockStatus = DetermineStockStatusSafe(
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
+            })
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<StockItemDto>> GetByMaterialTypeIdAsync(int materialTypeId)
+    {
+        return await _context.StockItems
+            .Include(x => x.Category)
+            .Include(x => x.Unit)
+            .Include(x => x.MaterialName)
+            .Include(x => x.MaterialType)
+            .Include(x => x.MaterialQuality)
+            .Include(x => x.StockBalances)
+            .Where(x => x.MaterialTypeId == materialTypeId && x.IsActive)
+            .Select(x => new StockItemDto
+            {
+                Id = x.Id,
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",
+                CategoryId = x.CategoryId,
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                HasLotTracking = x.HasLotTracking,
+                MinimumStock = x.MinimumStock,
+                MaximumStock = x.MaximumStock,
+                ReorderLevel = x.ReorderLevel,
+                PurchasePrice = x.PurchasePrice,
+                SalePrice = x.SalePrice,
+                Currency = x.Currency ?? "",
+                Brand = x.Brand ?? "",
+                Model = x.Model ?? "",
+                IsActive = x.IsActive,
+                IsDiscontinued = x.IsDiscontinued,
+                IsCriticalItem = x.IsCriticalItem,
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
+                StockStatus = DetermineStockStatusSafe(
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
+            })
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<StockItemDto>> GetByMaterialQualityIdAsync(int materialQualityId)
+    {
+        return await _context.StockItems
+            .Include(x => x.Category)
+            .Include(x => x.Unit)
+            .Include(x => x.MaterialName)
+            .Include(x => x.MaterialType)
+            .Include(x => x.MaterialQuality)
+            .Include(x => x.StockBalances)
+            .Where(x => x.MaterialQualityId == materialQualityId && x.IsActive)
+            .Select(x => new StockItemDto
+            {
+                Id = x.Id,
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",
+                CategoryId = x.CategoryId,
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                HasLotTracking = x.HasLotTracking,
+                MinimumStock = x.MinimumStock,
+                MaximumStock = x.MaximumStock,
+                ReorderLevel = x.ReorderLevel,
+                PurchasePrice = x.PurchasePrice,
+                SalePrice = x.SalePrice,
+                Currency = x.Currency ?? "",
+                Brand = x.Brand ?? "",
+                Model = x.Model ?? "",
+                IsActive = x.IsActive,
+                IsDiscontinued = x.IsDiscontinued,
+                IsCriticalItem = x.IsCriticalItem,
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
+                StockStatus = DetermineStockStatusSafe(
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
+            })
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<StockItemDto>> GetLotTrackingItemsAsync()
+    {
+        return await _context.StockItems
+            .Include(x => x.Category)
+            .Include(x => x.Unit)
+            .Include(x => x.MaterialName)
+            .Include(x => x.MaterialType)
+            .Include(x => x.MaterialQuality)
+            .Include(x => x.StockBalances)
+            .Where(x => x.HasLotTracking && x.IsActive)
+            .Select(x => new StockItemDto
+            {
+                Id = x.Id,
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",
+                CategoryId = x.CategoryId,
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                HasLotTracking = x.HasLotTracking,
+                MinimumStock = x.MinimumStock,
+                MaximumStock = x.MaximumStock,
+                ReorderLevel = x.ReorderLevel,
+                PurchasePrice = x.PurchasePrice,
+                SalePrice = x.SalePrice,
+                Currency = x.Currency ?? "",
+                Brand = x.Brand ?? "",
+                Model = x.Model ?? "",
+                IsActive = x.IsActive,
+                IsDiscontinued = x.IsDiscontinued,
+                IsCriticalItem = x.IsCriticalItem,
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
+                StockStatus = DetermineStockStatusSafe(
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
+            })
+            .ToListAsync();
+    }
+    }

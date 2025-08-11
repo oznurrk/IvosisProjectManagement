@@ -12,6 +12,9 @@ public class StockMovement : CompanyEntity
     public string Description { get; set; }
     public string Notes { get; set; }
     public DateTime MovementDate { get; set; } = DateTime.Now;
+    public int? StockLotId { get; set; }
+    public decimal? ProducedQuantity { get; set; } // Quantity produced in case of production movements
+    public virtual StockLot StockLot { get; set; }
     public virtual StockItem StockItem { get; set; }
     public virtual StockLocation Location { get; set; }
 }

@@ -10,11 +10,20 @@ using Microsoft.AspNetCore.Mvc;
     {
         private readonly IStockItemService _stockItemService;
         private readonly IAuthorizationService _authService;
+        private readonly IMaterialNameService _materialNameService;
+        private readonly IMaterialTypeService _materialTypeService;
+        private readonly IMaterialQualityService _materialQualityService;
 
-    public StockItemsController(IStockItemService stockItemService, IAuthorizationService authService)
+    public StockItemsController(IStockItemService stockItemService, IAuthorizationService authService,
+        IMaterialNameService materialNameService, 
+        IMaterialTypeService materialTypeService, 
+        IMaterialQualityService materialQualityService)
     {
         _stockItemService = stockItemService;
-         _authService = authService;
+        _authService = authService;
+        _materialNameService = materialNameService;
+        _materialTypeService = materialTypeService;    
+        _materialQualityService = materialQualityService;
     }
 
     [HttpGet]
@@ -244,10 +253,108 @@ using Microsoft.AspNetCore.Mvc;
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
+        //mATERİAL NAME, TYPE, QUALITY GET METHODS
+        // These methods are used to fetch material names, types, and qualities for stock items.
+        [HttpGet("material-names")]
+        public async Task<ActionResult<object>> GetMaterialNames()
+        {
+            try
+            {
+                var materialNames = await _materialNameService.GetActiveAsync();
+                return Ok(new { success = true, data = materialNames });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet("material-types")]
+        public async Task<ActionResult<object>> GetMaterialTypes([FromQuery] int? materialNameId = null)
+        {
+            try
+            {
+                var materialTypes = materialNameId.HasValue 
+                    ? await _materialTypeService.GetByMaterialNameIdAsync(materialNameId.Value)
+                    : await _materialTypeService.GetActiveAsync();
+                    
+                return Ok(new { success = true, data = materialTypes });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet("material-qualities")]
+        public async Task<ActionResult<object>> GetMaterialQualities([FromQuery] int? materialTypeId = null)
+        {
+            try
+            {
+                var materialQualities = materialTypeId.HasValue 
+                    ? await _materialQualityService.GetByMaterialTypeIdAsync(materialTypeId.Value)
+                    : await _materialQualityService.GetActiveAsync();
+                    
+                return Ok(new { success = true, data = materialQualities });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet("lot-tracking-items")]
+        public async Task<ActionResult<object>> GetLotTrackingItems()
+        {
+            try
+            {
+                var filter = new StockItemFilterDto { HasLotTracking = true };
+                var userId = GetCurrentUserId();
+                
+                if (!HasGroupAccess() && !GetCurrentUserRoles().Any(r => r.Contains("PURCHASE")))
+                {
+                    var accessibleCompanies = await _authService.GetUserAccessibleCompaniesAsync(userId);
+                    filter.CompanyIds = accessibleCompanies;
+                }
+                
+                var (items, totalCount) = await _stockItemService.GetFilteredAsync(filter);
+                return Ok(new { success = true, data = items, totalCount });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpGet("by-material")]
+        public async Task<ActionResult<object>> GetStockItemsByMaterial(
+            [FromQuery] int? materialNameId = null,
+            [FromQuery] int? materialTypeId = null,
+            [FromQuery] int? materialQualityId = null)
+        {
+        try
+        {
+            var filter = new StockItemFilterDto
+            {
+                MaterialNameId = materialNameId,
+                MaterialTypeId = materialTypeId,
+                MaterialQualityId = materialQualityId
+            };
+            
+            var userId = GetCurrentUserId();
+            
+            if (!HasGroupAccess() && !GetCurrentUserRoles().Any(r => r.Contains("PURCHASE")))
+            {
+                var accessibleCompanies = await _authService.GetUserAccessibleCompaniesAsync(userId);
+                filter.CompanyIds = accessibleCompanies;
+            }
+            
+            var (items, totalCount) = await _stockItemService.GetFilteredAsync(filter);
+            return Ok(new { success = true, data = items, totalCount });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
     }
-//GET    /api/stockitems              - Filtrelenmiş ürün listesi
-//GET    /api/stockitems/{id}         - Ürün detayı
-//POST   /api/stockitems              - Yeni ürün oluştur
-//PUT    /api/stockitems/{id}         - Ürün güncelle
-//DELETE /api/stockitems/{id}         - Ürün sil
-//
+}

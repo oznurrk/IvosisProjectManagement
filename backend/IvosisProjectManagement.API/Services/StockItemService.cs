@@ -106,4 +106,24 @@ public class StockItemService : IStockItemService
     {
         return await _stockItemRepository.IsItemCodeUniqueAsync(itemCode, excludeId);
     }
+
+     public async Task<IEnumerable<StockItemDto>> GetByMaterialNameIdAsync(int materialNameId)
+    {
+        return await _stockItemRepository.GetByMaterialNameIdAsync(materialNameId);
+    }
+
+    public async Task<IEnumerable<StockItemDto>> GetByMaterialTypeIdAsync(int materialTypeId)
+    {
+        return await _stockItemRepository.GetByMaterialTypeIdAsync(materialTypeId);
+    }
+
+    public async Task<IEnumerable<StockItemDto>> GetByMaterialQualityIdAsync(int materialQualityId)
+    {
+        return await _stockItemRepository.GetByMaterialQualityIdAsync(materialQualityId);
+    }
+
+    public async Task<IEnumerable<StockItemDto>> GetLotTrackingItemsAsync()
+    {
+        return await _stockItemRepository.GetLotTrackingItemsAsync();
+    }
 }

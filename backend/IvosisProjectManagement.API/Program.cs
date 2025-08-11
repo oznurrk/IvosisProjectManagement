@@ -77,8 +77,14 @@ builder.Services.AddScoped<IUnitService, UnitService>();
 builder.Services.AddScoped<IStockLocationService, StockLocationService>();
 builder.Services.AddScoped<IStockCategoryService, StockCategoryService>();
 
+builder.Services.AddScoped<IStockLotService, StockLotService>();
+
+builder.Services.AddScoped<IMaterialNameService, MaterialNameService>();
+builder.Services.AddScoped<IMaterialTypeService, MaterialTypeService>();
+builder.Services.AddScoped<IMaterialQualityService, MaterialQualityService>();
 
 builder.Services.AddAutoMapper(typeof(StockManagementProfile));
+
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();

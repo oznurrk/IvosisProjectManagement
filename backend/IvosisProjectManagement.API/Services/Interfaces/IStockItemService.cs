@@ -12,5 +12,9 @@ public interface IStockItemService
     Task<IEnumerable<StockItemDto>> GetCriticalStockItemsAsync();
     Task<IEnumerable<StockItemDto>> SearchAsync(string searchTerm);
     Task<bool> IsItemCodeUniqueAsync(string itemCode, int? excludeId = null);
+    Task<IEnumerable<StockItemDto>> GetByMaterialNameIdAsync(int materialNameId);
+    Task<IEnumerable<StockItemDto>> GetByMaterialTypeIdAsync(int materialTypeId);
+    Task<IEnumerable<StockItemDto>> GetByMaterialQualityIdAsync(int materialQualityId);
+    Task<IEnumerable<StockItemDto>> GetLotTrackingItemsAsync();
         
     }

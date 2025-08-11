@@ -13,4 +13,8 @@ public class StockItemFilterDto
         public string SortBy { get; set; } = "Name";
         public string SortDirection { get; set; } = "ASC";
         public List<int>? CompanyIds { get; set; }
+        public bool? HasLotTracking { get; set; }
+        public int? MaterialNameId { get; set; }
+        public int? MaterialTypeId { get; set; }
+        public int? MaterialQualityId { get; set; }
     }
