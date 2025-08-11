@@ -124,3 +124,5 @@ sayfalandırma yapısı sol tarafta yapılacak. 5-10-15-20 şeklinde artacak.
 2-MyTask sayfasında dosya yükleme işlemi zorunlu hale getirildi
 3-ProjectTask sayfasındaki process ekranı ayrı bir component olarak eklendi
 4-ProjectTask sayfasında dosya yükleme işlemi zorunlu hale getirildi
+
+
