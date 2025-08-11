@@ -465,18 +465,20 @@ function getStockStatus(item) {
 
       {/* Actions */}
       <div className="px-4 mb-6">
-        <div className="flex justify-end">
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-ivosis-500 to-ivosis-600 h-8 text-white px-6 py-3 rounded-lg shadow-lg hover:from-ivosis-600 hover:to-ivosis-700 transition-all duration-200 flex items-center gap-2 font-semibold"
-          >
-            <IconPlus size={20} />
-            Ekle
-          </button>
-        </div>
+        {/* Ekle butonunu kaldırdık, yerine sabit sağ altta yuvarlak yeşil plus buton eklenecek */}
       </div>
 
       {/* Stok Kartları Liste */}
+      {/* Sabit sağ altta yuvarlak yeşil plus buton */}
+      <button
+        type="button"
+        onClick={() => setShowAddModal(true)}
+        className="fixed bottom-8 right-8 z-[100] bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 text-3xl transition-all duration-200"
+        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}
+        title="Yeni Stok Kartı Ekle"
+      >
+        <IconPlus size={36} />
+      </button>
       <div className="px-4">
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {currentItems.length === 0 ? (
@@ -498,13 +500,12 @@ function getStockStatus(item) {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">ID</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Malzeme Bilgileri</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-ivosis-700 uppercase tracking-wider">ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-ivosis-700 uppercase tracking-wider">Malzeme Bilgileri</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Stok Kodu</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Stok Türü</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Mevcut Stok</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Min/Kritik Stok</th>
-                    {/* <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Fiyat Bilgileri</th> */}
+                    <th className="px-4 py-3 text-right text-xs font-medium text-ivosis-700 uppercase tracking-wider">Mevcut Stok</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-ivosis-700 uppercase tracking-wider">Min/Kritik Stok</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">Durum</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-ivosis-700 uppercase tracking-wider">İşlemler</th>
                   </tr>
@@ -516,8 +517,8 @@ function getStockStatus(item) {
                     return (
                       <tr key={item.id} className="hover:bg-gray-50">
                         {/* Sıra Numarası */}
-                        <td className="px-4 py-4 text-center">
-                          <div className="flex items-center justify-center">
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex items-center justify-end">
                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold bg-ivosis-100 text-ivosis-800">
                               {rowNumber}
                             </span>
@@ -525,14 +526,14 @@ function getStockStatus(item) {
                         </td>
 
                         {/* Malzeme Bilgileri */}
-                        <td className="px-4 py-4 text-right">
-                          <div className="flex items-center justify-end space-x-3">
-                            <div className="min-w-0 flex-1 text-right">
-                              <div className="text-sm font-medium text-gray-900 break-words text-right">
+                        <td className="px-4 py-4 text-left">
+                          <div className="flex items-center justify-start space-x-3">
+                            <div className="min-w-0 flex-1 text-left">
+                              <div className="text-sm font-medium text-gray-900 break-words text-left">
                                 {item.name}
                               </div>
                               {item.brand && (
-                                <div className="text-sm items-center text-gray-500 flex items-center justify-end mt-1 text-right">
+                                <div className="text-sm items-center text-gray-500 flex items-center justify-start mt-1 text-left">
                                   <IconStar size={12} className="mr-1 flex-shrink-0" />
                                   <span className="break-words">
                                     {item.brand}
@@ -541,7 +542,7 @@ function getStockStatus(item) {
                                 </div>
                               )}
                               {item.description && (
-                                <div className="text-xs text-gray-400 mt-1 line-clamp-2 text-right">
+                                <div className="text-xs text-gray-400 mt-1 line-clamp-2 text-left">
                                   {item.description}
                                 </div>
                               )}
@@ -550,22 +551,22 @@ function getStockStatus(item) {
                         </td>
 
                         {/* Stok Kodu */}
-                        <td className="px-4 py-4 text-right">
-                          <div className="text-sm font-medium text-gray-900 text-right">
+                        <td className="px-4 py-4 text-center">
+                          <div className="text-sm font-medium text-gray-900 text-center">
                             {item.itemCode}
                           </div>
                         </td>
 
                         {/* Kategori */}
-                        <td className="px-4 py-4 text-right">
-                          <div className="text-sm text-gray-900 text-right">
+                        <td className="px-4 py-4 text-center">
+                          <div className="text-sm text-gray-900 text-center">
                             {item.category || getCategoryName(item.categoryId, item)}
                           </div>
                         </td>
 
                         {/* Mevcut Stok */}
-                        <td className="px-4 py-4 text-left">
-                          <div className="text-sm text-gray-900 text-left">
+                        <td className="px-4 py-4 text-right">
+                          <div className="text-sm text-gray-900 text-right">
                             <span className={`font-medium ${
                               status === "Kritik" ? "text-red-600" : 
                               status === "Düşük" ? "text-yellow-600" : "text-green-600"
@@ -579,8 +580,8 @@ function getStockStatus(item) {
                         </td>
 
                         {/* Min/Kritik Stok */}
-                        <td className="px-4 py-4 text-left">
-                          <div className="text-sm text-gray-900 text-left">
+                        <td className="px-4 py-4 text-right">
+                          <div className="text-sm text-gray-900 text-right">
                             <div>Min: {item.minimumStock} {getUnitName(item.unitId)}</div>
                             <div className="text-xs text-gray-500">
                               Kritik: {item.reorderLevel} {getUnitName(item.unitId)}
