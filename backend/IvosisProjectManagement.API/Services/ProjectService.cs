@@ -18,7 +18,18 @@ namespace IvosisProjectManagement.API.Services
         public async Task<IEnumerable<ProjectDto>> GetAllAsync()
         {
             return await _context.Projects
-                .Include(p => p.Address) // Çoklu adresler dahil
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.City)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.District)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.Neighborhood)
+                .Include(p => p.Company)
+                .Include(p => p.PanelBrand)
+                .Include(p => p.InverterBrand)
+                .Include(p => p.ProjectType)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
                 .Select(p => new ProjectDto
                 {
                     Id = p.Id,
@@ -30,29 +41,41 @@ namespace IvosisProjectManagement.API.Services
                     Status = p.Status,
                     AcValue = p.AcValue,
                     DcValue = p.DcValue,
+                    CompanyId = p.CompanyId,
+                    CompanyName = p.Company != null ? p.Company.Name : null,
                     Address = p.Address.Select(a => new ProjectAddressDto
                     {
+                        Id = a.Id,
                         CityId = a.CityId,
+                        CityName = a.City != null ? a.City.Name : "",
                         DistrictId = a.DistrictId,
+                        DistrictName = a.District != null ? a.District.Name : "",
                         NeighborhoodId = a.NeighborhoodId,
+                        NeighborhoodName = a.Neighborhood != null ? a.Neighborhood.Name : null,
                         Ada = a.Ada,
-                        Parsel = a.Parsel
+                        Parsel = a.Parsel,
+                        AdressDetails = a.AdressDetails
                     }).ToList(),
                     ProjectTypeId = p.ProjectTypeId,
+                    ProjectTypeName = p.ProjectType != null ? p.ProjectType.Name : null,
                     PanelCount = p.PanelCount,
                     PanelPower = p.PanelPower,
                     PanelBrandId = p.PanelBrandId,
+                    PanelBrandName = p.PanelBrand != null ? p.PanelBrand.Name : null,
                     InverterCount = p.InverterCount,
                     InverterPower = p.InverterPower,
                     InverterBrandId = p.InverterBrandId,
+                    InverterBrandName = p.InverterBrand != null ? p.InverterBrand.Name : null,
                     HasAdditionalStructure = p.HasAdditionalStructure,
                     AdditionalPanelCount = p.AdditionalPanelCount,
                     AdditionalInverterCount = p.AdditionalInverterCount,
                     AdditionalPanelPower = p.AdditionalPanelPower,
                     CreatedAt = p.CreatedAt,
                     CreatedBy = p.CreatedBy,
+                    CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
                     UpdatedAt = p.UpdatedAt,
-                    CompanyId = p.CompanyId,
+                    UpdatedBy = p.UpdatedBy,
+                    UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null,
                     ProjeGesType = p.ProjeGesType
                 }).ToListAsync();
         }
@@ -61,6 +84,17 @@ namespace IvosisProjectManagement.API.Services
         {
             var project = await _context.Projects
                 .Include(p => p.Address)
+                    .ThenInclude(a => a.City)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.District)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.Neighborhood)
+                .Include(p => p.Company)
+                .Include(p => p.PanelBrand)
+                .Include(p => p.InverterBrand)
+                .Include(p => p.ProjectType)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.UpdatedByUser)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null) return null;
@@ -76,28 +110,41 @@ namespace IvosisProjectManagement.API.Services
                 Status = project.Status,
                 AcValue = project.AcValue,
                 DcValue = project.DcValue,
+                CompanyId = project.CompanyId,
+                CompanyName = project.Company?.Name,
                 Address = project.Address.Select(a => new ProjectAddressDto
                 {
+                    Id = a.Id,
                     CityId = a.CityId,
+                    CityName = a.City?.Name ?? "",
                     DistrictId = a.DistrictId,
+                    DistrictName = a.District?.Name ?? "",
                     NeighborhoodId = a.NeighborhoodId,
+                    NeighborhoodName = a.Neighborhood?.Name,
                     Ada = a.Ada,
-                    Parsel = a.Parsel
+                    Parsel = a.Parsel,
+                    AdressDetails = a.AdressDetails
                 }).ToList(),
                 ProjectTypeId = project.ProjectTypeId,
+                ProjectTypeName = project.ProjectType?.Name,
                 PanelCount = project.PanelCount,
                 PanelPower = project.PanelPower,
                 PanelBrandId = project.PanelBrandId,
+                PanelBrandName = project.PanelBrand?.Name,
                 InverterCount = project.InverterCount,
                 InverterPower = project.InverterPower,
                 InverterBrandId = project.InverterBrandId,
+                InverterBrandName = project.InverterBrand?.Name,
                 HasAdditionalStructure = project.HasAdditionalStructure,
                 AdditionalPanelCount = project.AdditionalPanelCount,
                 AdditionalInverterCount = project.AdditionalInverterCount,
                 AdditionalPanelPower = project.AdditionalPanelPower,
                 CreatedAt = project.CreatedAt,
                 CreatedBy = project.CreatedBy,
+                CreatedByUserName = project.CreatedByUser?.Name,
                 UpdatedAt = project.UpdatedAt,
+                UpdatedBy = project.UpdatedBy,
+                UpdatedByUserName = project.UpdatedByUser?.Name,
                 ProjeGesType = project.ProjeGesType
             };
         }
@@ -128,55 +175,24 @@ namespace IvosisProjectManagement.API.Services
                 AdditionalPanelCount = dto.AdditionalPanelCount,
                 AdditionalInverterCount = dto.AdditionalInverterCount,
                 AdditionalPanelPower = dto.AdditionalPanelPower ?? 0,
-                ProjeGesType=   dto.ProjeGesType,
+                ProjeGesType = dto.ProjeGesType,
                 Address = dto.Address.Select(a => new ProjectAddress
                 {
                     CityId = a.CityId,
                     DistrictId = a.DistrictId,
                     NeighborhoodId = a.NeighborhoodId,
                     Ada = a.Ada,
-                    Parsel = a.Parsel
+                    Parsel = a.Parsel,
+                    AdressDetails = a.AdressDetails
                 }).ToList()
             };
 
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
 
-            return new ProjectDto
-            {
-                Id = project.Id,
-                Name = project.Name,
-                Description = project.Description,
-                StartDate = project.StartDate,
-                EndDate = project.EndDate,
-                Priority = project.Priority,
-                Status = project.Status,
-                AcValue = project.AcValue,
-                DcValue = project.DcValue,
-                ProjectTypeId = project.ProjectTypeId,
-                ProjeGesType = project.ProjeGesType,
-                Address = project.Address.Select(a => new ProjectAddressDto
-                {
-                    CityId = a.CityId,
-                    DistrictId = a.DistrictId,
-                    NeighborhoodId = a.NeighborhoodId,
-                    Ada = a.Ada,
-                    Parsel = a.Parsel
-                }).ToList(),
-                PanelCount = project.PanelCount,
-                PanelPower = project.PanelPower,
-                PanelBrandId = project.PanelBrandId,
-                InverterCount = project.InverterCount,
-                InverterPower = project.InverterPower,
-                InverterBrandId = project.InverterBrandId,
-                HasAdditionalStructure = project.HasAdditionalStructure,
-                AdditionalPanelCount = project.AdditionalPanelCount,
-                AdditionalInverterCount = project.AdditionalInverterCount,
-                AdditionalPanelPower = project.AdditionalPanelPower,
-                CreatedAt = project.CreatedAt,
-                CreatedBy = project.CreatedBy,
-                CompanyId = project.CompanyId
-            };
+            // Oluşturulan projeyi tekrar yükle (ilişkili verilerle birlikte)
+            var createdProject = await GetByIdAsync(project.Id);
+            return createdProject!;
         }
 
         public async Task<bool> UpdateAsync(int id, ProjectUpdateDto dto)
@@ -190,7 +206,7 @@ namespace IvosisProjectManagement.API.Services
             project.Name = dto.Name;
             project.Description = dto.Description;
             project.StartDate = dto.StartDate;
-            project.EndDate =  dto.EndDate ?? DateTime.Now.AddDays(15);
+            project.EndDate = dto.EndDate ?? DateTime.Now.AddDays(15);
             project.Priority = dto.Priority;
             project.Status = dto.Status;
             project.AcValue = dto.ACValue;
@@ -210,18 +226,20 @@ namespace IvosisProjectManagement.API.Services
             project.AdditionalPanelPower = dto.AdditionalPanelPower ?? 0;
             project.ProjeGesType = dto.ProjeGesType;
 
-            project.Address.Clear();
-            foreach (var a in dto.Address)
+            // Mevcut adresleri temizle
+            _context.ProjectAddresses.RemoveRange(project.Address);
+            
+            // Yeni adresleri ekle
+            project.Address = dto.Address.Select(a => new ProjectAddress
             {
-                project.Address.Add(new ProjectAddress
-                {
-                    CityId = a.CityId,
-                    DistrictId = a.DistrictId,
-                    NeighborhoodId = a.NeighborhoodId,
-                    Ada = a.Ada,
-                    Parsel = a.Parsel
-                });
-            }
+                ProjectId = id,
+                CityId = a.CityId,
+                DistrictId = a.DistrictId,
+                NeighborhoodId = a.NeighborhoodId,
+                Ada = a.Ada,
+                Parsel = a.Parsel,
+                AdressDetails = a.AdressDetails
+            }).ToList();
 
             _context.Projects.Update(project);
             return await _context.SaveChangesAsync() > 0;
@@ -242,6 +260,12 @@ namespace IvosisProjectManagement.API.Services
 
             var projects = await _context.Projects
                 .Where(p => companyIds.Contains(p.CompanyId ?? 0))
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.City)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.District)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.Neighborhood)
                 .Include(p => p.Company)
                 .Include(p => p.PanelBrand)
                 .Include(p => p.InverterBrand)
@@ -275,13 +299,26 @@ namespace IvosisProjectManagement.API.Services
                     DcValue = p.DcValue,
                     ProjectTypeId = p.ProjectTypeId,
                     ProjectTypeName = p.ProjectType != null ? p.ProjectType.Name : null,
+                    Address = p.Address.Select(a => new ProjectAddressDto
+                    {
+                        Id = a.Id,
+                        CityId = a.CityId,
+                        CityName = a.City != null ? a.City.Name : "",
+                        DistrictId = a.DistrictId,
+                        DistrictName = a.District != null ? a.District.Name : "",
+                        NeighborhoodId = a.NeighborhoodId,
+                        NeighborhoodName = a.Neighborhood != null ? a.Neighborhood.Name : null,
+                        Ada = a.Ada,
+                        Parsel = a.Parsel,
+                        AdressDetails = a.AdressDetails
+                    }).ToList(),
                     CreatedAt = p.CreatedAt,
                     CreatedBy = p.CreatedBy,
                     CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
                     UpdatedAt = p.UpdatedAt,
                     UpdatedBy = p.UpdatedBy,
                     UpdatedByUserName = p.UpdatedByUser != null ? p.UpdatedByUser.Name : null,
-                    ProjeGesType= p.ProjeGesType
+                    ProjeGesType = p.ProjeGesType
                 })
                 .ToListAsync();
 
@@ -299,6 +336,12 @@ namespace IvosisProjectManagement.API.Services
                 .Where(p => p.CompanyId == companyId && 
                            (p.Status == "Üretim" || p.Status == "Production" || 
                             p.Name!.Contains("Üretim") || p.Name.Contains("Production")))
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.City)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.District)
+                .Include(p => p.Address)
+                    .ThenInclude(a => a.Neighborhood)
                 .Include(p => p.Company)
                 .Include(p => p.PanelBrand)
                 .Include(p => p.InverterBrand)
@@ -332,6 +375,19 @@ namespace IvosisProjectManagement.API.Services
                     DcValue = p.DcValue,
                     ProjectTypeId = p.ProjectTypeId,
                     ProjectTypeName = p.ProjectType != null ? p.ProjectType.Name : null,
+                    Address = p.Address.Select(a => new ProjectAddressDto
+                    {
+                        Id = a.Id,
+                        CityId = a.CityId,
+                        CityName = a.City != null ? a.City.Name : "",
+                        DistrictId = a.DistrictId,
+                        DistrictName = a.District != null ? a.District.Name : "",
+                        NeighborhoodId = a.NeighborhoodId,
+                        NeighborhoodName = a.Neighborhood != null ? a.Neighborhood.Name : null,
+                        Ada = a.Ada,
+                        Parsel = a.Parsel,
+                        AdressDetails = a.AdressDetails
+                    }).ToList(),
                     CreatedAt = p.CreatedAt,
                     CreatedBy = p.CreatedBy,
                     CreatedByUserName = p.CreatedByUser != null ? p.CreatedByUser.Name : null,
