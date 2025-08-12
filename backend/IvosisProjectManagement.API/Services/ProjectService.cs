@@ -52,6 +52,7 @@ namespace IvosisProjectManagement.API.Services
                     CreatedAt = p.CreatedAt,
                     CreatedBy = p.CreatedBy,
                     UpdatedAt = p.UpdatedAt,
+                    CompanyId = p.CompanyId,
                     ProjeGesType = p.ProjeGesType
                 }).ToListAsync();
         }
@@ -147,7 +148,7 @@ namespace IvosisProjectManagement.API.Services
                 Name = project.Name,
                 Description = project.Description,
                 StartDate = project.StartDate,
-                EndDate = project.EndDate ,
+                EndDate = project.EndDate,
                 Priority = project.Priority,
                 Status = project.Status,
                 AcValue = project.AcValue,
@@ -173,7 +174,8 @@ namespace IvosisProjectManagement.API.Services
                 AdditionalInverterCount = project.AdditionalInverterCount,
                 AdditionalPanelPower = project.AdditionalPanelPower,
                 CreatedAt = project.CreatedAt,
-                CreatedBy = project.CreatedBy
+                CreatedBy = project.CreatedBy,
+                CompanyId = project.CompanyId
             };
         }
 
@@ -195,6 +197,7 @@ namespace IvosisProjectManagement.API.Services
             project.DcValue = dto.DCValue;
             project.UpdatedAt = DateTime.UtcNow;
             project.UpdatedBy = dto.UpdatedBy;
+            project.CompanyId = dto.CompanyId;
             project.PanelCount = dto.PanelCount;
             project.PanelPower = dto.PanelPower;
             project.PanelBrandId = dto.PanelBrandId;

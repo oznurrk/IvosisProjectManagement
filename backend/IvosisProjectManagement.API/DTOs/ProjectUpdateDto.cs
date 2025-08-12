@@ -1,6 +1,6 @@
 namespace IvosisProjectManagement.API.DTOs
 {
-    public class ProjectUpdateDto
+    public class ProjectUpdateDto :CompanyDto
     {
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
