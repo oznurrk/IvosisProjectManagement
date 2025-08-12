@@ -113,6 +113,7 @@ namespace IvosisProjectManagement.API.Services
                 Status = dto.Status,
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = DateTime.UtcNow,
+                CompanyId = dto.CompanyId,
                 AcValue = dto.ACValue,
                 DcValue = dto.DCValue,
                 ProjectTypeId = dto.ProjectTypeId,
