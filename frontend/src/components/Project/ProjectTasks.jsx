@@ -59,13 +59,16 @@ const ProjectTasks = () => {
   const projectId = localStorage.getItem("selectedProjectId");
   const token = localStorage.getItem("token");
 
-  // Status helper functions - memoized
-  const statusConfig = useMemo(() => ({
-    NotStarted: { label: "Başlamadı", color: "#7ed2e2" },
-    InProgress: { label: "Devam Ediyor", color: "#ffd43b" },
-    Completed: { label: "Tamamlandı", color: "#51cf66" },
-    Cancelled: { label: "İptal Edildi", color: "#ff6b6b" }
-  }), []);
+  // Status konfigürasyonu - MyTasks ile uyumlu
+  const statusConfig = {
+    "NotStarted": { label: "Başlamadı", color: "#6c757d" },
+    "InProgress": { label: "Devam Ediyor", color: "#fd7e14" },
+    "Completed": { label: "Tamamlandı", color: "#28a745" },
+    "Cancelled": { label: "İptal Edildi", color: "#dc3545" }
+  };
+
+  const getStatusLabel = useCallback((status) => statusConfig[status]?.label || status, [statusConfig]);
+  const getStatusColor = useCallback((status) => statusConfig[status]?.color || "#6c757d", [statusConfig]);
 
   // İstatistikler - memoized
   const calculateStatusStats = useCallback((tasks) => {
@@ -81,6 +84,8 @@ const ProjectTasks = () => {
       Object.entries(stats).map(([key, count]) => [key, Math.round((count / total) * 100)])
     );
   }, [statusConfig]);
+
+  
 
   // Filtrelenmiş görevler - useMemo hook'u early return'den ÖNCE tanımlanmalı
   const filteredTasks = useMemo(() => {
@@ -113,6 +118,25 @@ const ProjectTasks = () => {
     return filtered;
   }, [selectedProcess?.tasks, searchFilters]);
 
+  const projectTasksCalculate = useMemo(() => {
+    const total = filteredTasks.length;
+    if(total === 0) return {notStarted: 0, inProgress: 0, completed: 0, cancelled: 0};
+
+    const stats = {
+      notStarted: filteredTasks.filter(t => t.status === "NotStarted").length,
+      inProgress: filteredTasks.filter(t => t.status === "InProgress").lenght,
+      completed: filteredTasks.filter(t => t.status === "Completed").lenght,
+      cancelled: filteredTasks.filter(t => t.status === "Cancelled").lenght
+    };
+
+    return {
+      notStarted: Math.round((stats.notStarted / total) * 100),
+      inProgress: Math.round((stats.inProgress / total) * 100),
+      completed: Math.round((stats.completed / total) * 100),
+      cancelled: Math.round((stats.cancelled / total) * 100)
+    };
+  }, [filteredTasks]);
+
   // Paginated tasks - useMemo ile optimize edildi
   const paginatedTasks = useMemo(() => {
     return filteredTasks.slice(
@@ -127,8 +151,6 @@ const ProjectTasks = () => {
     localStorage.setItem("pageSize", newPageSize);
     setCurrentPage(1);
   }, []);
-
-  const getStatusLabel = useCallback((status) => statusConfig[status]?.label || status, [statusConfig]);
 
   // Dosya kontrolü fonksiyonu - MyTasks'dan alındı
   const validateTaskCompletion = useCallback((task) => {
@@ -648,8 +670,8 @@ const ProjectTasks = () => {
   }, [taskToReassign, token]);
 
   const updateTaskInState = useCallback((taskId, updates) => {
-    setProjectProcesses(prev =>
-      prev.map(p => ({
+    setProjectProcesses(prev => {
+      const newProcesses = prev.map(p => ({
         ...p,
         tasks: p.tasks.map(t => {
           if (t.id === taskId) {
@@ -665,9 +687,19 @@ const ProjectTasks = () => {
           }
           return t;
         })
-      }))
-    );
-  }, [validateTaskCompletion, updateValidationError]);
+      }));
+      
+      // selectedProcess'i de güncellemek gerekiyor
+      if (selectedProcess) {
+        const updatedSelectedProcess = newProcesses.find(p => p.processId === selectedProcess.processId);
+        if (updatedSelectedProcess) {
+          setSelectedProcess(updatedSelectedProcess);
+        }
+      }
+      
+      return newProcesses;
+    });
+  }, [validateTaskCompletion, updateValidationError, selectedProcess]);
 
   const formatDate = useCallback((dateString) => {
     return dateString ? new Date(dateString).toLocaleDateString('tr-TR') : "Belirtilmemiş";
@@ -725,7 +757,7 @@ const ProjectTasks = () => {
       <Header
         title={currentProcess.processName}
         subtitle={`${projectName} Görevleri`}
-        stats={processStats}
+        stats={projectTasksCalculate}
         showStats={true}
       />
 
@@ -785,8 +817,12 @@ const ProjectTasks = () => {
                       <Text size="sm" weight={500} className="flex-1" style={{ color: '#112d3b' }}>
                        {task.task?.title || "Görev Adı Yok"}
                       </Text>
-                      {/* Görev Status */}
-                      <Badge color="cyan" size="sm" variant="light" radius="sm">
+                      {/* Görev Status - MyTasks ile uyumlu - Key eklendi */}
+                      <Badge 
+                        key={`badge-${task.id}-${task.status}`}
+                        style={{backgroundColor: getStatusColor(task.status), color: 'white'}} 
+                        size="sm"
+                      >
                         {getStatusLabel(task.status)}
                       </Badge>
                     </Group>
@@ -845,7 +881,10 @@ const ProjectTasks = () => {
                       size="sm"
                       placeholder="Durum Seçin"
                       value={task.status}
-                      onChange={(value) => updateTaskInState(task.id, { status: value })}
+                      onChange={(value) => {
+                        console.log('Status değişiyor:', { taskId: task.id, oldStatus: task.status, newStatus: value });
+                        updateTaskInState(task.id, { status: value });
+                      }}
                       data={[
                         { value: "NotStarted", label: "Başlamadı" },
                         { value: "InProgress", label: "Devam Ediyor" },
@@ -859,6 +898,7 @@ const ProjectTasks = () => {
                           backgroundColor: validationError && task.status === "Completed" ? '#f8d7da' : undefined
                         }
                       }}
+                      key={`${task.id}-${task.status}`}
                     />
 
                     <Textarea

@@ -49,9 +49,13 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           url: "/my-tasks",
           icon: <IconCalendarUser size={20} />,
         },
+        {
+          name: "Süreçler",
+          url: "/processes",
+          icon: <IconLoader size={20} />
+        }
       ],
     },
-    { name: "Süreçler", url: "/processes", icon: <IconLoader size={20} /> },
     { 
       name: "Stok Yönetimi", 
       url: "/stock-management", 

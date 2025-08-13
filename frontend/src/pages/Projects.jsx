@@ -399,7 +399,7 @@ const Projects = () => {
         />
       </div>
     
-      {/* yeni proje butonu */}
+      {/* yeni proje butonu 
       <div className="flex justify-end mb-5 px-4">
         <button
           onClick={() => navigate("/projectCreated")}
@@ -409,7 +409,7 @@ const Projects = () => {
           Ekle
         </button>
       </div>
-
+*/}
       {/* Proje kartları */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
         {pagedProjects.length === 0 ? (
@@ -548,6 +548,19 @@ const Projects = () => {
             </Card>
           ))
         )}
+
+        <div className="fixed bottom-4 right-4 flex flex-row items-end space-x-2 z-50 md:bottom-6 md:right-6 md:space-x-4">
+          <div className="relative group">
+            <button
+              onClick={() => navigate("/projectCreated")}
+              className="bg-green-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-green-600 transition-all duration-300">
+                <IconPlus className="h-5 w-5 md:h-6 md:w-6" />
+              </button>
+              <span className="absolute bottom-14 right-1/2 translate-x-1/2 px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm bg-gray-900 text-white rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                Proje Ekle
+              </span>
+          </div>
+        </div>
       </div>
 
       {/* Yeni Pagination Component'i kullan */}

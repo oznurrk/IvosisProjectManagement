@@ -126,3 +126,5 @@ sayfalandırma yapısı sol tarafta yapılacak. 5-10-15-20 şeklinde artacak.
 4-ProjectTask sayfasında dosya yükleme işlemi zorunlu hale getirildi
 
 
+13.06
+1-PaginationComponent Güncellendi
