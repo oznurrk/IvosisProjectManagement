@@ -32,7 +32,7 @@ public class ProjectAddressService : IProjectAddressService
             AdressDetails = pa.AdressDetails
         })
         .ToListAsync();
-    }
+}
 
     Task<List<ProjectAddressDto>> IProjectAddressService.GetByProjectIdAsync(int projectId)
     {

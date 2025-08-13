@@ -289,5 +289,106 @@ namespace IvosisProjectManagement.API.Services
             var normalizedPaths = FileHelper.NormalizeFilePaths(task.FilePath ?? new List<string>());
             return FileHelper.FindFileByOriginalName(normalizedPaths, fileName);
         }
+        public async Task<List<string>> UploadTaskFilesAsync(int taskId, IFormFileCollection files, int userId)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null)
+                throw new Exception($"Task bulunamadı: {taskId}");
+
+            var uploadedFilePaths = new List<string>();
+            var currentFilePaths = task.FilePath ?? new List<string>();
+
+            foreach (var file in files)
+            {
+                if (file.Length > 0)
+                {
+                    string savedFilePath = await FileHelper.SaveFileAsync(file, taskId);
+                    uploadedFilePaths.Add(savedFilePath);
+                    currentFilePaths.Add(savedFilePath);
+                }
+            }
+
+            task.FilePath = FileHelper.NormalizeFilePaths(currentFilePaths);
+            task.UpdatedAt = DateTime.Now;
+            task.UpdatedBy = userId;
+
+            _context.ProjectTasks.Update(task);
+            await _context.SaveChangesAsync();
+
+            return uploadedFilePaths;
+        }
+
+        // <summary>
+        /// Task'tan belirli bir dosyayı sil
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <param name="fileName">Silinecek dosyanın orijinal adı</param>
+        /// <param name="userId">İşlemi yapan kullanıcı ID</param>
+        /// <returns>Silme işlemi başarılı ise true</returns>
+        public async Task<bool> DeleteTaskFileAsync(int taskId, string fileName, int userId)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) return false;
+
+            var normalizedPaths = FileHelper.NormalizeFilePaths(task.FilePath ?? new List<string>());
+            
+            // Dosyayı fiziksel olarak sil
+            bool fileDeleted = FileHelper.DeleteFile(normalizedPaths, fileName);
+            
+            if (fileDeleted)
+            {
+                // Listeden de kaldır
+                var fileToRemove = normalizedPaths.FirstOrDefault(path => 
+                    FileHelper.ExtractOriginalFileName(path).Equals(fileName, StringComparison.OrdinalIgnoreCase));
+                
+                if (fileToRemove != null)
+                {
+                    normalizedPaths.Remove(fileToRemove);
+                    task.FilePath = normalizedPaths;
+                    task.UpdatedAt = DateTime.Now;
+                    task.UpdatedBy = userId;
+
+                    _context.ProjectTasks.Update(task);
+                    await _context.SaveChangesAsync();
+                    
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Task'a ait tüm dosyaları sil
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <param name="userId">İşlemi yapan kullanıcı ID</param>
+        /// <returns>Silinen dosya sayısı</returns>
+        public async Task<int> DeleteAllTaskFilesAsync(int taskId, int userId)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) return 0;
+
+            var normalizedPaths = FileHelper.NormalizeFilePaths(task.FilePath ?? new List<string>());
+            
+            // Tüm dosyaları fiziksel olarak sil
+            int deletedCount = FileHelper.DeleteAllFiles(normalizedPaths);
+            
+            if (deletedCount > 0)
+            {
+                // Task'ın file listesini temizle
+                task.FilePath = new List<string>();
+                task.UpdatedAt = DateTime.Now;
+                task.UpdatedBy = userId;
+
+                _context.ProjectTasks.Update(task);
+                await _context.SaveChangesAsync();
+                
+                // Boş klasörü de sil
+                FileHelper.DeleteTaskDirectory(taskId);
+            }
+            
+            return deletedCount;
+        }
     }
 }

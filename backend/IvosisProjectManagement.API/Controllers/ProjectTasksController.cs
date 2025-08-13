@@ -106,10 +106,10 @@ namespace IvosisProjectManagement.API.Controllers
         {
             // UpdatedBy'yi set et
             dto.UpdatedBy = GetCurrentUserId();
-            
+
             var updated = await _service.UpdateAsync(id, dto);
             if (!updated) return NotFound();
-            
+
             // Güncellenmiş item'ı döndür
             var updatedItem = await _service.GetByIdAsync(id);
             return Ok(updatedItem);
@@ -231,7 +231,7 @@ namespace IvosisProjectManagement.API.Controllers
         [LogActivity(ActivityType.View, "ProjectTask/FilePath")]
         public async Task<IActionResult> GetTaskFilePath(int taskId, string fileName)
         {
-            try 
+            try
             {
                 // URL'den decode et
                 fileName = Uri.UnescapeDataString(fileName);
@@ -252,6 +252,137 @@ namespace IvosisProjectManagement.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest($"Dosya path'i alınırken hata oluştu: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Task'a dosya(lar) yükle
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <param name="files">Yüklenecek dosyalar</param>
+        /// <returns>Yüklenen dosya bilgileri</returns>
+        [HttpPost("{taskId}/upload-files")]
+        [LogActivity(ActivityType.Create, "ProjectTask/FileUpload")]
+        public async Task<IActionResult> UploadTaskFiles(int taskId, [FromForm] IFormFileCollection files)
+        {
+            try
+            {
+                // Task var mı kontrol et
+                var task = await _service.GetByIdAsync(taskId);
+                if (task == null)
+                {
+                    return NotFound($"Task bulunamadı: {taskId}");
+                }
+
+                // Dosya var mı kontrol et
+                if (files == null || files.Count == 0)
+                {
+                    return BadRequest("Yüklenecek dosya bulunamadı.");
+                }
+
+                // Dosyaları yükle
+                int userId = GetCurrentUserId();
+                var uploadedFiles = await _service.UploadTaskFilesAsync(taskId, files, userId);
+
+                return Ok(new
+                {
+                    TaskId = taskId,
+                    UploadedFiles = uploadedFiles,
+                    Count = uploadedFiles.Count,
+                    Message = $"{uploadedFiles.Count} dosya başarıyla yüklendi."
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Dosya yüklerken hata oluştu: {ex.Message}");
+            }
+        }
+        
+        /// <summary>
+        /// Task'tan belirli bir dosyayı sil
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <param name="fileName">Silinecek dosyanın orijinal adı</param>
+        /// <returns>Silme sonucu</returns>
+        [HttpDelete("{taskId}/files/{fileName}")]
+        [LogActivity(ActivityType.Delete, "ProjectTask/File")]
+        public async Task<IActionResult> DeleteTaskFile(int taskId, string fileName)
+        {
+            try
+            {
+                // URL'den decode et
+                fileName = Uri.UnescapeDataString(fileName);
+                
+                // Task var mı kontrol et
+                var task = await _service.GetByIdAsync(taskId);
+                if (task == null)
+                {
+                    return NotFound($"Task bulunamadı: {taskId}");
+                }
+
+                // Dosya var mı kontrol et
+                bool fileExists = await _service.TaskFileExistsAsync(taskId, fileName);
+                if (!fileExists)
+                {
+                    return NotFound($"Dosya bulunamadı: {fileName}");
+                }
+
+                // Dosyayı sil
+                int userId = GetCurrentUserId();
+                bool deleted = await _service.DeleteTaskFileAsync(taskId, fileName, userId);
+                
+                if (deleted)
+                {
+                    return Ok(new
+                    {
+                        TaskId = taskId,
+                        FileName = fileName,
+                        Message = "Dosya başarıyla silindi."
+                    });
+                }
+                else
+                {
+                    return BadRequest("Dosya silinemedi.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Dosya silinirken hata oluştu: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Task'a ait tüm dosyaları sil
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <returns>Silme sonucu</returns>
+        [HttpDelete("{taskId}/files")]
+        [LogActivity(ActivityType.Delete, "ProjectTask/AllFiles")]
+        public async Task<IActionResult> DeleteAllTaskFiles(int taskId)
+        {
+            try
+            {
+                // Task var mı kontrol et
+                var task = await _service.GetByIdAsync(taskId);
+                if (task == null)
+                {
+                    return NotFound($"Task bulunamadı: {taskId}");
+                }
+
+                // Tüm dosyaları sil
+                int userId = GetCurrentUserId();
+                int deletedCount = await _service.DeleteAllTaskFilesAsync(taskId, userId);
+                
+                return Ok(new
+                {
+                    TaskId = taskId,
+                    DeletedFileCount = deletedCount,
+                    Message = $"{deletedCount} dosya başarıyla silindi."
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Dosyalar silinirken hata oluştu: {ex.Message}");
             }
         }
     }

@@ -23,7 +23,7 @@ namespace IvosisProjectManagement.API.Helpers
         // Orijinal dosya adından tam path'i bul
         public static string FindFileByOriginalName(List<string> filePaths, string originalFileName)
         {
-            return filePaths.FirstOrDefault(path => 
+            return filePaths.FirstOrDefault(path =>
                 ExtractOriginalFileName(path).Equals(originalFileName, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -86,6 +86,131 @@ namespace IvosisProjectManagement.API.Helpers
                 ".xml" => "application/xml",
                 _ => "application/octet-stream"
             };
+        }
+        public static async Task<string> SaveFileAsync(IFormFile file, int taskId)
+        {
+            // Upload dizinini oluştur
+            string uploadDir = Path.Combine("uploads", "tasks", taskId.ToString());
+            Directory.CreateDirectory(uploadDir);
+
+            // Güvenli dosya adı oluştur
+            string fileName = $"{Guid.NewGuid()}_{file.FileName}";
+            string filePath = Path.Combine(uploadDir, fileName);
+
+            // Dosyayı kaydet
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // Orijinal dosya adını koruyarak path döndür
+            return $"{filePath}|{file.FileName}"; // Format: "fiziksel_path|orijinal_ad"
+        }
+
+        /// <summary>
+        /// Belirtilen orijinal dosya adına sahip dosyayı sil
+        /// </summary>
+        /// <param name="filePaths">Dosya path listesi</param>
+        /// <param name="originalFileName">Silinecek dosyanın orijinal adı</param>
+        /// <returns>Silme işlemi başarılı ise true</returns>
+        public static bool DeleteFile(List<string> filePaths, string originalFileName)
+        {
+            try
+            {
+                string fullPath = FindFileByOriginalName(filePaths, originalFileName);
+                if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tam dosya path'i ile dosyayı sil
+        /// </summary>
+        /// <param name="fullPath">Silinecek dosyanın tam path'i</param>
+        /// <returns>Silme işlemi başarılı ise true</returns>
+        public static bool DeleteFileByPath(string fullPath)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Task'a ait tüm dosyaları sil
+        /// </summary>
+        /// <param name="filePaths">Silinecek dosya path listesi</param>
+        /// <returns>Silinen dosya sayısı</returns>
+        public static int DeleteAllFiles(List<string> filePaths)
+        {
+            int deletedCount = 0;
+            
+            foreach (var filePath in filePaths)
+            {
+                try
+                {
+                    // Eğer path format "fiziksel_path|orijinal_ad" şeklindeyse
+                    string actualPath = filePath.Contains('|') ? filePath.Split('|')[0] : filePath;
+                    
+                    if (File.Exists(actualPath))
+                    {
+                        File.Delete(actualPath);
+                        deletedCount++;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Hata durumunda devam et
+                    continue;
+                }
+            }
+            
+            return deletedCount;
+        }
+
+        /// <summary>
+        /// Task klasörünü tamamen sil (boşsa)
+        /// </summary>
+        /// <param name="taskId">Task ID</param>
+        /// <returns>Klasör silindi ise true</returns>
+        public static bool DeleteTaskDirectory(int taskId)
+        {
+            try
+            {
+                string taskDir = Path.Combine("uploads", "tasks", taskId.ToString());
+                
+                if (Directory.Exists(taskDir))
+                {
+                    // Klasör boş mu kontrol et
+                    if (!Directory.EnumerateFileSystemEntries(taskDir).Any())
+                    {
+                        Directory.Delete(taskDir);
+                        return true;
+                    }
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }
