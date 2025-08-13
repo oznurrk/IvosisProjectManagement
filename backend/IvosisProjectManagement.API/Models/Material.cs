@@ -18,7 +18,7 @@ public class MaterialType : CommonBaseEntity
     public string Name { get; set; }
     public string Code { get; set; }
     public string Description { get; set; }
-    public string TechnicalSpecs { get; set; }
+    public string? TechnicalSpecs { get; set; }
     public bool IsActive { get; set; } = true;
 
     // Navigation Properties
@@ -34,7 +34,7 @@ public class MaterialQuality : CommonBaseEntity
     public string Name { get; set; }
     public string Code { get; set; }
     public string Description { get; set; }
-    public string QualitySpecs { get; set; }
+    public string? QualitySpecs { get; set; }
     public bool IsActive { get; set; } = true;
 
     // Navigation Properties

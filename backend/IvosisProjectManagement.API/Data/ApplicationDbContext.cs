@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using IvosisProjectManagement.API.Models;
 using System.Text.Json;
+using IvosisProjectManagement.API.Models.Demand;
 
 namespace IvosisProjectManagement.API.Data
 {
@@ -40,7 +41,34 @@ namespace IvosisProjectManagement.API.Data
         public DbSet<MaterialName> MaterialNames { get; set; }
         public DbSet<MaterialType> MaterialTypes { get; set; }
         public DbSet<MaterialQuality> MaterialQualities { get; set; }
+        
+        //Demand Module
+        public DbSet<DemandStatus> DemandStatuses { get; set; }
+        public DbSet<DemandPriority> DemandPriorities { get; set; }
+        public DbSet<Demand> Demands { get; set; }
+        public DbSet<DemandItem> DemandItems { get; set; }
+        public DbSet<DemandApproval> DemandApprovals { get; set; }
+        public DbSet<DemandComment> DemandComments { get; set; }
 
+        // Quotation Module
+        //public DbSet<QuotationType> QuotationTypes { get; set; }
+        //public DbSet<QuotationStatus> QuotationStatuses { get; set; }
+        //public DbSet<Quotation> Quotations { get; set; }
+        //public DbSet<QuotationItem> QuotationItems { get; set; }
+        //public DbSet<QuotationComparison> QuotationComparisons { get; set; }
+        //public DbSet<QuotationComparisonItem> QuotationComparisonItems { get; set; }
+        //public DbSet<QuotationComment> QuotationComments { get; set; }
+
+        // Order Module
+        //public DbSet<OrderType> OrderTypes { get; set; }
+        //public DbSet<OrderStatus> OrderStatuses { get; set; }
+        //public DbSet<Order> Orders { get; set; }
+        //public DbSet<OrderItem> OrderItems { get; set; }
+        //public DbSet<OrderDelivery> OrderDeliveries { get; set; }
+        //public DbSet<OrderDeliveryItem> OrderDeliveryItems { get; set; }
+        //public DbSet<OrderPayment> OrderPayments { get; set; }
+        //public DbSet<OrderApproval> OrderApprovals { get; set; }
+        //public DbSet<OrderComment> OrderComments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -568,16 +596,16 @@ namespace IvosisProjectManagement.API.Data
                     .WithMany(e => e.StockItems)
                     .HasForeignKey(e => e.UnitId)
                     .OnDelete(DeleteBehavior.Restrict);
-                     entity.HasOne(e => e.MaterialName)
-                  .WithMany(e => e.StockItems)
-                  .HasForeignKey(e => e.MaterialNameId)
-                  .OnDelete(DeleteBehavior.SetNull);
-                    
+                entity.HasOne(e => e.MaterialName)
+             .WithMany(e => e.StockItems)
+             .HasForeignKey(e => e.MaterialNameId)
+             .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasOne(e => e.MaterialType)
                     .WithMany(e => e.StockItems)
                     .HasForeignKey(e => e.MaterialTypeId)
                     .OnDelete(DeleteBehavior.SetNull);
-                    
+
                 entity.HasOne(e => e.MaterialQuality)
                   .WithMany(e => e.StockItems)
                   .HasForeignKey(e => e.MaterialQualityId)
@@ -635,8 +663,8 @@ namespace IvosisProjectManagement.API.Data
                 entity.HasIndex(e => e.StockLotId);
                 entity.HasIndex(e => e.ReferenceType);
 
-            // Check constraint for MovementType
-                entity.HasCheckConstraint("CK_StockMovements_MovementType", 
+                // Check constraint for MovementType
+                entity.HasCheckConstraint("CK_StockMovements_MovementType",
                     "MovementType IN ('IN', 'OUT', 'TRANSFER', 'ADJUSTMENT')");
             });
 
@@ -781,7 +809,7 @@ namespace IvosisProjectManagement.API.Data
                 .HasOne(u => u.User)
                 .WithMany(u => u.ActivityLogs)
                 .HasForeignKey(u => u.UserId);
-            
+
             // StockLot configuration
             modelBuilder.Entity<StockLot>(entity =>
             {
@@ -827,7 +855,7 @@ namespace IvosisProjectManagement.API.Data
                     .WithMany()
                     .HasForeignKey(e => e.LocationId)
                     .OnDelete(DeleteBehavior.Restrict);
-                
+
                 entity.HasOne(sc => sc.CreatedByUser)
                     .WithMany()
                     .HasForeignKey(sc => sc.CreatedBy)
@@ -862,7 +890,7 @@ namespace IvosisProjectManagement.API.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(m => m.UpdatedByUser)
-                    .WithMany() 
+                    .WithMany()
                     .HasForeignKey(m => m.UpdatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
@@ -876,13 +904,13 @@ namespace IvosisProjectManagement.API.Data
                 entity.Property(e => e.Description).HasMaxLength(1000);
                 entity.Property(e => e.TechnicalSpecs).HasMaxLength(2000);
                 entity.HasIndex(e => e.Code).IsUnique();
-                
+
                 entity.HasOne(e => e.MaterialName)
                     .WithMany(e => e.MaterialTypes)
                     .HasForeignKey(e => e.MaterialNameId)
                     .OnDelete(DeleteBehavior.Restrict);
-                
-               // EXPLICIT Foreign Key Configuration
+
+                // EXPLICIT Foreign Key Configuration
                 entity.HasOne(mt => mt.CreatedByUser)
                     .WithMany()
                     .HasForeignKey(mt => mt.CreatedBy)
@@ -892,33 +920,600 @@ namespace IvosisProjectManagement.API.Data
                     .WithMany()
                     .HasForeignKey(mt => mt.UpdatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
-                  
+
             });
-             modelBuilder.Entity<MaterialQuality>(entity =>
+            modelBuilder.Entity<MaterialQuality>(entity =>
+           {
+               entity.ToTable("MaterialQualities");
+               entity.HasKey(e => e.Id);
+               entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+               entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+               entity.Property(e => e.Description).HasMaxLength(1000);
+               entity.Property(e => e.QualitySpecs).HasMaxLength(2000);
+               entity.HasIndex(e => e.Code).IsUnique();
+
+               entity.HasOne(e => e.MaterialType)
+                      .WithMany(e => e.MaterialQualities)
+                      .HasForeignKey(e => e.MaterialTypeId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+               entity.HasOne(mq => mq.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(mq => mq.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+               entity.HasOne(mq => mq.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(mq => mq.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+           });
+
+           // Demand Configuration
+            modelBuilder.Entity<Demand>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.DemandNumber).IsRequired().HasMaxLength(50);
+                entity.HasIndex(e => e.DemandNumber).IsUnique();
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.Currency).HasDefaultValue("TRY");
+                entity.Property(e => e.IsApproved).HasDefaultValue(false);
+
+                // Decimal precision
+                entity.Property(e => e.EstimatedBudget).HasColumnType("decimal(18,4)");
+
+                // EXPLICIT Foreign Key Configuration - DİĞER ENTİTY'LER GİBİ
+                entity.HasOne(d => d.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(d => d.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(d => d.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.Company)
+                    .WithMany()
+                    .HasForeignKey(d => d.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Project)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Status)
+                    .WithMany(s => s.Demands)
+                    .HasForeignKey(e => e.StatusId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Priority)
+                    .WithMany(p => p.Demands)
+                    .HasForeignKey(e => e.PriorityId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ApprovedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ApprovedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Indexes
+                entity.HasIndex(e => e.ProjectId);
+                entity.HasIndex(e => e.StatusId);
+                entity.HasIndex(e => e.PriorityId);
+                entity.HasIndex(e => e.RequestedDate);
+                entity.HasIndex(e => e.RequiredDate);
+            });
+
+            // DemandItem Configuration
+            modelBuilder.Entity<DemandItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ItemName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.Currency).HasDefaultValue("TRY");
+                entity.Property(e => e.Status).HasDefaultValue("PENDING");
+
+                // Decimal precision
+                entity.Property(e => e.RequestedQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(e => e.EstimatedUnitPrice).HasColumnType("decimal(18,4)");
+                entity.Property(e => e.EstimatedTotalPrice).HasColumnType("decimal(18,4)");
+
+                // EXPLICIT Foreign Key Configuration - DİĞER ENTİTY'LER GİBİ
+                entity.HasOne(di => di.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(di => di.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(di => di.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(di => di.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Demand)
+                    .WithMany(d => d.DemandItems)
+                    .HasForeignKey(e => e.DemandId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.StockItem)
+                    .WithMany()
+                    .HasForeignKey(e => e.StockItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Unit)
+                    .WithMany()
+                    .HasForeignKey(e => e.UnitId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.SuggestedSupplier)
+                    .WithMany()
+                    .HasForeignKey(e => e.SuggestedSupplierId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasCheckConstraint("CK_DemandItems_Status",
+                    "[Status] IN ('PENDING', 'APPROVED', 'REJECTED', 'ORDERED', 'CANCELLED')");
+
+                // Indexes
+                entity.HasIndex(e => e.DemandId);
+                entity.HasIndex(e => e.StockItemId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.RequiredDate);
+            });
+
+            // DemandApproval Configuration
+            modelBuilder.Entity<DemandApproval>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.ApprovalStatus).HasDefaultValue("PENDING");
+                entity.Property(e => e.IsRequired).HasDefaultValue(true);
+                entity.Property(e => e.IsCompleted).HasDefaultValue(false);
+
+                // EXPLICIT Foreign Key Configuration - DİĞER ENTİTY'LER GİBİ
+                entity.HasOne(da => da.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(da => da.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(da => da.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(da => da.UpdatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Demand)
+                    .WithMany(d => d.DemandApprovals)
+                    .HasForeignKey(e => e.DemandId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.ApproverUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ApproverUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasCheckConstraint("CK_DemandApprovals_Status",
+                    "[ApprovalStatus] IN ('PENDING', 'APPROVED', 'REJECTED')");
+
+                // Indexes
+                entity.HasIndex(e => e.DemandId);
+                entity.HasIndex(e => e.ApproverUserId);
+                entity.HasIndex(e => e.ApprovalStatus);
+                entity.HasIndex(e => e.ApprovalLevel);
+            });
+
+            // DemandStatus Configuration
+            modelBuilder.Entity<DemandStatus>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
+                entity.HasIndex(e => e.Code).IsUnique();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+                // EXPLICIT Foreign Key Configuration - DİĞER ENTİTY'LER GİBİ
+                entity.HasOne(ds => ds.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(ds => ds.CreatedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+            });
+            /*
+            // QuotationType Configuration
+        modelBuilder.Entity<QuotationType>(entity =>
         {
-            entity.ToTable("MaterialQualities");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Description).HasMaxLength(1000);
-            entity.Property(e => e.QualitySpecs).HasMaxLength(2000);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
             entity.HasIndex(e => e.Code).IsUnique();
-            
-            entity.HasOne(e => e.MaterialType)
-                  .WithMany(e => e.MaterialQualities)
-                  .HasForeignKey(e => e.MaterialTypeId)
-                  .OnDelete(DeleteBehavior.Restrict); 
-                 
-            entity.HasOne(mq => mq.CreatedByUser)
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne<User>()
                 .WithMany()
-                .HasForeignKey(mq => mq.CreatedBy)
+                .HasForeignKey("CreatedBy")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // QuotationStatus Configuration
+        modelBuilder.Entity<QuotationStatus>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey("CreatedBy")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Quotation Configuration
+        modelBuilder.Entity<Quotation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.QuotationNumber).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.QuotationNumber).IsUnique();
+            entity.Property(e => e.Direction).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.Currency).HasDefaultValue("TRY");
+            entity.Property(e => e.TaxRate).HasDefaultValue(18);
+            
+            // Decimal precision
+            entity.Property(e => e.SubTotal).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.TaxAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+
+            entity.HasOne(e => e.Type)
+                .WithMany(t => t.Quotations)
+                .HasForeignKey(e => e.TypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(mq => mq.UpdatedByUser)
+            entity.HasOne(e => e.Project)
                 .WithMany()
-                .HasForeignKey(mq => mq.UpdatedBy)
+                .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
-                });
+
+            entity.HasOne(e => e.Demand)
+                .WithMany()
+                .HasForeignKey(e => e.DemandId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Supplier)
+                .WithMany()
+                .HasForeignKey(e => e.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Status)
+                .WithMany(s => s.Quotations)
+                .HasForeignKey(e => e.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasCheckConstraint("CK_Quotations_Direction",
+                "[Direction] IN ('INCOMING', 'OUTGOING')");
+
+            // Indexes
+            entity.HasIndex(e => e.Direction);
+            entity.HasIndex(e => e.ProjectId);
+            entity.HasIndex(e => e.DemandId);
+            entity.HasIndex(e => e.SupplierId);
+            entity.HasIndex(e => e.StatusId);
+            entity.HasIndex(e => e.QuotationDate);
+            entity.HasIndex(e => e.ValidUntil);
+        });
+
+        // QuotationItem Configuration
+        modelBuilder.Entity<QuotationItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ItemName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.Currency).HasDefaultValue("TRY");
+            entity.Property(e => e.Status).HasDefaultValue("ACTIVE");
+            entity.Property(e => e.DiscountPercent).HasDefaultValue(0);
+            
+            // Decimal precision
+            entity.Property(e => e.Quantity).HasColumnType("decimal(18,3)");
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.LineTotal).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.NetLineTotal).HasColumnType("decimal(18,4)");
+
+            entity.HasOne(e => e.Quotation)
+                .WithMany(q => q.QuotationItems)
+                .HasForeignKey(e => e.QuotationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.StockItem)
+                .WithMany()
+                .HasForeignKey(e => e.StockItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Unit)
+                .WithMany()
+                .HasForeignKey(e => e.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.DemandItem)
+                .WithMany()
+                .HasForeignKey(e => e.DemandItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasCheckConstraint("CK_QuotationItems_Status",
+                "[Status] IN ('ACTIVE', 'CANCELLED', 'ALTERNATIVE')");
+
+            // Indexes
+            entity.HasIndex(e => e.QuotationId);
+            entity.HasIndex(e => e.StockItemId);
+            entity.HasIndex(e => e.DemandItemId);
+            entity.HasIndex(e => e.Status);
+        });
+
+        // QuotationComparison Configuration
+        modelBuilder.Entity<QuotationComparison>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComparisonName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.Status).HasDefaultValue("ACTIVE");
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Demand)
+                .WithMany()
+                .HasForeignKey(e => e.DemandId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.WinnerQuotation)
+                .WithMany()
+                .HasForeignKey(e => e.WinnerQuotationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.DecisionByUser)
+                .WithMany()
+                .HasForeignKey(e => e.DecisionBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(e => e.ProjectId);
+            entity.HasIndex(e => e.DemandId);
+            entity.HasIndex(e => e.Status);
+        });
+
+        // QuotationComparisonItem Configuration
+        modelBuilder.Entity<QuotationComparisonItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            
+            // Decimal precision for scores
+            entity.Property(e => e.PriceScore).HasColumnType("decimal(3,1)");
+            entity.Property(e => e.QualityScore).HasColumnType("decimal(3,1)");
+            entity.Property(e => e.DeliveryScore).HasColumnType("decimal(3,1)");
+            entity.Property(e => e.ServiceScore).HasColumnType("decimal(3,1)");
+            entity.Property(e => e.TotalScore).HasColumnType("decimal(4,1)");
+
+            entity.HasOne(e => e.Comparison)
+                .WithMany(c => c.QuotationComparisonItems)
+                .HasForeignKey(e => e.ComparisonId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Quotation)
+                .WithMany()
+                .HasForeignKey(e => e.QuotationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.ComparisonId, e.QuotationId }).IsUnique();
+        });
+
+        // QuotationComment Configuration
+        modelBuilder.Entity<QuotationComment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Comment).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.CommentType).HasDefaultValue("GENERAL");
+            entity.Property(e => e.IsInternal).HasDefaultValue(true);
+
+            entity.HasOne(e => e.Quotation)
+                .WithMany(q => q.QuotationComments)
+                .HasForeignKey(e => e.QuotationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasCheckConstraint("CK_QuotationComments_Type",
+                "[CommentType] IN ('GENERAL', 'EVALUATION', 'NEGOTIATION', 'DECISION', 'TECHNICAL')");
+
+            // Indexes
+            entity.HasIndex(e => e.QuotationId);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.CreatedAt);
+        });
+            */
+        
+        /*
+        // OrderType Configuration
+        modelBuilder.Entity<OrderType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey("CreatedBy")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // OrderStatus Configuration
+        modelBuilder.Entity<OrderStatus>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey("CreatedBy")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Order Configuration
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OrderNumber).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.OrderNumber).IsUnique();
+            entity.Property(e => e.Direction).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.Currency).HasDefaultValue("TRY");
+            entity.Property(e => e.TaxRate).HasDefaultValue(18);
+            entity.Property(e => e.PaymentStatus).HasDefaultValue("PENDING");
+            entity.Property(e => e.IsApproved).HasDefaultValue(false);
+            
+            // Decimal precision
+            entity.Property(e => e.SubTotal).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.TaxAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.ShippingCost).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.PaidAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+
+            entity.HasOne(e => e.Type)
+                .WithMany(t => t.Orders)
+                .HasForeignKey(e => e.TypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Demand)
+                .WithMany()
+                .HasForeignKey(e => e.DemandId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Quotation)
+                .WithMany()
+                .HasForeignKey(e => e.QuotationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Supplier)
+                .WithMany()
+                .HasForeignKey(e => e.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Status)
+                .WithMany(s => s.Orders)
+                .HasForeignKey(e => e.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ApprovedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasCheckConstraint("CK_Orders_Direction",
+                "[Direction] IN ('PURCHASE', 'SALES')");
+            entity.HasCheckConstraint("CK_Orders_PaymentStatus",
+                "[PaymentStatus] IN ('PENDING', 'PARTIAL', 'PAID', 'OVERDUE', 'CANCELLED')");
+
+            // Indexes
+            entity.HasIndex(e => e.Direction);
+            entity.HasIndex(e => e.ProjectId);
+            entity.HasIndex(e => e.DemandId);
+            entity.HasIndex(e => e.QuotationId);
+            entity.HasIndex(e => e.SupplierId);
+            entity.HasIndex(e => e.StatusId);
+            entity.HasIndex(e => e.OrderDate);
+            entity.HasIndex(e => e.RequiredDate);
+            entity.HasIndex(e => e.PaymentStatus);
+        });
+
+        // OrderItem Configuration
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ItemName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            entity.Property(e => e.Currency).HasDefaultValue("TRY");
+            entity.Property(e => e.Status).HasDefaultValue("PENDING");
+            entity.Property(e => e.CompletionPercent).HasDefaultValue(0);
+            entity.Property(e => e.DiscountPercent).HasDefaultValue(0);
+            
+            // Decimal precision
+            entity.Property(e => e.OrderedQuantity).HasColumnType("decimal(18,3)");
+            entity.Property(e => e.DeliveredQuantity).HasColumnType("decimal(18,3)").HasDefaultValue(0);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.LineTotal).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18,4)").HasDefaultValue(0);
+            entity.Property(e => e.NetLineTotal).HasColumnType("decimal(18,4)");
+            entity.Property(e => e.CompletionPercent).HasColumnType("decimal(5,2)");
+
+            entity.HasOne(e => e.Order)
+                .WithMany(o => o.OrderItems)
+                .HasForeignKey(e => e.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.QuotationItem)
+                .WithMany()
+                .HasForeignKey(e => e.QuotationItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.DemandItem)
+                .WithMany()
+                .HasForeignKey(e => e.DemandItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.StockItem)
+                .WithMany()
+                .HasForeignKey(e => e.StockItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Unit)
+                .WithMany()
+                .HasForeignKey(e => e.UnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.QualityCheckedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.QualityCheckedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasCheckConstraint("CK_OrderItems_Status",
+                "[Status] IN ('PENDING', 'CONFIRMED', 'PRODUCTION', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED')");
+            entity.HasCheckConstraint("CK_OrderItems_QualityStatus",
+                "[QualityStatus] IS NULL OR [QualityStatus] IN ('PENDING', 'APPROVED', 'REJECTED', 'CONDITIONAL')");
+
+            // Indexes
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.StockItemId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.RequiredDate);
+            entity.HasIndex(e => e.QualityStatus);
+        });
+        */
+
         }
     }
 }

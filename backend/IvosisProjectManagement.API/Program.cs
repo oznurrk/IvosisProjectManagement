@@ -12,6 +12,7 @@ using Serilog;
 using IvosisProjectManagement.API.Repositories.Implementations;
 using IvosisProjectManagement.API.Services.Implementations;
 using IvosisProjectManagement.API.Profiles;
+using IvosisProjectManagement.API.Repositories.Interfaces;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -82,6 +83,10 @@ builder.Services.AddScoped<IStockLotService, StockLotService>();
 builder.Services.AddScoped<IMaterialNameService, MaterialNameService>();
 builder.Services.AddScoped<IMaterialTypeService, MaterialTypeService>();
 builder.Services.AddScoped<IMaterialQualityService, MaterialQualityService>();
+
+builder.Services.AddScoped<IDemandRepository, DemandRepository>();
+builder.Services.AddScoped<IDemandService, DemandService>();
+builder.Services.AddAutoMapper(typeof(DemandProfile));
 
 builder.Services.AddAutoMapper(typeof(StockManagementProfile));
 
