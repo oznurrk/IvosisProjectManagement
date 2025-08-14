@@ -45,7 +45,7 @@ public class StockLot : CompanyEntity
     public string? CertificateNumber { get; set; }
     
     [StringLength(50)]
-    public string QualityGrade { get; set; }
+    public string? QualityGrade { get; set; }
     
     [StringLength(500)]
     public string TestResults { get; set; }

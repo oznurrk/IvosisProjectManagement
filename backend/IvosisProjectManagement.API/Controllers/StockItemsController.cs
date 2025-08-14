@@ -177,12 +177,17 @@ using Microsoft.AspNetCore.Mvc;
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<object>> DeleteStockItem(int id)
         {
+            // Manuel yetki kontrolü
+            if (!User.IsInRole("Admin"))
+            {
+                return StatusCode(403, new { success = false, message = "Bu işlem için yetkiniz yok." });
+            }
+
             try
             {
                 var success = await _stockItemService.DeleteAsync(id);
                 if (!success)
                     return NotFound(new { success = false, message = "Stock item not found" });
-
                 return Ok(new { success = true, message = "Stock item deleted successfully" });
             }
             catch (InvalidOperationException ex)

@@ -9,7 +9,7 @@ namespace IvosisProjectManagement.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class DemandController : BaseController
     {
         private readonly IDemandService _demandService;
