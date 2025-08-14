@@ -77,8 +77,8 @@ const PaginationComponent = ({
                   ...(currentPage === pageNumber ? {
                     zIndex: 10,
                     backgroundColor: '#fef7f0',
-                    borderColor: '#f97316',
-                    color: '#ea580c'
+                    borderColor: '#279ab3',
+                    color: '#279ab3'
                   } : {
                     backgroundColor: 'white',
                     color: '#6b7280',
