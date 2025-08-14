@@ -5,14 +5,14 @@ import { IconX, IconCheck } from "@tabler/icons-react";
 
 const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
   const [form, setForm] = useState({
-    LotNumber: "",
-    Barcode: "",
-    InitialWeight: 0,
-    CurrentWeight: 0,
-    Width: 0,
-    Thickness: 0,
-    QualityGrade: "",
-    StoragePosition: ""
+    lotNumber: "",
+    barcode: "",
+    initialWeight: 0,
+    currentWeight: 0,
+    width: 0,
+    thickness: 0,
+    qualityGrade: "",
+    storagePosition: ""
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -20,14 +20,14 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
   useEffect(() => {
     if (lot) {
       setForm({
-        LotNumber: lot.LotNumber || "",
-        Barcode: lot.Barcode || "",
-        InitialWeight: lot.InitialWeight || 0,
-        CurrentWeight: lot.CurrentWeight || 0,
-        Width: lot.Width || 0,
-        Thickness: lot.Thickness || 0,
-        QualityGrade: lot.QualityGrade || "",
-        StoragePosition: lot.StoragePosition || ""
+        lotNumber: lot.lotNumber || "",
+        barcode: lot.barcode || "",
+        initialWeight: lot.initialWeight || 0,
+        currentWeight: lot.currentWeight || 0,
+        width: lot.width || 0,
+        thickness: lot.thickness || 0,
+        qualityGrade: lot.qualityGrade || "",
+        storagePosition: lot.storagePosition || ""
       });
     }
   }, [lot, isOpen]);
@@ -39,22 +39,32 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!form.LotNumber.trim()) newErrors.LotNumber = "Lot No zorunlu";
-    if (!form.InitialWeight || form.InitialWeight < 0) newErrors.InitialWeight = "Geçerli bir ağırlık girin";
-    if (!form.CurrentWeight || form.CurrentWeight < 0) newErrors.CurrentWeight = "Geçerli bir ağırlık girin";
+    if (!form.lotNumber.trim()) newErrors.lotNumber = "Lot No zorunlu";
+    if (!form.initialWeight || form.initialWeight < 0) newErrors.initialWeight = "Geçerli bir ağırlık girin";
+    if (!form.currentWeight || form.currentWeight < 0) newErrors.currentWeight = "Geçerli bir ağırlık girin";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
-    setTimeout(() => {
-      if (onSave) onSave(form);
-      setLoading(false);
+    try {
+      if (!onSave) throw new Error("onSave fonksiyonu tanımlı değil!");
+      const result = await onSave(form);
+      // Eğer onSave false veya hata döndürürse
+      if (result === false) {
+        alert("Kaydetme işlemi başarısız! (onSave false döndürdü)");
+        setLoading(false);
+        return;
+      }
       onClose();
-    }, 800);
+    } catch (err) {
+      alert("Kaydetme sırasında hata: " + (err?.message || err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -88,18 +98,18 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Lot No *</label>
                   <input
                     type="text"
-                    value={form.LotNumber}
-                    onChange={e => handleChange("LotNumber", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.LotNumber ? 'border-red-500' : 'border-gray-300'}`}
+                    value={form.lotNumber}
+                    onChange={e => handleChange("lotNumber", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.lotNumber ? 'border-red-500' : 'border-gray-300'}`}
                   />
-                  {errors.LotNumber && <p className="text-red-500 text-xs mt-1">{errors.LotNumber}</p>}
+                  {errors.lotNumber && <p className="text-red-500 text-xs mt-1">{errors.lotNumber}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Barkod</label>
                   <input
                     type="text"
-                    value={form.Barcode}
-                    onChange={e => handleChange("Barcode", e.target.value)}
+                    value={form.barcode}
+                    onChange={e => handleChange("barcode", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -107,28 +117,28 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Başlangıç Ağırlık (kg) *</label>
                   <input
                     type="number"
-                    value={form.InitialWeight}
-                    onChange={e => handleChange("InitialWeight", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.InitialWeight ? 'border-red-500' : 'border-gray-300'}`}
+                    value={form.initialWeight}
+                    onChange={e => handleChange("initialWeight", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.initialWeight ? 'border-red-500' : 'border-gray-300'}`}
                   />
-                  {errors.InitialWeight && <p className="text-red-500 text-xs mt-1">{errors.InitialWeight}</p>}
+                  {errors.initialWeight && <p className="text-red-500 text-xs mt-1">{errors.initialWeight}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mevcut Ağırlık (kg) *</label>
                   <input
                     type="number"
-                    value={form.CurrentWeight}
-                    onChange={e => handleChange("CurrentWeight", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.CurrentWeight ? 'border-red-500' : 'border-gray-300'}`}
+                    value={form.currentWeight}
+                    onChange={e => handleChange("currentWeight", e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.currentWeight ? 'border-red-500' : 'border-gray-300'}`}
                   />
-                  {errors.CurrentWeight && <p className="text-red-500 text-xs mt-1">{errors.CurrentWeight}</p>}
+                  {errors.currentWeight && <p className="text-red-500 text-xs mt-1">{errors.currentWeight}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Genişlik (mm)</label>
                   <input
                     type="number"
-                    value={form.Width}
-                    onChange={e => handleChange("Width", e.target.value)}
+                    value={form.width}
+                    onChange={e => handleChange("width", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -136,8 +146,8 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Kalınlık (mm)</label>
                   <input
                     type="number"
-                    value={form.Thickness}
-                    onChange={e => handleChange("Thickness", e.target.value)}
+                    value={form.thickness}
+                    onChange={e => handleChange("thickness", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -145,8 +155,8 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Kalite</label>
                   <input
                     type="text"
-                    value={form.QualityGrade}
-                    onChange={e => handleChange("QualityGrade", e.target.value)}
+                    value={form.qualityGrade}
+                    onChange={e => handleChange("qualityGrade", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -154,8 +164,8 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Depo Pozisyonu</label>
                   <input
                     type="text"
-                    value={form.StoragePosition}
-                    onChange={e => handleChange("StoragePosition", e.target.value)}
+                    value={form.storagePosition}
+                    onChange={e => handleChange("storagePosition", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
