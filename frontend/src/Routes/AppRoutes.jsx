@@ -18,6 +18,10 @@ import StockCards from "../pages/StockCards";
 import StockMovements from "../pages/StockMovements";
 import IncomingInvoices from "../pages/IncomingInvoices";
 import EInvoiceDashboard from "../pages/EInvoiceDashboard";
+import Buying from "../pages/Buying";
+import Offers from "../components/Buying/Offers";
+import Orders from "../components/Buying/Orders";
+import Demands from "../components/Buying/Demands";
 
 const AppRoutes = () => {
     return(
@@ -45,6 +49,10 @@ const AppRoutes = () => {
                     <Route path="/incoming-invoices" element={<IncomingInvoices />} />
                     <Route path="/e-invoice-dashboard" element={<EInvoiceDashboard />} />
                     <Route path="/waybills" element={<Random />} />
+                    <Route path="/buying" element={<Buying />} />
+                    <Route path="/demands" element={<Demands />} />
+                    <Route path="/offers" element={<Offers />} />
+                    <Route path="/orders" element={<Orders />} />
                 </Route>
             </Routes>
         </BrowserRouter>

@@ -16,6 +16,10 @@ import {
   IconFileInvoice,
   IconFileText,
   IconTruck,
+  IconCurrencyDollar,
+  IconShoppingBagPlus,
+  IconShoppingCartDiscount,
+  IconTruckReturn,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
 
@@ -100,6 +104,28 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           url: "/waybills",
           icon: <IconTruck size={18} />,
         },
+      ]
+    },
+    {
+      name:"Satın Alma",
+      url: "/buying",
+      icon: <IconCurrencyDollar size={20} />,
+      children: [
+        {
+          name:"Talepler",
+          url:"/demands",
+          icon: <IconShoppingBagPlus size={18} />
+        },
+        {
+          name:"Teklifler",
+          url:"/offers",
+          icon:<IconShoppingCartDiscount size={18} />
+        },
+        {
+          name:"Siparişler",
+          url:"/orders",
+          icon:<IconTruckReturn size={18} />
+        }
       ]
     },
     { name: "Belgeler", url: "/documents", icon: <IconClipboardText size={20} /> },
