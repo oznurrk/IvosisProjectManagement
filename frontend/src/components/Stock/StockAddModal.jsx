@@ -58,17 +58,130 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredItems, setFilteredItems] = useState([]);
-  // Hammadde modal state
+  // Hammadde API state
   const [showMaterialModal, setShowMaterialModal] = useState(false);
   const [materialModalType, setMaterialModalType] = useState(""); // "name", "type", "quality"
   const [materialModalForm, setMaterialModalForm] = useState({ code: "", name: "", description: "", isActive: true });
-  // Malzeme Adı modalında girilen kodu sakla
-  const [lastMaterialCode, setLastMaterialCode] = useState("");
+  const [materialModalOpenCount, setMaterialModalOpenCount] = useState(0);
+  const [materialNames, setMaterialNames] = useState([]);
+  const [materialTypes, setMaterialTypes] = useState([]);
+  const [materialQualities, setMaterialQualities] = useState([]);
+  // Hammadde verilerini API'den çek
+  // API response mapping helper (düzgün çalışacak şekilde)
+  const extractArray = (res) => {
+    if (!res) {
+      return [];
+    }
+    if (Array.isArray(res)) {
+      return res;
+    }
+    if (res.success === false) {
+      return [];
+    }
+    if (res.items && Array.isArray(res.items)) {
+      return res.items;
+    }
+    if (res.data && Array.isArray(res.data)) {
+      return res.data;
+    }
+    if (res.result && Array.isArray(res.result)) {
+      return res.result;
+    }
+    return [];
+  };
+
+  // API error state for material combos
+  const [materialApiError, setMaterialApiError] = useState("");
+
+  // Son ID'yi çekip kodu otomatik ayarlayan fonksiyonlar
+  const fetchLastMaterialNameId = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/MaterialNames", { headers: { Authorization: `Bearer ${token}` } });
+      const arr = extractArray(res.data);
+      if (arr.length === 0) return "1";
+      const maxId = Math.max(...arr.map(x => Number(x.id || x.Id || 0)));
+      return (maxId + 1).toString();
+    } catch {
+      return "1";
+    }
+  };
+  const fetchLastMaterialTypeId = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/MaterialTypes", { headers: { Authorization: `Bearer ${token}` } });
+      const arr = extractArray(res.data);
+      if (arr.length === 0) return "1";
+      const maxId = Math.max(...arr.map(x => Number(x.id || x.Id || 0)));
+      return (maxId + 1).toString();
+    } catch {
+      return "1";
+    }
+  };
+  const fetchLastMaterialQualityId = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/MaterialQualities", { headers: { Authorization: `Bearer ${token}` } });
+      const arr = extractArray(res.data);
+      if (arr.length === 0) return "1";
+      const maxId = Math.max(...arr.map(x => Number(x.id || x.Id || 0)));
+      return (maxId + 1).toString();
+    } catch {
+      return "1";
+    }
+  };
+
+  const fetchMaterialData = async () => {
+    try {
+      setMaterialApiError("");
+      const token = localStorage.getItem("token");
+      // MaterialNames
+      const namesRes = await axios.get("http://localhost:5000/api/MaterialNames", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (namesRes.data && namesRes.data.success === false) {
+        setMaterialApiError(namesRes.data.message || "Malzeme Adı verisi alınamadı");
+        setMaterialNames([]);
+      } else {
+        console.log("MaterialNames API response:", namesRes.data);
+        const arr = extractArray(namesRes.data);
+        console.log("MaterialNames after extractArray:", arr);
+        setMaterialNames(arr);
+      }
+      // MaterialTypes
+      const typesRes = await axios.get("http://localhost:5000/api/MaterialTypes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (typesRes.data && typesRes.data.success === false) {
+        setMaterialApiError(typesRes.data.message || "Malzeme Türü verisi alınamadı");
+        setMaterialTypes([]);
+      } else {
+        setMaterialTypes(extractArray(typesRes.data));
+      }
+      // MaterialQualities
+      const qualitiesRes = await axios.get("http://localhost:5000/api/MaterialQualities", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (qualitiesRes.data && qualitiesRes.data.success === false) {
+        setMaterialApiError(qualitiesRes.data.message || "Malzeme Kalitesi verisi alınamadı");
+        setMaterialQualities([]);
+      } else {
+        setMaterialQualities(extractArray(qualitiesRes.data));
+      }
+    } catch (err) {
+      setMaterialApiError("API bağlantı hatası veya veri alınamadı");
+      setMaterialNames([]);
+      setMaterialTypes([]);
+      setMaterialQualities([]);
+    }
+  };
+
 
   useEffect(() => {
     if (isOpen) {
       fetchModalData();
       fetchLocations();
+      fetchMaterialData();
     }
   }, [isOpen]);
 
@@ -760,161 +873,141 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                 </div>
               </div>
               {/* Hammadde seçildiyse ek pencere */}
-                    {(() => {
-                      const selectedCategory = categories.find(cat => cat.id.toString() === form.categoryId);
-      if (selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde")) {
-    // Hammadde verilerini localStorage'dan id'li olarak oku
-    const tree = JSON.parse(localStorage.getItem("hammaddeTree") || "{}") || {};
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mt-4 w-full">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Hammadde Bilgileri</h3>
-        <div className="flex flex-row items-end gap-4 w-auto">
-          {/* Malzeme Adı Combo */}
-          <div className="flex flex-col gap-2 min-w-[180px]">
-            <label className="block text-sm font-medium text-gray-700">Malzeme Adı</label>
-            <div className="flex gap-2">
-              <select value={form.rawMaterialNameId || ""} onChange={e => {
-                const id = e.target.value;
-                const name = Object.keys(tree).find(n => tree[n].id?.toString() === id || n === id) || "";
-                handleChange("rawMaterialName", { id, name });
-              }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
-                <option value="">Malzeme adı seçiniz</option>
-                {Object.entries(tree).map(([name, obj]) => (
-                  <option key={obj.id || name} value={obj.id || name}>{name}</option>
-                ))}
-              </select>
-              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                setMaterialModalType("name");
-                setShowMaterialModal(true);
-                const count = Object.keys(tree).length + 1;
-                setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
-              }}><IconPlus size={16} /></button>
-            </div>
-          </div>
-          {/* Malzeme Türü Combo */}
-          <div className="flex flex-col gap-2 min-w-[180px]">
-            <label className="block text-sm font-medium text-gray-700">Malzeme Türü</label>
-            <div className="flex gap-2">
-              <select value={form.rawMaterialTypeId || ""} onChange={e => {
-                const id = e.target.value;
-                const name = tree[form.rawMaterialName]?.types && Object.keys(tree[form.rawMaterialName].types).find(t => tree[form.rawMaterialName].types[t].id?.toString() === id || t === id) || "";
-                handleChange("rawMaterialType", { id, name });
-              }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700" disabled={!form.rawMaterialNameId}>
-                <option value="">Malzeme türü seçiniz</option>
-                {form.rawMaterialName && tree[form.rawMaterialName]?.types && Object.entries(tree[form.rawMaterialName].types).map(([type, obj]) => (
-                  <option key={obj.id || type} value={obj.id || type}>{type}</option>
-                ))}
-              </select>
-              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                setMaterialModalType("type");
-                setShowMaterialModal(true);
-                const types = tree[form.rawMaterialName]?.types || {};
-                const count = Object.keys(types).length + 1;
-                setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
-              }} disabled={!form.rawMaterialNameId}><IconPlus size={16} /></button>
-            </div>
-          </div>
-          {/* Malzeme Kalitesi Combo */}
-          <div className="flex flex-col gap-2 min-w-[180px]">
-            <label className="block text-sm font-medium text-gray-700">Malzeme Kalitesi</label>
-            <div className="flex gap-2">
-              <select value={form.rawMaterialQualityId || ""} onChange={e => {
-                const id = e.target.value;
-                const qualities = tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {};
-                const name = Object.keys(qualities).find(q => qualities[q].id?.toString() === id || q === id) || "";
-                handleChange("rawMaterialQuality", { id, name });
-              }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700" disabled={!form.rawMaterialTypeId}>
-                <option value="">Malzeme kalitesi seçiniz</option>
-                {form.rawMaterialName && form.rawMaterialType && tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities && Object.entries(tree[form.rawMaterialName].types[form.rawMaterialType].qualities).map(([quality, obj]) => (
-                  <option key={obj.id || quality} value={obj.id || quality}>{quality}</option>
-                ))}
-              </select>
-              <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={() => {
-                setMaterialModalType("quality");
-                setShowMaterialModal(true);
-                const qualities = tree[form.rawMaterialName]?.types?.[form.rawMaterialType]?.qualities || {};
-                const count = Object.keys(qualities).length + 1;
-                setMaterialModalForm({ code: String(count), name: '', description: '', isActive: true });
-              }} disabled={!form.rawMaterialTypeId}><IconPlus size={16} /></button>
-            </div>
-          </div>
-        </div>
-        {/* Lot Takibi yeni satırda */}
-        <div className="flex flex-col gap-2 min-w-[180px] justify-center mt-4">
-          <label className="block text-sm font-medium text-gray-700">Lot Takibi</label>
-          <div className="flex items-center mt-2">
-            <input type="checkbox" checked={form.lotTracking} onChange={e => handleChange("lotTracking", e.target.checked)} className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded" />
-            <label className="ml-2 text-sm text-gray-700">Lot Takibi Yapılsın</label>
-          </div>
-        </div>
-        {/* Hammadde modalı */}
-        {showMaterialModal && (
-          <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative">
-              <div className="absolute top-4 right-4 cursor-pointer" onClick={() => { setShowMaterialModal(false); setMaterialModalForm({ code: "", name: "", description: "", isActive: true }); }}>
-                <IconX size={24} className="text-gray-400 hover:text-gray-600" />
-              </div>
-              <h3 className="text-lg font-bold mb-4">{materialModalType === "name" ? "Malzeme Adı Ekle" : materialModalType === "type" ? "Malzeme Türü Ekle" : "Malzeme Kalitesi Ekle"}</h3>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={materialModalForm.code}
-                  onChange={e => setMaterialModalForm(f => ({ ...f, code: f.code }))}
-                  placeholder="Kod"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  disabled
-                />
-                <input type="text" value={materialModalForm.name} onChange={e => setMaterialModalForm(f => ({ ...f, name: e.target.value }))} placeholder="Adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                <textarea value={materialModalForm.description} onChange={e => setMaterialModalForm(f => ({ ...f, description: e.target.value }))} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
-                <div className="flex items-center">
-                  <input type="checkbox" checked={materialModalForm.isActive} onChange={e => setMaterialModalForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 text-ivosis-600 border-gray-300 rounded" />
-                  <label className="ml-2 text-sm">Aktif</label>
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2 mt-6">
-                <button type="button" className="px-4 py-2 bg-gray-100 text-gray-700 rounded" onClick={() => { setShowMaterialModal(false); setMaterialModalForm({ code: "", name: "", description: "", isActive: true }); }}>İptal</button>
-                <button type="button" className="px-4 py-2 bg-ivosis-600 text-white rounded" onClick={() => {
-                  // Modal kaydet mantığı ve localStorage'a ekle
-                  let key = "hammaddeTree";
-                  let tree = JSON.parse(localStorage.getItem(key) || "{}") || {};
-                  if (materialModalType === "name") {
-                    setForm(f => ({ ...f, rawMaterialName: materialModalForm.name }));
-                    tree[materialModalForm.name] = tree[materialModalForm.name] || { types: {} };
-                    // Kod bilgisini sakla
-                    setLastMaterialCode(materialModalForm.code);
-                  }
-                  if (materialModalType === "type") {
-                    setForm(f => ({ ...f, rawMaterialType: materialModalForm.name }));
-                    if (form.rawMaterialName) {
-                      tree[form.rawMaterialName] = tree[form.rawMaterialName] || { types: {} };
-                      tree[form.rawMaterialName].types[materialModalForm.name] = tree[form.rawMaterialName].types[materialModalForm.name] || { qualities: {} };
-                    }
-                  }
-                  if (materialModalType === "quality") {
-                    setForm(f => ({ ...f, rawMaterialQuality: materialModalForm.name }));
-                    if (form.rawMaterialName && form.rawMaterialType) {
-                      tree[form.rawMaterialName] = tree[form.rawMaterialName] || { types: {} };
-                      tree[form.rawMaterialName].types[form.rawMaterialType] = tree[form.rawMaterialName].types[form.rawMaterialType] || { qualities: {} };
-                      tree[form.rawMaterialName].types[form.rawMaterialType].qualities[materialModalForm.name] = {
-                        code: materialModalForm.code,
-                        description: materialModalForm.description,
-                        isActive: materialModalForm.isActive
-                      };
-                    }
-                  }
-                  localStorage.setItem(key, JSON.stringify(tree));
-                  setShowMaterialModal(false);
-                  setMaterialModalForm({ code: "", name: "", description: "", isActive: true });
-                }}>{"Kaydet"}</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-                      }
-                      return null;
-                    })()}
+              {(() => {
+                const selectedCategory = categories.find(cat => cat.id.toString() === form.categoryId);
+                if (selectedCategory && selectedCategory.name.toLowerCase().includes("hammadde")) {
+                  return (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mt-4 w-full">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Hammadde Bilgileri</h3>
+                      <div className="flex flex-row items-end gap-4 w-auto">
+                        {/* Malzeme Adı Combo */}
+                        <div className="flex flex-col gap-2 min-w-[180px]">
+                          <label className="block text-sm font-medium text-gray-700">Malzeme Adı</label>
+                          <div className="flex gap-2">
+                            <select value={form.rawMaterialNameId ? form.rawMaterialNameId.toString() : ""} onChange={e => {
+                              const id = e.target.value;
+                              const name = (Array.isArray(materialNames) ? materialNames : []).find(m => m.id?.toString() === id)?.name || "";
+                              handleChange("rawMaterialName", { id, name });
+                            }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">
+                              <option value="">Malzeme adı seçiniz</option>
+                              {(Array.isArray(materialNames) && materialNames.length > 0) ? materialNames.filter(m => m.isActive !== false).map((m) => (
+                                <option key={m.id} value={m.id.toString()}>{m.name}</option>
+                              )) : <option value="" disabled>Malzeme adı bulunamadı</option>}
+                            </select>
+                            <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={async () => {
+                              setMaterialModalType("name");
+                              setShowMaterialModal(true);
+                              setMaterialModalOpenCount(prev => prev + 1);
+                              const nextCode = await fetchLastMaterialNameId();
+                              setMaterialModalForm({ code: nextCode, name: '', description: '', isActive: true });
+                            }}><IconPlus size={16} /></button>
+                          </div>
+                        </div>
+                        {/* Malzeme Türü Combo */}
+                        <div className="flex flex-col gap-2 min-w-[180px]">
+                          <label className="block text-sm font-medium text-gray-700">Malzeme Türü</label>
+                          <div className="flex gap-2">
+                            <select value={form.rawMaterialTypeId || ""} onChange={e => {
+                              const id = e.target.value;
+                              const name = materialTypes.find(t => t.id?.toString() === id)?.name || "";
+                              handleChange("rawMaterialType", { id, name });
+                            }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700" disabled={!form.rawMaterialNameId}>
+                              <option value="">Malzeme türü seçiniz</option>
+                              {materialTypes.filter(t => !form.rawMaterialNameId || t.materialNameId?.toString() === form.rawMaterialNameId).map((t) => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                              ))}
+                            </select>
+                            <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={async () => {
+                              setMaterialModalType("type");
+                              setShowMaterialModal(true);
+                              setMaterialModalOpenCount(prev => prev + 1);
+                              const nextCode = await fetchLastMaterialTypeId();
+                              setMaterialModalForm({ code: nextCode, name: '', description: '', isActive: true });
+                            }} disabled={!form.rawMaterialNameId}><IconPlus size={16} /></button>
+                          </div>
+                        </div>
+                        {/* Malzeme Kalitesi Combo */}
+                        <div className="flex flex-col gap-2 min-w-[180px]">
+                          <label className="block text-sm font-medium text-gray-700">Malzeme Kalitesi</label>
+                          <div className="flex gap-2">
+                            <select value={form.rawMaterialQualityId || ""} onChange={e => {
+                              const id = e.target.value;
+                              const name = materialQualities.find(q => q.id?.toString() === id)?.name || "";
+                              handleChange("rawMaterialQuality", { id, name });
+                            }} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700" disabled={!form.rawMaterialTypeId}>
+                              <option value="">Malzeme kalitesi seçiniz</option>
+                              {materialQualities.filter(q => !form.rawMaterialTypeId || q.materialTypeId?.toString() === form.rawMaterialTypeId).map((q) => (
+                                <option key={q.id} value={q.id}>{q.name}</option>
+                              ))}
+                            </select>
+                            <button type="button" className="px-2 py-2 bg-ivosis-100 text-ivosis-700 rounded-lg hover:bg-ivosis-200" onClick={async () => {
+                              setMaterialModalType("quality");
+                              setShowMaterialModal(true);
+                              setMaterialModalOpenCount(prev => prev + 1);
+                              const nextCode = await fetchLastMaterialQualityId();
+                              setMaterialModalForm({ code: nextCode, name: '', description: '', isActive: true });
+                            }} disabled={!form.rawMaterialTypeId}><IconPlus size={16} /></button>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Lot Takibi yeni satırda */}
+                      <div className="flex flex-col gap-2 min-w-[180px] justify-center mt-4">
+                        <label className="block text-sm font-medium text-gray-700">Lot Takibi</label>
+                        <div className="flex items-center mt-2">
+                          <input type="checkbox" checked={form.lotTracking} onChange={e => handleChange("lotTracking", e.target.checked)} className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded" />
+                          <label className="ml-2 text-sm text-gray-700">Lot Takibi Yapılsın</label>
+                        </div>
+                      </div>
+                      {/* Hammadde modalı */}
+                      {showMaterialModal && (
+                        <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex items-center justify-center z-50">
+                          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative">
+                            <div className="absolute top-4 right-4 cursor-pointer" onClick={() => { setShowMaterialModal(false); setMaterialModalForm({ code: "", name: "", description: "", isActive: true }); }}>
+                              <IconX size={24} className="text-gray-400 hover:text-gray-600" />
+                            </div>
+                            <h3 className="text-lg font-bold mb-4">{materialModalType === "name" ? "Malzeme Adı Ekle" : materialModalType === "type" ? "Malzeme Türü Ekle" : "Malzeme Kalitesi Ekle"}</h3>
+                            <div className="space-y-3">
+                              <input type="text" value={materialModalForm.code} onChange={e => setMaterialModalForm(f => ({ ...f, code: e.target.value }))} placeholder="Kod" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                              <input type="text" value={materialModalForm.name} onChange={e => setMaterialModalForm(f => ({ ...f, name: e.target.value }))} placeholder="Adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                              <textarea value={materialModalForm.description} onChange={e => setMaterialModalForm(f => ({ ...f, description: e.target.value }))} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                              <div className="flex items-center">
+                                <input type="checkbox" checked={materialModalForm.isActive} onChange={e => setMaterialModalForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 text-ivosis-600 border-gray-300 rounded" />
+                                <label className="ml-2 text-sm">Aktif</label>
+                              </div>
+                            </div>
+                            <div className="flex justify-end space-x-2 mt-6">
+                              <button type="button" className="px-4 py-2 bg-gray-100 text-gray-700 rounded" onClick={() => { setShowMaterialModal(false); setMaterialModalForm({ code: "", name: "", description: "", isActive: true }); }}>İptal</button>
+                              <button type="button" className="px-4 py-2 bg-ivosis-600 text-white rounded" onClick={async () => {
+                                try {
+                                  const token = localStorage.getItem("token");
+                                  let url = "";
+                                  let payload = { ...materialModalForm };
+                                  if (materialModalType === "name") {
+                                    url = "http://localhost:5000/api/MaterialNames";
+                                  } else if (materialModalType === "type") {
+                                    url = "http://localhost:5000/api/MaterialTypes";
+                                    payload.materialNameId = form.rawMaterialNameId;
+                                  } else if (materialModalType === "quality") {
+                                    url = "http://localhost:5000/api/MaterialQualities";
+                                    payload.materialTypeId = form.rawMaterialTypeId;
+                                  }
+                                  await axios.post(url, payload, { headers: { Authorization: `Bearer ${token}` } });
+                                  setShowMaterialModal(false);
+                                  setMaterialModalForm({ code: "", name: "", description: "", isActive: true });
+                                  fetchMaterialData();
+                                } catch (err) {
+                                  alert("Kayıt hatası: " + (err.message || "Bilinmeyen hata"));
+                                }
+                              }}>{"Kaydet"}</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* Stok Bilgileri */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 w-full">

@@ -166,7 +166,7 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      // Ana veri objesi
+      // Ana veri objesi (StockMovements/stock-in için)
       const stockInData = {
         stockItemId: parseInt(form.itemId),
         locationId: parseInt(form.locationId),
@@ -187,13 +187,44 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
         LotSupplier: form.lotSupplier && form.lotSupplier !== "" ? form.lotSupplier : ""
       };
 
-      // Hammadde ise ek alanları ekle
-      // ...hammadde kontrolü kaldırıldı, alanlar her zaman stockInData'da...
+      // StockLot API için lotData objesi (gerekli alanlar)
+      const lotData = {
+        stockItemId: parseInt(form.itemId),
+        lotNumber: form.lotNumber || "LOT-" + Date.now(),
+        internalLotNumber: "INTERNAL-" + Date.now(),
+        labelNumber: form.lotLabel || "LBL-" + Date.now(),
+        barcode: "BARCODE-" + Date.now(),
+        initialWeight: 1.0, // zorunlu alan, dummy değer
+        currentWeight: 1.0, // zorunlu alan, dummy değer
+        initialLength: 1.0,
+        currentLength: 1.0,
+        width: form.lotWidth ? parseFloat(form.lotWidth) : 1.0,
+        thickness: form.lotThickness ? parseFloat(form.lotThickness) : 1.0,
+        supplierId: 1,
+        receiptDate: new Date().toISOString(),
+        certificateNumber: "CERT-" + Date.now(),
+        qualityGrade: "A",
+        testResults: "Test başarılı",
+        locationId: parseInt(form.locationId),
+        storagePosition: "STORAGE-1",
+        status: "Active",
+        isBlocked: false,
+        blockReason: null,
+        createdBy: 1,
+        companyId: 1
+      };
 
-      console.log('StockIn API\'ye gönderilecek veri:', stockInData);
-      // API'nin beklediği format: direkt JSON
+      // Önce StockLot'a POST at
+      await axios.post("http://localhost:5000/api/StockLot", lotData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      // Sonra StockMovements/stock-in'e POST at
       const response = await axios.post("http://localhost:5000/api/StockMovements/stock-in", stockInData, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },

@@ -1,5 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminDashboard from "../Layout/AdminDashboard";
+import ProductionDashboard from "../pages/Production.jsx";
+import LotManagement from "../pages/LotManagement.jsx";
 import Projects from "../pages/Projects";
 import Random from "../components/Header/Random";
 import ProjectCreated from "../pages/ProjectCreated";
@@ -31,6 +33,8 @@ const AppRoutes = () => {
                     <Route path="/my-tasks" element={<MyTasks />} />
                     <Route path="/processes" element={<Processes />} />
                     <Route path="/stock-management" element={<StockManagement />} />
+                    <Route path="/production" element={<ProductionDashboard />} />
+                    <Route path="/lot-management" element={<LotManagement />} />
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/users" element={<PersonnelListPage  />} />
