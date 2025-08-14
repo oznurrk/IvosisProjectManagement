@@ -73,6 +73,18 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         },
       ]
     },
+    {
+      name: "Üretim",
+      url: "/production",
+      icon: <IconSunElectricity size={20} />,
+      children: [
+        {
+          name: "Lot Yönetimi",
+          url: "/lot-management",
+          icon: <IconPackage size={18} />,
+        },
+      ]
+    },
     { 
       name: "E-Fatura", 
       url: "/e-invoice-dashboard", 
