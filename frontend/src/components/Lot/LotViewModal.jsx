@@ -29,17 +29,17 @@ const LotViewModal = ({ isOpen, onClose, lot }) => {
             <div className="bg-gray-50 rounded-xl p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Lot Bilgileri</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><b>Lot No:</b> {lot.LotNumber}</div>
-                <div><b>Barkod:</b> {lot.Barcode}</div>
-                <div><b>Başlangıç Ağırlık:</b> {lot.InitialWeight}</div>
-                <div><b>Mevcut Ağırlık:</b> {lot.CurrentWeight}</div>
-                <div><b>Genişlik:</b> {lot.Width}</div>
-                <div><b>Kalınlık:</b> {lot.Thickness}</div>
-                <div><b>Kalite:</b> {lot.QualityGrade}</div>
-                <div><b>Depo Pozisyonu:</b> {lot.StoragePosition}</div>
-                <div><b>Durum:</b> {lot.Status}</div>
-                <div><b>Bloklu:</b> {lot.IsBlocked ? "Evet" : "Hayır"}</div>
-                <div><b>Geliş Tarihi:</b> {lot.ReceiptDate ? new Date(lot.ReceiptDate).toLocaleDateString("tr-TR") : "-"}</div>
+                <div><b>Lot No:</b> {lot.lotNumber}</div>
+                <div><b>Barkod:</b> {lot.barcode}</div>
+                <div><b>Başlangıç Ağırlık:</b> {lot.initialWeight}</div>
+                <div><b>Mevcut Ağırlık:</b> {lot.currentWeight}</div>
+                <div><b>Genişlik:</b> {lot.width}</div>
+                <div><b>Kalınlık:</b> {lot.thickness}</div>
+                <div><b>Kalite:</b> {lot.qualityGrade}</div>
+                <div><b>Depo Pozisyonu:</b> {lot.storagePosition}</div>
+                <div><b>Durum:</b> {lot.status}</div>
+                <div><b>Bloklu:</b> {lot.isBlocked ? "Evet" : "Hayır"}</div>
+                <div><b>Geliş Tarihi:</b> {lot.receiptDate ? new Date(lot.receiptDate).toLocaleDateString("tr-TR") : "-"}</div>
               </div>
             </div>
           </div>
