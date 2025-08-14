@@ -8,13 +8,13 @@ public class StockLot : CompanyEntity
     
     //[Required]
     [StringLength(50)]
-    public string LotNumber { get; set; }
+    public string? LotNumber { get; set; }
     
     [StringLength(50)]
     public string InternalLotNumber { get; set; }
     
     [StringLength(50)]
-    public string LabelNumber { get; set; }
+    public string? LabelNumber { get; set; }
     
     [StringLength(100)]
     public string Barcode { get; set; }
@@ -57,7 +57,7 @@ public class StockLot : CompanyEntity
     
     //[Required]
     [StringLength(20)]
-    public string Status { get; set; } = "ACTIVE"; // ACTIVE, CONSUMED, BLOCKED
+    public string? Status { get; set; } = "ACTIVE"; // ACTIVE, CONSUMED, BLOCKED
     
     public bool IsBlocked { get; set; } = false;
     
