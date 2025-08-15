@@ -3,16 +3,16 @@ using System.ComponentModel.DataAnnotations;
 public class StockLotUpdateDto
 {
     [StringLength(50)]
-    public string InternalLotNumber { get; set; }
+    public string? InternalLotNumber { get; set; }
     
     [StringLength(50)]
-    public string LabelNumber { get; set; }
+    public string? LabelNumber { get; set; }
     
     [StringLength(100)]
-    public string Barcode { get; set; }
+    public string? Barcode { get; set; }
     
     [StringLength(100)]
-    public string CertificateNumber { get; set; }
+    public string? CertificateNumber { get; set; }
     
     [StringLength(50)]
     public string QualityGrade { get; set; }
