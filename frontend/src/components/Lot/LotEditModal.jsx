@@ -12,7 +12,8 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
     width: 0,
     thickness: 0,
     qualityGrade: "",
-    storagePosition: ""
+    storagePosition: "",
+    blockReason: ""
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -27,7 +28,8 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
         width: lot.width || 0,
         thickness: lot.thickness || 0,
         qualityGrade: lot.qualityGrade || "",
-        storagePosition: lot.storagePosition || ""
+        storagePosition: lot.storagePosition || "",
+        blockReason: lot.blockReason || ""
       });
     }
   }, [lot, isOpen]);
@@ -42,6 +44,7 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
     if (!form.lotNumber.trim()) newErrors.lotNumber = "Lot No zorunlu";
     if (!form.initialWeight || form.initialWeight < 0) newErrors.initialWeight = "Geçerli bir ağırlık girin";
     if (!form.currentWeight || form.currentWeight < 0) newErrors.currentWeight = "Geçerli bir ağırlık girin";
+    if (lot?.isBlocked && !form.blockReason.trim()) newErrors.blockReason = "Bloke sebebi zorunlu";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -169,6 +172,19 @@ const LotEditModal = ({ isOpen, onClose, lot, onSave }) => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
+                {/* BlockReason alanı */}
+                {lot?.isBlocked && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bloke Sebebi *</label>
+                    <input
+                      type="text"
+                      value={form.blockReason}
+                      onChange={e => handleChange("blockReason", e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.blockReason ? 'border-red-500' : 'border-gray-300'}`}
+                    />
+                    {errors.blockReason && <p className="text-red-500 text-xs mt-1">{errors.blockReason}</p>}
+                  </div>
+                )}
               </div>
             </div>
             {/* Butonlar */}

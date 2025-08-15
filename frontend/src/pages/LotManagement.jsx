@@ -239,7 +239,9 @@ const LotManagement = () => {
                   options: [
                     { value: "", label: "Tümü" },
                     { value: "Active", label: "Aktif" },
-                    { value: "Blocked", label: "Bloklu" }
+                    { value: "Blocked", label: "Bloklu" },
+                    { value: "Quarantined", label: "Karantinada" },
+                    { value: "Reserved", label: "Rezerve" }
                   ]
                 },
                 {
