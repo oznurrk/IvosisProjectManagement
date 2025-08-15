@@ -2,12 +2,47 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { IconX, IconCheck, IconSearch, IconPackage } from "@tabler/icons-react";
 
+// /api/Unit'ten birimleri çeken custom hook kodu doğrudan burada:
+function useUnits() {
+  const [units, setUnits] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  React.useEffect(() => {
+    const fetchUnits = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/Unit", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (Array.isArray(res.data)) {
+          setUnits(res.data);
+        } else if (res.data && Array.isArray(res.data.items)) {
+          setUnits(res.data.items);
+        } else if (res.data && Array.isArray(res.data.data)) {
+          setUnits(res.data.data);
+        } else {
+          setUnits([]);
+        }
+      } catch (err) {
+        setError(err);
+        setUnits([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUnits();
+  }, []);
+
+  return { units, loading, error };
+}
+
 const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues }) => {
   const [form, setForm] = useState({
     itemId: initialValues?.itemId?.toString() || initialValues?.stockItemId?.toString() || "",
     locationId: initialValues?.locationId?.toString() || "1",
     quantity: initialValues?.quantity?.toString() || "",
-    unitPrice: initialValues?.unitPrice?.toString() || "",
+    unitId: initialValues?.unitId?.toString() || "",
     referenceNumber: initialValues?.referenceNumber || "",
     description: initialValues?.description || "",
     notes: initialValues?.notes || "",
@@ -15,8 +50,23 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
     lotThickness: initialValues?.lotThickness || "",
     lotSupplier: initialValues?.lotSupplier || "",
     lotLabel: initialValues?.lotLabel || "",
-    lotNumber: initialValues?.lotNumber || ""
+    lotNumber: initialValues?.lotNumber || "",
+    supplierId: "",
+    companyId: ""
   });
+  // Birim listesini çek
+  const { units, loading: unitsLoading } = useUnits();
+  // Dummy örnek supplier ve company listesi (gerçek API'den çekmek daha iyi)
+  const supplierList = [
+    { id: 1, name: "ABC Tedarik A.Ş." },
+    { id: 2, name: "XYZ Malzeme Ltd." },
+    { id: 3, name: "DEF Endüstri" }
+  ];
+  const companyList = [
+    { id: 1, name: "Firma 1" },
+    { id: 2, name: "Firma 2" },
+    { id: 3, name: "Firma 3" }
+  ];
 
   // Lokasyonlar için state
   const [locations, setLocations] = useState([]);
@@ -156,7 +206,7 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
 
     if (!form.itemId) newErrors.itemId = "Malzeme seçimi zorunludur";
     if (!form.quantity || parseFloat(form.quantity) <= 0) newErrors.quantity = "Geçerli bir miktar giriniz";
-    if (!form.unitPrice || parseFloat(form.unitPrice) <= 0) newErrors.unitPrice = "Geçerli bir birim fiyat giriniz";
+    if (!form.unitId) newErrors.unitId = "Birim seçimi zorunludur";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -172,7 +222,7 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
         locationId: parseInt(form.locationId),
         MovementType: "IN",
         quantity: parseFloat(form.quantity),
-        unitPrice: parseFloat(form.unitPrice),
+        unitId: parseInt(form.unitId),
         referenceType: "Purchase", // Sabit değer
         referenceId: 0,
         referenceNumber: form.referenceNumber || "",
@@ -200,27 +250,34 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
         currentLength: 1.0,
         width: form.lotWidth ? parseFloat(form.lotWidth) : 1.0,
         thickness: form.lotThickness ? parseFloat(form.lotThickness) : 1.0,
-        supplierId: 1,
+        supplierId: form.supplierId ? parseInt(form.supplierId) : 1,
         receiptDate: new Date().toISOString(),
         certificateNumber: "CERT-" + Date.now(),
         qualityGrade: "A",
         testResults: "Test başarılı",
-        locationId: parseInt(form.locationId),
+        locationId: form.locationId ? parseInt(form.locationId) : 1,
         storagePosition: "STORAGE-1",
-        status: "Active",
-        isBlocked: false,
-        blockReason: null,
+        status: form.status || "Active",
+        isBlocked: form.status === "Blocked",
+        blockReason: form.status === "Blocked" ? form.blockReason : null,
         createdBy: 1,
-        companyId: 1
+        companyId: form.companyId ? parseInt(form.companyId) : 1
       };
 
+      // DEBUG: lotData'yı ekrana bas
+      console.log("[DEBUG] StockLot API'ye gönderilecek lotData:", lotData);
+
       // Önce StockLot'a POST at
-      await axios.post("http://localhost:5000/api/StockLot", lotData, {
+      const lotRes = await axios.post("http://localhost:5000/api/StockLot", lotData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
+      // LotManagement'a yeni lotu eklemek için callback tetiklenebilir
+      if (onSave && lotRes.data) {
+        onSave(lotRes.data);
+      }
 
       // Sonra StockMovements/stock-in'e POST at
       const response = await axios.post("http://localhost:5000/api/StockMovements/stock-in", stockInData, {
@@ -361,16 +418,23 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
               {errors.quantity && (<p className="text-red-500 text-xs mt-1">{errors.quantity}</p>)}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Birim Fiyat (₺) *</label>
-              <input
-                type="number"
-                step="0.0001"
-                value={form.unitPrice}
-                onChange={(e) => handleChange("unitPrice", e.target.value)}
-                placeholder="0.0000"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.unitPrice ? 'border-red-500' : 'border-gray-300'}`}
-              />
-              {errors.unitPrice && (<p className="text-red-500 text-xs mt-1">{errors.unitPrice}</p>)}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Birim *</label>
+              <select
+                value={form.unitId}
+                onChange={e => handleChange("unitId", e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.unitId ? 'border-red-500' : 'border-gray-300'}`}
+                required
+              >
+                <option value="">Birim Seçiniz</option>
+                {unitsLoading ? (
+                  <option disabled>Yükleniyor...</option>
+                ) : (
+                  units && units.map(unit => (
+                    <option key={unit.id} value={unit.id}>{unit.name}</option>
+                  ))
+                )}
+              </select>
+              {errors.unitId && (<p className="text-red-500 text-xs mt-1">{errors.unitId}</p>)}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Lokasyon</label>
@@ -399,85 +463,191 @@ const StockInModal = ({ isOpen, onClose, onSave, stockItems = [], initialValues 
               />
             </div>
           </div>
-          {/* Lot Bilgileri: Sadece hammadde ve lotTracking true ise göster */}
-          {selectedItem && (
-            (
-              (selectedItem.category && selectedItem.category.toLowerCase().includes("hammadde")) ||
-              (selectedItem.categoryName && selectedItem.categoryName.toLowerCase().includes("hammadde")) ||
-              (selectedItem.categoryId === 17) // KategoriId hammadde ise
-            )
-          ) && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-6">
-              <h4 className="text-md font-semibold text-gray-800 mb-4">Lot Bilgileri</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Lot Bilgileri: LotAddModal ile aynı inputlar */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-6">
+            <h4 className="text-md font-semibold text-gray-800 mb-4">Lot Bilgileri</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Başlangıç Ağırlık (kg) *</label>
+                <input
+                  type="number"
+                  value={form.initialWeight || ""}
+                  onChange={e => handleChange("initialWeight", e.target.value)}
+                  placeholder="Başlangıç Ağırlık (kg)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Genişlik (mm) *</label>
+                <input
+                  type="number"
+                  value={form.width || ""}
+                  onChange={e => handleChange("width", e.target.value)}
+                  placeholder="Genişlik (mm)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Kalınlık (mm) *</label>
+                <input
+                  type="number"
+                  value={form.thickness || ""}
+                  onChange={e => handleChange("thickness", e.target.value)}
+                  placeholder="Kalınlık (mm)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Durum *</label>
+                <select
+                  value={form.status || "Active"}
+                  onChange={e => handleChange("status", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                >
+                  <option value="Active">Aktif</option>
+                  <option value="Blocked">Bloklu</option>
+                  <option value="Quarantined">Karantinada</option>
+                  <option value="Reserved">Rezerve</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Lot No *</label>
+                <input
+                  type="text"
+                  value={form.lotNumber || ""}
+                  onChange={e => handleChange("lotNumber", e.target.value)}
+                  placeholder="Lot No"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Etiket No *</label>
+                <input
+                  type="text"
+                  value={form.labelNumber || form.lotLabel || ""}
+                  onChange={e => handleChange("labelNumber", e.target.value)}
+                  placeholder="Etiket No"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tedarikçi *</label>
+                <select
+                  value={form.supplierId}
+                  onChange={e => handleChange("supplierId", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                >
+                  <option value="">Tedarikçi Seçiniz</option>
+                  {supplierList.map(sup => (
+                    <option key={sup.id} value={sup.id}>{sup.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Geliş Tarihi *</label>
+                <input
+                  type="date"
+                  value={form.receiptDate || ""}
+                  onChange={e => handleChange("receiptDate", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Depo *</label>
+                <select
+                  value={form.locationId}
+                  onChange={e => handleChange("locationId", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                >
+                  <option value="">Depo Seç</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id.toString()}>{location.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Depo Pozisyonu *</label>
+                <input
+                  type="text"
+                  value={form.storagePosition || ""}
+                  onChange={e => handleChange("storagePosition", e.target.value)}
+                  placeholder="Depo Pozisyonu"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Firma *</label>
+                <select
+                  value={form.companyId}
+                  onChange={e => handleChange("companyId", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                >
+                  <option value="">Firma Seçiniz</option>
+                  {companyList.map(comp => (
+                    <option key={comp.id} value={comp.id}>{comp.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sertifika No *</label>
+                <input
+                  type="text"
+                  value={form.certificateNumber || ""}
+                  onChange={e => handleChange("certificateNumber", e.target.value)}
+                  placeholder="Sertifika No"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Kalite *</label>
+                <input
+                  type="text"
+                  value={form.qualityGrade || ""}
+                  onChange={e => handleChange("qualityGrade", e.target.value)}
+                  placeholder="Kalite"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Test Sonucu *</label>
+                <input
+                  type="text"
+                  value={form.testResults || ""}
+                  onChange={e => handleChange("testResults", e.target.value)}
+                  placeholder="Test Sonucu"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              {form.status === "Blocked" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Genişlik *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Blokaj Sebebi *</label>
                   <input
                     type="text"
-                    value={form.lotWidth}
-                    onChange={e => handleChange("lotWidth", e.target.value)}
-                    placeholder="Genişlik"
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${!form.lotWidth ? 'border-red-500' : ''}`}
+                    value={form.blockReason || ""}
+                    onChange={e => handleChange("blockReason", e.target.value)}
+                    placeholder="Blokaj sebebini giriniz"
+                    className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Kalınlık *</label>
-                  <input
-                    type="text"
-                    value={form.lotThickness}
-                    onChange={e => handleChange("lotThickness", e.target.value)}
-                    placeholder="Kalınlık"
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg ${!form.lotThickness ? 'border-red-500' : ''}`}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Lot No</label>
-                  <input
-                    type="text"
-                    value={form.lotNumber}
-                    onChange={e => handleChange("lotNumber", e.target.value)}
-                    placeholder="Lot No"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tedarikçi</label>
-                  <select
-                    value={form.lotSupplier}
-                    onChange={e => handleChange("lotSupplier", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">Tedarikçi Seçiniz</option>
-                    {suppliers.map(sup => (
-                      <option key={sup} value={sup}>{sup}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Etiket No</label>
-                  <input
-                    type="text"
-                    value={form.lotLabel}
-                    onChange={e => handleChange("lotLabel", e.target.value)}
-                    placeholder="Etiket No"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
+              )}
             </div>
-          )}
-          {form.quantity && form.unitPrice && (
-            <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
-              <div className="text-lg font-semibold text-gray-800">
-                Toplam Tutar: {(parseFloat(form.quantity || 0) * parseFloat(form.unitPrice || 0)).toFixed(4)} ₺
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Miktar: {form.quantity} × Birim Fiyat: {form.unitPrice} ₺
-              </div>
-            </div>
-          )}
+          </div>
+          {/* Toplam tutar kaldırıldı, birim fiyat yok */}
         </div>
 
           {/* Açıklama ve Notlar */}

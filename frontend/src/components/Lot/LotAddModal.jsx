@@ -5,11 +5,11 @@ import { IconX, IconPlus, IconCheck, IconRefresh } from "@tabler/icons-react";
 const initialForm = {
   stockItemId: "",
   lotNumber: "",
-  internalLotNumber: "",
+  // internalLotNumber: "",
   labelNumber: "",
-  barcode: "",
+  // barcode: "",
   initialWeight: "",
-  initialLength: "",
+  // initialLength: "",
   width: "",
   thickness: "",
   supplierId: "",
@@ -20,6 +20,7 @@ const initialForm = {
   locationId: "",
   storagePosition: "",
   companyId: "",
+  status: "Active",
   blockReason: ""
 };
 
@@ -36,9 +37,10 @@ const LotAddModal = ({ isOpen, onClose, onSave }) => {
   useEffect(() => {
     if (isOpen) {
       setStockItems([]); // Modal açıldığında eski state'i sıfırla
-      fetchModalData();
       setForm(initialForm);
       setError("");
+      fetchModalData();
+      fetchLocations();
     }
   }, [isOpen]);
 
@@ -77,6 +79,17 @@ const LotAddModal = ({ isOpen, onClose, onSave }) => {
     }
   };
 
+  const fetchLocations = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const locRes = await axios.get("http://localhost:5000/api/StockLocations", { headers: { Authorization: `Bearer ${token}` } });
+      setLocations(locRes.data.items || locRes.data.data || locRes.data || []);
+      console.log("Locations fetched:", locRes.data);
+    } catch (err) {
+      setLocations([]);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -86,11 +99,11 @@ const LotAddModal = ({ isOpen, onClose, onSave }) => {
     setForm({
       stockItemId: stockItems[0]?.id?.toString() || "",
       lotNumber: "LOT-" + Math.floor(Math.random() * 10000),
-      internalLotNumber: "INT-" + Math.floor(Math.random() * 10000),
+      // internalLotNumber: "INT-" + Math.floor(Math.random() * 10000),
       labelNumber: "LBL-" + Math.floor(Math.random() * 10000),
-      barcode: Math.floor(Math.random() * 9000000000000) + 1000000000000,
+      // barcode: Math.floor(Math.random() * 9000000000000) + 1000000000000,
       initialWeight: "1000",
-      initialLength: "100",
+      // initialLength: "100",
       width: "1000",
       thickness: "10",
       supplierId: suppliers[0]?.id?.toString() || "",
@@ -101,13 +114,18 @@ const LotAddModal = ({ isOpen, onClose, onSave }) => {
       locationId: locations[0]?.id?.toString() || "",
       storagePosition: "Raf-1",
       companyId: companies[0]?.id?.toString() || "",
-      blockReason: "Test blokaj sebebi"
+      status: "Active",
+      blockReason: ""
     });
   };
 
   const validateForm = () => {
-    if (!form.lotNumber || !form.internalLotNumber || !form.labelNumber || !form.barcode || !form.initialWeight || !form.initialLength || !form.width || !form.thickness || !form.supplierId || !form.receiptDate || !form.certificateNumber || !form.qualityGrade || !form.testResults || !form.locationId || !form.storagePosition || !form.companyId || !form.stockItemId || !form.blockReason) {
-      setError("Tüm alanlar ve blokaj sebebi zorunludur.");
+    // if (!form.lotNumber || !form.internalLotNumber || !form.labelNumber || !form.barcode || !form.initialWeight || !form.initialLength || !form.width || !form.thickness || !form.supplierId || !form.receiptDate || !form.certificateNumber || !form.qualityGrade || !form.testResults || !form.locationId || !form.storagePosition || !form.companyId || !form.stockItemId) {
+    //   setError("Tüm alanlar zorunludur.");
+    //   return false;
+    // }
+    if ((form.status === "Blocked") && !form.blockReason) {
+      setError("Bloklu durumunda blokaj sebebi zorunludur.");
       return false;
     }
     setError("");
@@ -119,18 +137,29 @@ const LotAddModal = ({ isOpen, onClose, onSave }) => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      await onSave({
+      // Tüm string olması gereken alanları stringe çevir
+      const payload = {
         ...form,
+        lotNumber: String(form.lotNumber),
+        // internalLotNumber: String(form.internalLotNumber),
+        labelNumber: String(form.labelNumber),
+        // barcode: String(form.barcode),
+        certificateNumber: String(form.certificateNumber),
+        qualityGrade: String(form.qualityGrade),
+        testResults: String(form.testResults),
+        storagePosition: String(form.storagePosition),
         initialWeight: Number(form.initialWeight),
-        initialLength: Number(form.initialLength),
+        // initialLength: Number(form.initialLength),
         width: Number(form.width),
         thickness: Number(form.thickness),
         supplierId: Number(form.supplierId),
         locationId: Number(form.locationId),
         companyId: Number(form.companyId),
         stockItemId: Number(form.stockItemId),
-        blockReason: form.blockReason
-      });
+        status: form.status,
+        blockReason: form.status === "Blocked" ? form.blockReason : ""
+      };
+      await onSave({ createDto: payload });
     } catch (err) {
       setError("Kayıt başarısız: " + (err?.message || ""));
     } finally {
@@ -182,6 +211,15 @@ return (
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Temel Bilgiler</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Durum *</label>
+                  <select name="status" value={form.status} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option value="Active">Aktif</option>
+                    <option value="Blocked">Bloklu</option>
+                    <option value="Quarantined">Karantinada</option>
+                    <option value="Reserved">Rezerve</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Stok Kartı *</label>
                   <select name="stockItemId" value={form.stockItemId} onChange={handleChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     <option value="">Stok Kartı Seç</option>
@@ -194,26 +232,32 @@ return (
                   <label className="block text-sm font-medium text-gray-700 mb-2">Lot No *</label>
                   <input name="lotNumber" value={form.lotNumber} onChange={handleChange} required placeholder="Lot No" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
                 </div>
+                {/*
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Internal Lot No *</label>
                   <input name="internalLotNumber" value={form.internalLotNumber} onChange={handleChange} required placeholder="Internal Lot No" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
                 </div>
+                */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Etiket No *</label>
                   <input name="labelNumber" value={form.labelNumber} onChange={handleChange} required placeholder="Etiket No" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
                 </div>
+                {/*
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Barkod *</label>
                   <input name="barcode" value={form.barcode} onChange={handleChange} required placeholder="Barkod" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
                 </div>
+                */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Başlangıç Ağırlık (kg) *</label>
                   <input name="initialWeight" value={form.initialWeight} onChange={handleChange} type="number" required placeholder="Başlangıç Ağırlık (kg)" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
                 </div>
+                {/*
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Başlangıç Uzunluk (m) *</label>
                   <input name="initialLength" value={form.initialLength} onChange={handleChange} type="number" required placeholder="Başlangıç Uzunluk (m)" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
                 </div>
+                */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Genişlik (mm) *</label>
                   <input name="width" value={form.width} onChange={handleChange} type="number" required placeholder="Genişlik (mm)" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
@@ -275,10 +319,12 @@ return (
                   <label className="block text-sm font-medium text-gray-700 mb-2">Test Sonucu *</label>
                   <input name="testResults" value={form.testResults} onChange={handleChange} required placeholder="Test Sonucu" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Blokaj Sebebi *</label>
-                  <input name="blockReason" value={form.blockReason} onChange={handleChange} required placeholder="Blokaj sebebini giriniz" className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
-                </div>
+                {form.status === "Blocked" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Blokaj Sebebi *</label>
+                    <input name="blockReason" value={form.blockReason} onChange={handleChange} required placeholder="Blokaj sebebini giriniz" className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" />
+                  </div>
+                )}
               </div>
             </div>
             {/* Hata mesajları */}
