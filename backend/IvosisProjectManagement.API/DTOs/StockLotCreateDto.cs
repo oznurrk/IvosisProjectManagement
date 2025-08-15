@@ -10,13 +10,13 @@ public class StockLotCreateDto
     public string LotNumber { get; set; }
     
     [StringLength(50)]
-    public string InternalLotNumber { get; set; }
+    public string? InternalLotNumber { get; set; }
     
     [StringLength(50)]
-    public string LabelNumber { get; set; }
+    public string? LabelNumber { get; set; }
     
     [StringLength(100)]
-    public string Barcode { get; set; }
+    public string? Barcode { get; set; }
     
     [Required]
     [Range(0, double.MaxValue, ErrorMessage = "Initial weight must be greater than 0")]

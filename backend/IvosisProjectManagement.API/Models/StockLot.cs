@@ -11,13 +11,13 @@ public class StockLot : CompanyEntity
     public string? LotNumber { get; set; }
     
     [StringLength(50)]
-    public string InternalLotNumber { get; set; }
+    public string? InternalLotNumber { get; set; }
     
     [StringLength(50)]
     public string? LabelNumber { get; set; }
     
     [StringLength(100)]
-    public string Barcode { get; set; }
+    public string? Barcode { get; set; }
     
     [Column(TypeName = "decimal(18,4)")]
     public decimal InitialWeight { get; set; }
