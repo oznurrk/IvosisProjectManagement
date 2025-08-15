@@ -31,7 +31,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
     rawMaterialQualityId: "",
     rawMaterialThickness: "",
     rawMaterialWidth: "",
-    lotTracking: false,
+    HasLotTracking: false,
     locationId: "1" // Default location
   });
 
@@ -553,7 +553,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         rawMaterialQuality: (form.rawMaterialQuality || "").trim(),
         rawMaterialThickness: (form.rawMaterialThickness || "").trim(),
         rawMaterialWidth: (form.rawMaterialWidth || "").trim(),
-        hasLotTracking: isRawMaterial ? Boolean(form.lotTracking) : false,
+        HasLotTracking: !!(isRawMaterial && form.HaslotTracking),
         materialNameId: isRawMaterial ? form.rawMaterialNameId || null : null,
         materialTypeId: isRawMaterial ? form.rawMaterialTypeId || null : null,
         materialQualityId: isRawMaterial ? form.rawMaterialQualityId || null : null
@@ -593,7 +593,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
         rawMaterialQuality: "",
         rawMaterialThickness: "",
         rawMaterialWidth: "",
-        lotTracking: false,
+        HasLotTracking: false,
         locationId: "1"
       });
       setSearchTerm("");
@@ -954,7 +954,7 @@ const StockAddModal = ({ isOpen, onClose, onSave }) => {
                       <div className="flex flex-col gap-2 min-w-[180px] justify-center mt-4">
                         <label className="block text-sm font-medium text-gray-700">Lot Takibi</label>
                         <div className="flex items-center mt-2">
-                          <input type="checkbox" checked={form.lotTracking} onChange={e => handleChange("lotTracking", e.target.checked)} className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded" />
+                          <input type="checkbox" checked={form.HasLotTracking} onChange={e => handleChange("HasLotTracking", e.target.checked)} className="h-4 w-4 text-ivosis-600 focus:ring-ivosis-500 border-gray-300 rounded" />
                           <label className="ml-2 text-sm text-gray-700">Lot Takibi Yapılsın</label>
                         </div>
                       </div>
