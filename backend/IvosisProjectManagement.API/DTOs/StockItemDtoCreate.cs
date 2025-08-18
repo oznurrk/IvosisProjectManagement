@@ -34,8 +34,8 @@ namespace IvosisProjectManagement.API.DTOs
         public string CertificateNumbers { get; set; } = "";
         public string StorageConditions { get; set; } = "";
         public int? ShelfLife { get; set; }
-        public bool IsCriticalItem { get; set; } = false;
-        public bool HasLotTracking { get; set; } = false;
+        public bool IsCriticalItem { get; set; }
+        public bool HasLotTracking { get; set; }
         public int? MaterialNameId { get; set; }
         public int? MaterialTypeId { get; set; }
         public int? MaterialQualityId { get; set; }

@@ -15,7 +15,12 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
                 .Include(x => x.Category)
                 .Include(x => x.Unit)
                 .Include(x => x.CreatedByUser)
+                .Include(x => x.UpdatedByUser)  // EKLENEN
                 .Include(x => x.StockBalances)
+                .Include(x => x.MaterialName)   // EKLENEN
+                .Include(x => x.MaterialType)   // EKLENEN
+                .Include(x => x.MaterialQuality) // EKLENEN
+                .Include(x => x.Company)         // EKLENEN
                 .AsQueryable();
 
             // Apply filters (güvenli şekilde)
@@ -89,12 +94,16 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
                 IsActive = x.IsActive,
                 IsDiscontinued = x.IsDiscontinued,
                 IsCriticalItem = x.IsCriticalItem,
-                CreatedAt = x.CreatedAt,
-                CreatedBy = x.CreatedBy ?? 0,
-                CreatedByName = x.CreatedByUser != null ? (x.CreatedByUser.Name ?? "") : "",
-                UpdatedAt = x.UpdatedAt,
-                UpdatedBy = x.UpdatedBy,
-                
+                HasLotTracking = x.HasLotTracking,
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
                 // StockBalances null safe hesaplaması  
                 CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
                 AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
@@ -103,8 +112,16 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
                     x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
                     x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
                     x.MinimumStock,
-                    x.MaximumStock)
-               
+                    x.MaximumStock),
+                // Company bilgileri
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                CompanyId = x.CompanyId,
+                CreatedAt = x.CreatedAt,    
+                CreatedBy = x.CreatedBy ?? 0,
+                CreatedByName = x.CreatedByUser != null ? (x.CreatedByUser.Name ?? "") : "",
+                UpdatedAt = x.UpdatedAt,
+                UpdatedBy = x.UpdatedBy,
+                UpdatedByName = x.UpdatedByUser != null ? x.UpdatedByUser.Name ?? "" : ""  // EKLENEN
           
             }).ToListAsync();
 
@@ -116,6 +133,7 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
         }   
         
     }
+    
     // Stock status'u hesaplayan yardımcı method - NULL SAFE
     private static string DetermineStockStatusSafe(decimal availableStock, decimal currentStock, decimal minimumStock, decimal maximumStock)
     {
@@ -137,44 +155,71 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.CreatedByUser)
             .Include(x => x.UpdatedByUser)
             .Include(x => x.StockBalances)
+            .Include(x => x.MaterialName)        // EKLENEN
+            .Include(x => x.MaterialType)        // EKLENEN
+            .Include(x => x.MaterialQuality)     // EKLENEN
+            .Include(x => x.Company)             // EKLENEN
             .Where(x => x.Id == id)
             .Select(x => new StockItemDto
             {
                 Id = x.Id,
-                ItemCode = x.ItemCode,
-                Name = x.Name,
-                Description = x.Description,
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",
                 CategoryId = x.CategoryId,
-                CategoryName = x.Category.Name,
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
                 UnitId = x.UnitId,
-                UnitName = x.Unit.Name,
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
                 MinimumStock = x.MinimumStock,
                 MaximumStock = x.MaximumStock,
                 ReorderLevel = x.ReorderLevel,
                 PurchasePrice = x.PurchasePrice,
                 SalePrice = x.SalePrice,
-                Currency = x.Currency,
-                Brand = x.Brand,
-                Model = x.Model,
-                Specifications = x.Specifications,
-                QualityStandards = x.QualityStandards,
-                CertificateNumbers = x.CertificateNumbers,
-                StorageConditions = x.StorageConditions,
+                Currency = x.Currency ?? "",
+                Brand = x.Brand ?? "",
+                Model = x.Model ?? "",
+                Specifications = x.Specifications ?? "",
+                QualityStandards = x.QualityStandards ?? "",
+                CertificateNumbers = x.CertificateNumbers ?? "",
+                StorageConditions = x.StorageConditions ?? "",
                 ShelfLife = x.ShelfLife,
                 IsActive = x.IsActive,
                 IsDiscontinued = x.IsDiscontinued,
                 IsCriticalItem = x.IsCriticalItem,
+                HasLotTracking = x.HasLotTracking,                    // EKLENEN
+                
+                // Material bilgileri - EKLENEN
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                
+                // Stock bilgileri - NULL SAFE
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
+                StockStatus = DetermineStockStatusSafe(
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock),
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                // Audit fields
                 CreatedAt = x.CreatedAt,
                 CreatedBy = x.CreatedBy ?? 0,
-                CreatedByName = x.CreatedByUser.Name,
+                CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name ?? "" : "",
                 UpdatedAt = x.UpdatedAt,
                 UpdatedBy = x.UpdatedBy,
-                UpdatedByName = x.UpdatedByUser != null ? x.UpdatedByUser.Name : null,
-                CurrentStock = x.StockBalances.Sum(b => b.CurrentQuantity),
-                AvailableStock = x.StockBalances.Sum(b => b.AvailableQuantity),
-                ReservedStock = x.StockBalances.Sum(b => b.ReservedQuantity),
-                StockStatus = x.StockBalances.Sum(b => b.AvailableQuantity) <= x.MinimumStock ? "LOW_STOCK" :
-                             x.StockBalances.Sum(b => b.CurrentQuantity) >= x.MaximumStock ? "OVERSTOCK" : "NORMAL"
+                UpdatedByName = x.UpdatedByUser != null ? x.UpdatedByUser.Name ?? "" : ""
             })
             .FirstOrDefaultAsync();
     }
@@ -185,18 +230,54 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.Category)
             .Include(x => x.Unit)
             .Include(x => x.StockBalances)
+            .Include(x => x.MaterialName)        // EKLENEN
+            .Include(x => x.MaterialType)        // EKLENEN
+            .Include(x => x.MaterialQuality)     // EKLENEN
+            .Include(x => x.Company)             // EKLENEN
             .Where(x => x.ItemCode == itemCode)
             .Select(x => new StockItemDto
             {
                 Id = x.Id,
-                ItemCode = x.ItemCode,
-                Name = x.Name,
-                CategoryName = x.Category.Name,
-                UnitName = x.Unit.Name,
-                CurrentStock = x.StockBalances.Sum(b => b.CurrentQuantity),
-                AvailableStock = x.StockBalances.Sum(b => b.AvailableQuantity),
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",        // EKLENEN
+                CategoryId = x.CategoryId,                // EKLENEN
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,                       // EKLENEN
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                Brand = x.Brand ?? "",                   // EKLENEN
+                Model = x.Model ?? "",                   // EKLENEN
+                HasLotTracking = x.HasLotTracking,       // EKLENEN
+                
+                // Material bilgileri - EKLENEN
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,  // EKLENEN
                 MinimumStock = x.MinimumStock,
-                MaximumStock = x.MaximumStock
+                MaximumStock = x.MaximumStock,
+                ReorderLevel = x.ReorderLevel,           // EKLENEN
+                PurchasePrice = x.PurchasePrice,         // EKLENEN
+                SalePrice = x.SalePrice,                 // EKLENEN
+                Currency = x.Currency ?? "",             // EKLENEN
+                StockStatus = DetermineStockStatusSafe(  // İYİLEŞTİRİLDİ
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
             })
             .FirstOrDefaultAsync();
     }
@@ -207,18 +288,54 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.Category)
             .Include(x => x.Unit)
             .Include(x => x.StockBalances)
+            .Include(x => x.MaterialName)        // EKLENEN
+            .Include(x => x.MaterialType)        // EKLENEN
+            .Include(x => x.MaterialQuality)     // EKLENEN
+            .Include(x => x.Company)             // EKLENEN
             .Where(x => x.CategoryId == categoryId && x.IsActive)
             .Select(x => new StockItemDto
             {
                 Id = x.Id,
-                ItemCode = x.ItemCode,
-                Name = x.Name,
-                CategoryName = x.Category.Name,
-                UnitName = x.Unit.Name,
-                CurrentStock = x.StockBalances.Sum(b => b.CurrentQuantity),
-                AvailableStock = x.StockBalances.Sum(b => b.AvailableQuantity),
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",        // EKLENEN
+                CategoryId = x.CategoryId,                // EKLENEN
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,                       // EKLENEN
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                Brand = x.Brand ?? "",                   // EKLENEN
+                Model = x.Model ?? "",                   // EKLENEN
+                HasLotTracking = x.HasLotTracking,       // EKLENEN
+                
+                // Material bilgileri - EKLENEN
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,  // EKLENEN
                 MinimumStock = x.MinimumStock,
-                StockStatus = x.StockBalances.Sum(b => b.AvailableQuantity) <= x.MinimumStock ? "LOW_STOCK" : "NORMAL"
+                MaximumStock = x.MaximumStock,           // EKLENEN
+                ReorderLevel = x.ReorderLevel,           // EKLENEN
+                PurchasePrice = x.PurchasePrice,         // EKLENEN
+                SalePrice = x.SalePrice,                 // EKLENEN
+                Currency = x.Currency ?? "",             // EKLENEN
+                StockStatus = DetermineStockStatusSafe(  // İYİLEŞTİRİLDİ
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
             })
             .ToListAsync();
     }
@@ -229,17 +346,49 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.Category)
             .Include(x => x.Unit)
             .Include(x => x.StockBalances)
+            .Include(x => x.MaterialName)        // EKLENEN
+            .Include(x => x.MaterialType)        // EKLENEN
+            .Include(x => x.MaterialQuality)     // EKLENEN
+            .Include(x => x.Company)             // EKLENEN
             .Where(x => x.IsActive && x.StockBalances.Sum(b => b.AvailableQuantity) <= x.MinimumStock)
             .Select(x => new StockItemDto
             {
                 Id = x.Id,
-                ItemCode = x.ItemCode,
-                Name = x.Name,
-                CategoryName = x.Category.Name,
-                UnitName = x.Unit.Name,
-                CurrentStock = x.StockBalances.Sum(b => b.CurrentQuantity),
-                AvailableStock = x.StockBalances.Sum(b => b.AvailableQuantity),
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",        // EKLENEN
+                CategoryId = x.CategoryId,                // EKLENEN
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,                       // EKLENEN
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                Brand = x.Brand ?? "",                   // EKLENEN
+                Model = x.Model ?? "",                   // EKLENEN
+                HasLotTracking = x.HasLotTracking,       // EKLENEN
+                
+                // Material bilgileri - EKLENEN
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,  // EKLENEN
                 MinimumStock = x.MinimumStock,
+                MaximumStock = x.MaximumStock,           // EKLENEN
+                ReorderLevel = x.ReorderLevel,           // EKLENEN
+                PurchasePrice = x.PurchasePrice,         // EKLENEN
+                SalePrice = x.SalePrice,                 // EKLENEN
+                Currency = x.Currency ?? "",             // EKLENEN
                 StockStatus = "LOW_STOCK"
             })
             .ToListAsync();
@@ -251,19 +400,50 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.Category)
             .Include(x => x.Unit)
             .Include(x => x.StockBalances)
+            .Include(x => x.MaterialName)        // EKLENEN
+            .Include(x => x.MaterialType)        // EKLENEN
+            .Include(x => x.MaterialQuality)     // EKLENEN
+            .Include(x => x.Company)             // EKLENEN
             .Where(x => x.IsActive && x.IsCriticalItem && x.StockBalances.Sum(b => b.AvailableQuantity) <= x.ReorderLevel)
             .Select(x => new StockItemDto
             {
                 Id = x.Id,
-                ItemCode = x.ItemCode,
-                Name = x.Name,
-                CategoryName = x.Category.Name,
-                UnitName = x.Unit.Name,
-                CurrentStock = x.StockBalances.Sum(b => b.CurrentQuantity),
-                AvailableStock = x.StockBalances.Sum(b => b.AvailableQuantity),
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",        // EKLENEN
+                CategoryId = x.CategoryId,                // EKLENEN
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,                       // EKLENEN
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                Brand = x.Brand ?? "",                   // EKLENEN
+                Model = x.Model ?? "",                   // EKLENEN
+                HasLotTracking = x.HasLotTracking,       // EKLENEN
+                
+                // Material bilgileri - EKLENEN
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,  // EKLENEN
                 MinimumStock = x.MinimumStock,
+                MaximumStock = x.MaximumStock,           // EKLENEN
                 ReorderLevel = x.ReorderLevel,
                 IsCriticalItem = x.IsCriticalItem,
+                PurchasePrice = x.PurchasePrice,         // EKLENEN
+                SalePrice = x.SalePrice,                 // EKLENEN
+                Currency = x.Currency ?? "",             // EKLENEN
                 StockStatus = "CRITICAL"
             })
             .ToListAsync();
@@ -292,6 +472,10 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.Category)
             .Include(x => x.Unit)
             .Include(x => x.StockBalances)
+            .Include(x => x.MaterialName)        // EKLENEN
+            .Include(x => x.MaterialType)        // EKLENEN
+            .Include(x => x.MaterialQuality)     // EKLENEN
+            .Include(x => x.Company)             // EKLENEN
             .Where(x => x.IsActive &&
                        (x.Name.Contains(searchTerm) ||
                         x.ItemCode.Contains(searchTerm) ||
@@ -299,16 +483,46 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Select(x => new StockItemDto
             {
                 Id = x.Id,
-                ItemCode = x.ItemCode,
-                Name = x.Name,
-                CategoryName = x.Category.Name,
-                UnitName = x.Unit.Name,
-                Brand = x.Brand,
-                Model = x.Model,
-                CurrentStock = x.StockBalances.Sum(b => b.CurrentQuantity),
-                AvailableStock = x.StockBalances.Sum(b => b.AvailableQuantity),
+                ItemCode = x.ItemCode ?? "",
+                Name = x.Name ?? "",
+                Description = x.Description ?? "",        // EKLENEN
+                CategoryId = x.CategoryId,                // EKLENEN
+                CategoryName = x.Category != null ? x.Category.Name ?? "" : "",
+                UnitId = x.UnitId,                       // EKLENEN
+                UnitName = x.Unit != null ? x.Unit.Name ?? "" : "",
+                Brand = x.Brand ?? "",
+                Model = x.Model ?? "",
+                HasLotTracking = x.HasLotTracking,       // EKLENEN
+                
+                // Material bilgileri - EKLENEN
+                MaterialNameId = x.MaterialNameId,
+                MaterialNameName = x.MaterialName != null ? x.MaterialName.Name ?? "" : "",
+                MaterialNameCode = x.MaterialName != null ? x.MaterialName.Code ?? "" : "",
+                MaterialTypeId = x.MaterialTypeId,
+                MaterialTypeName = x.MaterialType != null ? x.MaterialType.Name ?? "" : "",
+                MaterialTypeCode = x.MaterialType != null ? x.MaterialType.Code ?? "" : "",
+                MaterialQualityId = x.MaterialQualityId,
+                MaterialQualityName = x.MaterialQuality != null ? x.MaterialQuality.Name ?? "" : "",
+                MaterialQualityCode = x.MaterialQuality != null ? x.MaterialQuality.Code ?? "" : "",
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,  // EKLENEN
+                MinimumStock = x.MinimumStock,           // EKLENEN
+                MaximumStock = x.MaximumStock,           // EKLENEN
+                ReorderLevel = x.ReorderLevel,           // EKLENEN
                 PurchasePrice = x.PurchasePrice,
-                SalePrice = x.SalePrice
+                SalePrice = x.SalePrice,
+                Currency = x.Currency ?? "",             // EKLENEN
+                StockStatus = DetermineStockStatusSafe(  // İYİLEŞTİRİLDİ
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
+                    x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
+                    x.MinimumStock,
+                    x.MaximumStock)
             })
             .Take(20)
             .ToListAsync();
@@ -337,6 +551,9 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.MaterialType)
             .Include(x => x.MaterialQuality)
             .Include(x => x.StockBalances)
+            .Include(x => x.Company)             // EKLENEN
+            .Include(x => x.CreatedByUser)       // EKLENEN
+            .Include(x => x.UpdatedByUser)       // EKLENEN
             .Where(x => x.MaterialNameId == materialNameId && x.IsActive)
             .Select(x => new StockItemDto
             {
@@ -366,9 +583,27 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
                 Currency = x.Currency ?? "",
                 Brand = x.Brand ?? "",
                 Model = x.Model ?? "",
+                Specifications = x.Specifications ?? "",      // EKLENEN
+                QualityStandards = x.QualityStandards ?? "",  // EKLENEN
+                CertificateNumbers = x.CertificateNumbers ?? "", // EKLENEN
+                StorageConditions = x.StorageConditions ?? "", // EKLENEN
+                ShelfLife = x.ShelfLife,                      // EKLENEN
                 IsActive = x.IsActive,
                 IsDiscontinued = x.IsDiscontinued,
                 IsCriticalItem = x.IsCriticalItem,
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                // Audit fields - EKLENEN
+                CreatedAt = x.CreatedAt,
+                CreatedBy = x.CreatedBy ?? 0,
+                CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name ?? "" : "",
+                UpdatedAt = x.UpdatedAt,
+                UpdatedBy = x.UpdatedBy,
+                UpdatedByName = x.UpdatedByUser != null ? x.UpdatedByUser.Name ?? "" : "",
+                
                 CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
                 AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
                 ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
@@ -390,6 +625,9 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.MaterialType)
             .Include(x => x.MaterialQuality)
             .Include(x => x.StockBalances)
+            .Include(x => x.Company)             // EKLENEN
+            .Include(x => x.CreatedByUser)       // EKLENEN
+            .Include(x => x.UpdatedByUser)       // EKLENEN
             .Where(x => x.MaterialTypeId == materialTypeId && x.IsActive)
             .Select(x => new StockItemDto
             {
@@ -419,9 +657,27 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
                 Currency = x.Currency ?? "",
                 Brand = x.Brand ?? "",
                 Model = x.Model ?? "",
+                Specifications = x.Specifications ?? "",      // EKLENEN
+                QualityStandards = x.QualityStandards ?? "",  // EKLENEN
+                CertificateNumbers = x.CertificateNumbers ?? "", // EKLENEN
+                StorageConditions = x.StorageConditions ?? "", // EKLENEN
+                ShelfLife = x.ShelfLife,                      // EKLENEN
                 IsActive = x.IsActive,
                 IsDiscontinued = x.IsDiscontinued,
                 IsCriticalItem = x.IsCriticalItem,
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                // Audit fields - EKLENEN
+                CreatedAt = x.CreatedAt,
+                CreatedBy = x.CreatedBy ?? 0,
+                CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name ?? "" : "",
+                UpdatedAt = x.UpdatedAt,
+                UpdatedBy = x.UpdatedBy,
+                UpdatedByName = x.UpdatedByUser != null ? x.UpdatedByUser.Name ?? "" : "",
+                
                 CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
                 AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
                 ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
@@ -443,6 +699,9 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.MaterialType)
             .Include(x => x.MaterialQuality)
             .Include(x => x.StockBalances)
+            .Include(x => x.Company)             // EKLENEN
+            .Include(x => x.CreatedByUser)       // EKLENEN
+            .Include(x => x.UpdatedByUser)       // EKLENEN
             .Where(x => x.MaterialQualityId == materialQualityId && x.IsActive)
             .Select(x => new StockItemDto
             {
@@ -472,9 +731,27 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
                 Currency = x.Currency ?? "",
                 Brand = x.Brand ?? "",
                 Model = x.Model ?? "",
+                Specifications = x.Specifications ?? "",      // EKLENEN
+                QualityStandards = x.QualityStandards ?? "",  // EKLENEN
+                CertificateNumbers = x.CertificateNumbers ?? "", // EKLENEN
+                StorageConditions = x.StorageConditions ?? "", // EKLENEN
+                ShelfLife = x.ShelfLife,                      // EKLENEN
                 IsActive = x.IsActive,
                 IsDiscontinued = x.IsDiscontinued,
                 IsCriticalItem = x.IsCriticalItem,
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                // Audit fields - EKLENEN
+                CreatedAt = x.CreatedAt,
+                CreatedBy = x.CreatedBy ?? 0,
+                CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name ?? "" : "",
+                UpdatedAt = x.UpdatedAt,
+                UpdatedBy = x.UpdatedBy,
+                UpdatedByName = x.UpdatedByUser != null ? x.UpdatedByUser.Name ?? "" : "",
+                
                 CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
                 AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
                 ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
@@ -496,6 +773,9 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             .Include(x => x.MaterialType)
             .Include(x => x.MaterialQuality)
             .Include(x => x.StockBalances)
+            .Include(x => x.Company)             // EKLENEN
+            .Include(x => x.CreatedByUser)       // EKLENEN
+            .Include(x => x.UpdatedByUser)       // EKLENEN
             .Where(x => x.HasLotTracking && x.IsActive)
             .Select(x => new StockItemDto
             {
@@ -525,9 +805,27 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
                 Currency = x.Currency ?? "",
                 Brand = x.Brand ?? "",
                 Model = x.Model ?? "",
+                Specifications = x.Specifications ?? "",      // EKLENEN
+                QualityStandards = x.QualityStandards ?? "",  // EKLENEN
+                CertificateNumbers = x.CertificateNumbers ?? "", // EKLENEN
+                StorageConditions = x.StorageConditions ?? "", // EKLENEN
+                ShelfLife = x.ShelfLife,                      // EKLENEN
                 IsActive = x.IsActive,
                 IsDiscontinued = x.IsDiscontinued,
                 IsCriticalItem = x.IsCriticalItem,
+                
+                // Company bilgileri - EKLENEN
+                CompanyId = x.CompanyId,
+                CompanyName = x.Company != null ? x.Company.Name ?? "" : "",
+                
+                // Audit fields - EKLENEN
+                CreatedAt = x.CreatedAt,
+                CreatedBy = x.CreatedBy ?? 0,
+                CreatedByName = x.CreatedByUser != null ? x.CreatedByUser.Name ?? "" : "",
+                UpdatedAt = x.UpdatedAt,
+                UpdatedBy = x.UpdatedBy,
+                UpdatedByName = x.UpdatedByUser != null ? x.UpdatedByUser.Name ?? "" : "",
+                
                 CurrentStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.CurrentQuantity) : 0,
                 AvailableStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.AvailableQuantity) : 0,
                 ReservedStock = x.StockBalances != null ? x.StockBalances.Sum(b => b.ReservedQuantity) : 0,
@@ -539,4 +837,4 @@ public class StockItemRepository : BaseRepository<StockItem>, IStockItemReposito
             })
             .ToListAsync();
     }
-    }
+}

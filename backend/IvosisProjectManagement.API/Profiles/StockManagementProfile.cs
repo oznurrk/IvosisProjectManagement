@@ -117,16 +117,62 @@ namespace IvosisProjectManagement.API.Profiles
                 .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.Name));
 
             // Supplier Mappings
+            
             CreateMap<Supplier, SupplierDto>()
                 .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.Name))
-                .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser != null ? src.UpdatedByUser.Name : null));
+                .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser != null ? src.UpdatedByUser.Name : null))
+                .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : null))
+                .ForMember(dest => dest.SupplierCompanies, opt => opt.MapFrom(src => src.SupplierCompanies));
+
+            CreateMap<SupplierCreateDto, Supplier>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.Company, opt => opt.Ignore())
+                .ForMember(dest => dest.SupplierCompanies, opt => opt.Ignore());
+
+            CreateMap<SupplierUpdateDto, Supplier>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.TaxNumber, opt => opt.Ignore()) // Tax number cannot be updated
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.CompanyId, opt => opt.Ignore())
+                .ForMember(dest => dest.Company, opt => opt.Ignore())
+                .ForMember(dest => dest.SupplierCompanies, opt => opt.Ignore())
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+            // SupplierCompany Mappings
+            CreateMap<SupplierCompany, SupplierCompanyDto>()
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser != null ? src.CreatedByUser.Name : null))
+                .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser != null ? src.UpdatedByUser.Name : null))
+                .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : null))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.CompanyName : null));
+
+            CreateMap<SupplierCompanyCreateDto, SupplierCompany>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedByUser, opt => opt.Ignore())
+                .ForMember(dest => dest.Company, opt => opt.Ignore())
+                .ForMember(dest => dest.Supplier, opt => opt.Ignore());
             
             CreateMap<StockLot, StockLotResponseDto>()
-            .ForMember(dest => dest.StockItemName, opt => opt.MapFrom(src => src.StockItem.Name))
-            .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier.CompanyName))
-            .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location.Name))
-            .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.Name ))
-            .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser.Name));
+                .ForMember(dest => dest.StockItemName, opt => opt.MapFrom(src => src.StockItem.Name))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier.CompanyName))
+                .ForMember(dest => dest.LocationName, opt => opt.MapFrom(src => src.Location.Name))
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser.Name ))
+                .ForMember(dest => dest.UpdatedByName, opt => opt.MapFrom(src => src.UpdatedByUser.Name));
 
             //StockLot Mappings
             CreateMap<StockLotCreateDto, StockLot>()

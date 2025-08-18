@@ -86,6 +86,7 @@ builder.Services.AddScoped<IMaterialQualityService, MaterialQualityService>();
 
 builder.Services.AddScoped<IDemandRepository, DemandRepository>();
 builder.Services.AddScoped<IDemandService, DemandService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddAutoMapper(typeof(DemandProfile));
 
 builder.Services.AddAutoMapper(typeof(StockManagementProfile));

@@ -1,4 +1,6 @@
-public class SupplierDto : BaseDto
+namespace IvosisProjectManagement.API.DTOs
+{
+    public class SupplierDto : BaseDto
     {
         public string CompanyName { get; set; }
         public string TaxNumber { get; set; }
@@ -14,4 +16,7 @@ public class SupplierDto : BaseDto
         public int? PaymentTerms { get; set; }
         public decimal? CreditLimit { get; set; }
         public bool IsActive { get; set; }
+        public List<SupplierCompanyDto> SupplierCompanies { get; set; } = new List<SupplierCompanyDto>();
     }
+}
+    
