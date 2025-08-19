@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext, Link } from "react-router-dom";
-import axios from "axios";
+import { fetchStockLots } from "../services/api";
 import Header from "../components/Header/Header";
 import { 
   IconPackage, 
@@ -34,40 +34,25 @@ const ProductionDashboard = () => {
   const fetchProductionData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
 
       // Lot ve üretimle ilgili API'ler burada
-      const [lotsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/StockLot", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-      ]);
-
-      let lotsData = [];
-      if (Array.isArray(lotsRes.data)) {
-        lotsData = lotsRes.data;
-      } else if (lotsRes.data && typeof lotsRes.data === 'object') {
-        if (lotsRes.data.items && Array.isArray(lotsRes.data.items)) {
-          lotsData = lotsRes.data.items;
-        } else if (lotsRes.data.data && Array.isArray(lotsRes.data.data)) {
-          lotsData = lotsRes.data.data;
-        }
-      }
+      const lotsData = await fetchStockLots();
+      const lotsArr = Array.isArray(lotsData.items) ? lotsData.items : [];
 
       // Son lot hareketleri (örnek: son eklenen 5 lot)
-      const sortedLots = lotsData.sort((a, b) => new Date(b.createdAt || b.lotDate) - new Date(a.createdAt || a.lotDate));
+      const sortedLots = lotsArr.sort((a, b) => new Date(b.createdAt || b.lotDate) - new Date(a.createdAt || a.lotDate));
 
       // Düşük ve kritik lotlar (örnek: miktarı az olanlar)
-      const lowLotsData = lotsData.filter(lot => (Number(lot.quantity) || 0) < 10 && (Number(lot.quantity) || 0) > 0);
-      const criticalLotsData = lotsData.filter(lot => (Number(lot.quantity) || 0) === 0);
+      const lowLotsData = lotsArr.filter(lot => (Number(lot.quantity) || 0) < 10 && (Number(lot.quantity) || 0) > 0);
+      const criticalLotsData = lotsArr.filter(lot => (Number(lot.quantity) || 0) === 0);
 
       setLowLots(lowLotsData);
       setCriticalLots(criticalLotsData);
       setRecentLots(sortedLots);
-      setLots(lotsData);
+      setLots(lotsArr);
 
       setProdStats({
-        totalLots: lotsData.length,
+        totalLots: lotsArr.length,
         lowLots: lowLotsData.length,
         criticalLots: criticalLotsData.length,
       });

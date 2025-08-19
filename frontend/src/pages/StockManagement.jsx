@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext, Link } from "react-router-dom";
-import axios from "axios";
+import {
+  fetchStockItems,
+  fetchStockMovements,
+  fetchLowStockItems,
+  fetchCriticalStockItems
+} from "../services/api";
 import Header from "../components/Header/Header";
 import StockInModal from "../components/Stock/StockInModal";
 import StockOutModal from "../components/Stock/StockOutModal";
@@ -37,21 +42,14 @@ const StockManagement = () => {
   const fetchStockData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
+
+
 
       const [lowStockRes, criticalStockRes, stockItemsRes, movementsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/StockItems/low-stock", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("http://localhost:5000/api/StockItems/critical-stock", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("http://localhost:5000/api/StockItems", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("http://localhost:5000/api/StockMovements", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        fetchLowStockItems(),
+        fetchCriticalStockItems(),
+        fetchStockItems(),
+        fetchStockMovements()
       ]);
 
       let totalItems = 0;

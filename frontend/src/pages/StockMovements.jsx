@@ -1,7 +1,16 @@
 
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import axios from "axios";
+import {
+  fetchStockMovements,
+  updateStockMovement,
+  deleteStockMovement,
+  fetchStockItems,
+  fetchStockLocations,
+  stockIn,
+  stockOut,
+  stockTransfer
+} from "../services/api";
 import Header from "../components/Header/Header";
 import { 
   IconArrowsExchange, 
@@ -52,10 +61,7 @@ const StockMovements = () => {
         notes: formData.notes || oldMovement.notes || null
       };
       // Hareket türüne göre endpoint
-      let url = `http://localhost:5000/api/StockMovements/${oldMovement.id}`;
-      await axios.put(url, updateData, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      });
+      await updateStockMovement(oldMovement.id, updateData);
       await fetchAllData();
       setEditMovement(null);
       setEditModalType(null);
@@ -73,9 +79,7 @@ const StockMovements = () => {
     if (!window.confirm('Bu hareketi silmek istediğinize emin misiniz?')) return;
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/StockMovements/${movement.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await deleteStockMovement(movement.id);
       await fetchAllData();
       alert('Hareket başarıyla silindi!');
     } catch (error) {
@@ -120,12 +124,8 @@ const StockMovements = () => {
       const token = localStorage.getItem("token");
       
       const [movementsRes, stockItemsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/StockMovements", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get("http://localhost:5000/api/StockItems", {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        fetchStockMovements(),
+        fetchStockItems(),
       ]);
 
       // Movements verilerini set et - array olduğundan emin ol
@@ -198,9 +198,7 @@ const StockMovements = () => {
   const fetchLocations = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/StockLocations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchStockLocations();
       let locationData = [];
       if (Array.isArray(res.data)) {
         locationData = res.data;
@@ -241,12 +239,7 @@ const StockMovements = () => {
         notes: stockInData.notes || null
         // movementDate, availableQuantity gibi alanları göndermiyoruz
       };
-      const response = await axios.post("http://localhost:5000/api/StockMovements/stock-in", cleanData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
+      const response = await stockIn(cleanData);
       await fetchAllData();
       setShowStockInModal(false);
       window.location.reload();
@@ -291,12 +284,7 @@ const StockMovements = () => {
       
 
       
-      const response = await axios.post("http://localhost:5000/api/StockMovements/stock-out", cleanData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
+      const response = await stockOut(cleanData);
 
       await fetchAllData();
       setShowStockOutModal(false);
@@ -334,9 +322,7 @@ const StockMovements = () => {
         description: transferData.description || null,
         movementType: "Transfer"
       };
-      await axios.post("http://localhost:5000/api/StockMovements/transfer", cleanData, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      });
+      await stockTransfer(cleanData);
       await fetchAllData();
       setShowStockTransferModal(false);
       window.location.reload();

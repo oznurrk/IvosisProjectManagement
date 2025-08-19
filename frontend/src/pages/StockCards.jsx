@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import axios from "axios";
+import { fetchStockItems, addStockCard, updateStockCard, deleteStockCard } from "../services/api";
 import Header from "../components/Header/Header";
 import { 
   IconCards, 
@@ -41,22 +41,20 @@ const StockCards = () => {
       const token = localStorage.getItem("token");
       
       const [stockItemsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/StockItems", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        fetchStockItems()
       ]);
   
       // StockItems verilerini set et - array olduğundan emin ol
       let stockData = [];
-      if (Array.isArray(stockItemsRes.data)) {
-        stockData = stockItemsRes.data;
-      } else if (stockItemsRes.data && typeof stockItemsRes.data === 'object') {
-        if (stockItemsRes.data.items && Array.isArray(stockItemsRes.data.items)) {
-          stockData = stockItemsRes.data.items;
-        } else if (stockItemsRes.data.data && Array.isArray(stockItemsRes.data.data)) {
-          stockData = stockItemsRes.data.data;
-        } else if (stockItemsRes.data.stockItems && Array.isArray(stockItemsRes.data.stockItems)) {
-          stockData = stockItemsRes.data.stockItems;
+      if (Array.isArray(stockItemsRes)) {
+        stockData = stockItemsRes;
+      } else if (stockItemsRes && typeof stockItemsRes === 'object') {
+        if (stockItemsRes.items && Array.isArray(stockItemsRes.items)) {
+          stockData = stockItemsRes.items;
+        } else if (stockItemsRes.data && Array.isArray(stockItemsRes.data)) {
+          stockData = stockItemsRes.data;
+        } else if (stockItemsRes.stockItems && Array.isArray(stockItemsRes.stockItems)) {
+          stockData = stockItemsRes.stockItems;
         }
       }
       
@@ -112,63 +110,27 @@ const StockCards = () => {
 
   const handleAddStockCard = async (newStockCard) => {
     try {
-      const token = localStorage.getItem("token");
-      
-      const response = await axios.post("http://localhost:5000/api/StockItems", newStockCard, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setStockItems(prev => [response.data, ...prev]);
+      const response = await addStockCard(newStockCard);
+      setStockItems(prev => [response, ...prev]);
       setShowAddModal(false);
       alert('Stok kartı başarıyla eklendi!');
     } catch (error) {
       console.error('Stok kartı eklenirken hata:', error);
-      
       let errorMessage = 'Stok kartı eklenirken hata oluştu!';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.errors) {
         errorMessage = Object.values(error.response.data.errors).join(', ');
       }
-      
       alert('Hata: ' + errorMessage);
     }
   };
 
   const handleEditStockCard = async (updatedStockCard) => {
     try {
-      const token = localStorage.getItem("token");
-      
-      const updateData = {
-        itemCode: updatedStockCard.itemCode,
-        name: updatedStockCard.name,
-        description: updatedStockCard.description || "",
-        categoryId: updatedStockCard.categoryId,
-        unitId: updatedStockCard.unitId,
-        minimumStock: updatedStockCard.minimumStock,
-        maximumStock: updatedStockCard.maximumStock || updatedStockCard.minimumStock * 5,
-        reorderLevel: updatedStockCard.reorderLevel,
-        purchasePrice: updatedStockCard.purchasePrice,
-        salePrice: updatedStockCard.salePrice,
-        currency: updatedStockCard.currency || "TRY",
-        brand: updatedStockCard.brand || "",
-        model: updatedStockCard.model || "",
-        specifications: updatedStockCard.specifications || "",
-        qualityStandards: updatedStockCard.qualityStandards || "",
-        certificateNumbers: updatedStockCard.certificateNumbers || "",
-        storageConditions: updatedStockCard.storageConditions || "",
-        shelfLife: updatedStockCard.shelfLife || 0,
-        isCriticalItem: updatedStockCard.isCriticalItem,
-        isActive: updatedStockCard.isActive !== false,
-        isDiscontinued: updatedStockCard.isDiscontinued || false
-      };
-
-      const response = await axios.put(`http://localhost:5000/api/StockItems/${updatedStockCard.id}`, updateData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      const response = await updateStockCard(updatedStockCard.id, updatedStockCard);
       setStockItems(prev => prev.map(item => 
-        item.id === response.data.id ? response.data : item
+        item.id === response.id ? response : item
       ));
       setShowEditModal(false);
       setSelectedItem(null);
@@ -180,85 +142,23 @@ const StockCards = () => {
   };
 
   const handleDeleteStockCard = async (id) => {
-    // ID'nin geçerli olduğunu kontrol et
     if (!id) {
       console.error('Geçersiz ID:', id);
       alert('Hata: Geçersiz kayıt ID\'si');
       return;
     }
-
     const confirmDelete = window.confirm(
       'Bu stok kartını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz ve tüm stok hareketleri de silinecektir.'
     );
-    
     if (!confirmDelete) {
       return;
     }
-
     try {
-      const token = localStorage.getItem("token");
-      
-      if (!token) {
-        alert('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-        return;
-      }
-
-      const apiUrl = `http://localhost:5000/api/StockItems/${id}`;
-
-      const response = await axios.delete(apiUrl, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
-
-      // State'i güncelle
-      const initialLength = stockItems.length;
-      
-      setStockItems(prev => {
-        const filteredItems = prev.filter(item => {
-          const shouldKeep = item.id !== id && item.id !== parseInt(id);
-          if (!shouldKeep) {
-          }
-          return shouldKeep;
-        });
-        return filteredItems;
-      });
-
-      // Sayfa sıfırlama kontrolü
-      setTimeout(() => {
-        setStockItems(current => {
-          const newVisibleItems = current.filter(item => {
-            // Use searchFilters.search for general search (itemCode and name)
-            const searchTerm = (searchFilters.search || "").toLowerCase();
-            const codeMatch = (item.itemCode || "").toLowerCase().includes(searchTerm);
-            const nameMatch = (item.name || "").toLowerCase().includes(searchTerm);
-            const categoryMatch = !searchFilters.category || (item.category || "").toLowerCase().includes(searchFilters.category.toLowerCase());
-            const brandMatch = !searchFilters.brand || (item.brand || "").toLowerCase().includes(searchFilters.brand.toLowerCase());
-            const criticalMatch = searchFilters.isCriticalItem === "" || item.isCriticalItem.toString() === searchFilters.isCriticalItem;
-            const statusMatch = !searchFilters.status || getStockStatus(item) === searchFilters.status;
-            return (codeMatch || nameMatch) && categoryMatch && brandMatch && criticalMatch && statusMatch;
-          });
-          const newTotalPages = Math.ceil(newVisibleItems.length / itemsPerPage);
-          if (currentPage > newTotalPages && newTotalPages > 0) {
-            setCurrentPage(newTotalPages);
-          }
-          return current;
-        });
-      }, 100);
-
+      await deleteStockCard(id);
+      setStockItems(prev => prev.filter(item => item.id !== id && item.id !== parseInt(id)));
       alert('Stok kartı başarıyla silindi!');
-      
     } catch (error) {
       console.error('Stok kartı silinirken hata:', error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message,
-        config: error.config
-      });
-      
       let errorMessage = 'Stok kartı silinemedi';
       if (error.response?.status === 401) {
         errorMessage = 'Yetkiniz bulunmuyor. Lütfen tekrar giriş yapın.';
@@ -273,7 +173,6 @@ const StockCards = () => {
       } else if (error.message.includes('Network Error')) {
         errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.';
       }
-      
       alert('Silme hatası: ' + errorMessage);
     }
   };

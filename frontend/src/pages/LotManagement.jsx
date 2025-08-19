@@ -1,6 +1,12 @@
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import {
+  updateStockLot,
+  deleteStockLot,
+  addStockLot,
+  fetchStockLot,
+  fetchStockLots
+} from "../services/api";
 import { useOutletContext } from "react-router-dom";
 import Header from "../components/Header/Header";
 import FilterAndSearch from "../Layout/FilterAndSearch";
@@ -10,25 +16,7 @@ import LotViewModal from "../components/Lot/LotViewModal";
 import LotDeleteModal from "../components/Lot/LotDeleteModal";
 import LotAddModal from "../components/Lot/LotAddModal";
 
-// API: Lot güncelle (PUT)
-const updateLot = async (id, data) => {
-  const token = localStorage.getItem("token");
-  const response = await axios.put(`http://localhost:5000/api/StockLot/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` },
-    timeout: 10000
-  });
-  return response.data;
-};
 
-// API: Lot sil (DELETE)
-const deleteLot = async (id) => {
-  const token = localStorage.getItem("token");
-  const response = await axios.delete(`http://localhost:5000/api/StockLot/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    timeout: 10000
-  });
-  return response.data;
-};
 
 
 const LotManagement = () => {
@@ -49,17 +37,10 @@ const LotManagement = () => {
   // Lot ekleme işlemi
   const handleAddLot = async (form) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/StockLot", form, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000
-      });
+      await addStockLot(form);
       // Eklemeden sonra lotları güncelle
-      const response = await axios.get("http://localhost:5000/api/StockLot", {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 15000
-      });
-      setLots(Array.isArray(response.data.items) ? response.data.items : []);
+      const lotsData = await fetchStockLots();
+      setLots(Array.isArray(lotsData.items) ? lotsData.items : []);
       setShowAddModal(false);
     } catch (err) {
       alert("Lot eklenemedi! " + (err?.response?.data?.message || ""));
@@ -83,12 +64,8 @@ const LotManagement = () => {
   useEffect(() => {
     const fetchLots = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/api/StockLot", {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 15000
-        });
-        setLots(Array.isArray(response.data.items) ? response.data.items : []);
+        const lotsData = await fetchStockLots();
+        setLots(Array.isArray(lotsData.items) ? lotsData.items : []);
       } catch (error) {
         setLots([]);
       }
@@ -110,11 +87,7 @@ const LotManagement = () => {
   const fetchLotById = async (id) => {
     setLoadingModal(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/StockLot/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000
-      });
+      const response = await fetchStockLot(id);
       if (!response.data || Object.keys(response.data).length === 0) {
         alert("Lot verisi bulunamadı veya null döndü.");
         setSelectedLot(null);
@@ -187,14 +160,10 @@ const LotManagement = () => {
     try {
       // Eksik zorunlu alanları selectedLot'tan tamamla
       const mergedForm = { ...selectedLot, ...form };
-      await updateLot(selectedLot.id, mergedForm);
+      await updateStockLot(selectedLot.id, mergedForm);
       // Güncel lotları tekrar çek
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/StockLot", {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 15000
-      });
-      setLots(Array.isArray(response.data.items) ? response.data.items : []);
+      const lotsData = await fetchStockLots();
+      setLots(Array.isArray(lotsData.items) ? lotsData.items : []);
     } catch (err) {
       alert("Lot güncellenemedi!");
     }
@@ -205,7 +174,7 @@ const LotManagement = () => {
   const handleDelete = async () => {
     if (!selectedLot) return;
     try {
-      await deleteLot(selectedLot.id);
+      await deleteStockLot(selectedLot.id);
       setLots((prev) => prev.filter((l) => l.id !== selectedLot.id));
     } catch (err) {
       alert("Lot silinemedi!");
