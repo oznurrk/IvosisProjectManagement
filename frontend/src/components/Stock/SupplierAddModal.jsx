@@ -50,6 +50,27 @@ const SupplierAddModal = ({ onClose, onSuccess }) => {
     }
   };
 
+  // Örnek veri doldurma fonksiyonu
+  const fillSampleData = () => {
+    setForm({
+      companyName: "Örnek Tedarikçi A.Ş.",
+      taxNumber: "1234567890",
+      taxOffice: "Kadıköy",
+      address: "Örnek Mah. Deneme Cad. No:1",
+      city: "İstanbul",
+      district: "Kadıköy",
+      postalCode: "34710",
+      contactPerson: "Ahmet Yılmaz",
+      contactPhone: "05551234567",
+      contactEmail: "ahmet.yilmaz@ornek.com",
+      website: "https://www.ornek.com",
+      paymentTerms: 30,
+      creditLimit: 25000,
+      isActive: true
+    });
+    setError("");
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
@@ -58,6 +79,9 @@ const SupplierAddModal = ({ onClose, onSuccess }) => {
           <button onClick={onClose} className="text-white hover:text-gray-200 p-2 hover:bg-white hover:bg-opacity-20 rounded-lg">X</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(90vh-100px)] overflow-y-auto">
+          <div className="flex justify-end mb-2">
+            <button type="button" onClick={fillSampleData} className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium border border-blue-200 transition-all">Örnek Veri</button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Firma Adı *</label>

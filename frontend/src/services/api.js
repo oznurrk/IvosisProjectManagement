@@ -1,249 +1,76 @@
-import axios from 'axios';
 
-// Stock Items ana listeleme fonksiyonu
-export const fetchStockItems = async () => {
-  const res = await axios.get(`${API_BASE}/StockItems`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
+import axios from "axios";
 
-const API_BASE = 'http://localhost:5000/api';
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
+  timeout: 10000,
+});
 
-function getToken() {
-  return localStorage.getItem('token');
-}
+// Token ekleme
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// Error handling
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    console.error("API Error:", err.response?.data || err.message);
+    return Promise.reject(err);
+  }
+);
+
+// ─── STOCK ITEMS ───────────────────────────────────────────────
+export const fetchStockItems = () => api.get("/StockItems").then(r => r.data);
+export const fetchLowStockItems = () => api.get("/StockItems/low-stock").then(r => r.data);
+export const fetchCriticalStockItems = () => api.get("/StockItems/critical-stock").then(r => r.data);
+export const addStockItem = (data) => api.post("/StockItems", data).then(r => r.data);
+export const updateStockItem = (id, data) => api.put(`/StockItems/${id}`, data).then(r => r.data);
+export const deleteStockItem = (id) => api.delete(`/StockItems/${id}`).then(r => r.data);
+
+// Stock Cards (alias for Stock Items CRUD)
+export const addStockCard = addStockItem;
+export const updateStockCard = updateStockItem;
+export const deleteStockCard = deleteStockItem;
+
+// ─── STOCK LOTS ───────────────────────────────────────────────
+export const fetchStockLots = () => api.get("/StockLot").then(r => r.data);
+export const fetchStockLot = (id) => api.get(`/StockLot/${id}`).then(r => r.data);
+export const fetchLotDetails = (lotId) => api.get(`/StockLot/${lotId}`).then(r => r.data);
+export const addStockLot = (data) => api.post("/StockLot", data).then(r => r.data);
+export const updateStockLot = (id, data) => api.put(`/StockLot/${id}`, data).then(r => r.data);
+export const deleteStockLot = (id) => api.delete(`/StockLot/${id}`).then(r => r.data);
+
+// ─── SUPPLIERS ───────────────────────────────────────────────
+export const fetchSuppliers = () => api.get("/Suppliers").then(r => r.data);
+export const addSupplier = (data) => api.post("/Suppliers", data).then(r => r.data);
 
 // Stock Locations
-export const fetchStockLocations = async () => {
-  const res = await axios.get(`${API_BASE}/StockLocations`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
+export const fetchStockLocations = () => api.get("/StockLocations").then(r => r.data);
 
-// Suppliers
-export const fetchSuppliers = async () => {
-  const res = await axios.get(`${API_BASE}/Suppliers`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
+// ─── STOCK MOVEMENTS ───────────────────────────────────────────────
+export const fetchStockMovements = () => api.get("/StockMovements").then(r => r.data);
+export const stockIn = (data) => api.post("/StockMovements/stock-in", data).then(r => r.data);
+export const stockOut = (data) => api.post("/StockMovements/stock-out", data).then(r => r.data);
+export const stockTransfer = (data) => api.post("/StockMovements/transfer", data).then(r => r.data);
+export const updateStockMovement = (id, data) => api.put(`/StockMovements/${id}`, data).then(r => r.data);
+export const deleteStockMovement = (id) => api.delete(`/StockMovements/${id}`).then(r => r.data);
 
-export const addSupplier = async (data) => {
-  const res = await axios.post(`${API_BASE}/Suppliers`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
+// ─── STOCK CATEGORIES ───────────────────────────────────────────────
+export const fetchStockCategories = () => api.get("/StockCategories").then(r => r.data);
+export const addStockCategory = (data) => api.post("/StockCategories", data).then(r => r.data);
+export const updateStockCategory = (id, data) => api.put(`/StockCategories/${id}`, data).then(r => r.data);
+export const deleteStockCategory = (id) => api.delete(`/StockCategories/${id}`).then(r => r.data);
 
-// Stock Lot
-export const addStockLot = async (data) => {
-  const res = await axios.post(`${API_BASE}/StockLot`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
+// ─── MATERIALS ───────────────────────────────────────────────
+export const fetchMaterialNames = () => api.get("/MaterialNames").then(r => r.data);
+export const addMaterialName = (data) => api.post("/MaterialNames", data).then(r => r.data);
+export const fetchMaterialTypes = () => api.get("/MaterialTypes").then(r => r.data);
+export const addMaterialType = (data) => api.post("/MaterialTypes", data).then(r => r.data);
+export const fetchMaterialQualities = () => api.get("/MaterialQualities").then(r => r.data);
+export const addMaterialQuality = (data) => api.post("/MaterialQualities", data).then(r => r.data);
 
-// Stock Movements
-export const stockIn = async (data) => {
-  const res = await axios.post(`${API_BASE}/StockMovements/stock-in`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Lot Details
-export const fetchLotDetails = async (lotId) => {
-  const res = await axios.get(`${API_BASE}/StockLot/${lotId}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Stock Lot CRUD (tamamlayıcı fonksiyonlar)
-export const fetchStockLot = async (id) => {
-  const res = await axios.get(`${API_BASE}/StockLot/${id}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const fetchStockLots = async () => {
-  const res = await axios.get(`${API_BASE}/StockLot`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Stock Movements CRUD
-export const fetchStockMovements = async () => {
-  const res = await axios.get(`${API_BASE}/StockMovements`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const updateStockMovement = async (id, data) => {
-  const res = await axios.put(`${API_BASE}/StockMovements/${id}`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const deleteStockMovement = async (id) => {
-  const res = await axios.delete(`${API_BASE}/StockMovements/${id}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Stock Items (ek fonksiyonlar) -- TEKRAR EDEN TANIM KALDIRILDI
-export const fetchLowStockItems = async () => {
-  const res = await axios.get(`${API_BASE}/StockItems/low-stock`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const fetchCriticalStockItems = async () => {
-  const res = await axios.get(`${API_BASE}/StockItems/critical-stock`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Stock Cards (StockItems CRUD tekrar)
-export const addStockCard = async (data) => {
-  const res = await axios.post(`${API_BASE}/StockItems`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const updateStockCard = async (id, data) => {
-  const res = await axios.put(`${API_BASE}/StockItems/${id}`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const deleteStockCard = async (id) => {
-  const res = await axios.delete(`${API_BASE}/StockItems/${id}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-// Stock Categories
-export const fetchStockCategories = async () => {
-  const res = await axios.get(`${API_BASE}/StockCategories`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const addStockCategory = async (data) => {
-  const res = await axios.post(`${API_BASE}/StockCategories`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const updateStockCategory = async (id, data) => {
-  const res = await axios.put(`${API_BASE}/StockCategories/${id}`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const deleteStockCategory = async (id) => {
-  const res = await axios.delete(`${API_BASE}/StockCategories/${id}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Units
-export const fetchUnits = async () => {
-  const res = await axios.get(`${API_BASE}/Unit`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Material Names/Types/Qualities
-export const fetchMaterialNames = async () => {
-  const res = await axios.get(`${API_BASE}/MaterialNames`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const addMaterialName = async (data) => {
-  const res = await axios.post(`${API_BASE}/MaterialNames`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const fetchMaterialTypes = async () => {
-  const res = await axios.get(`${API_BASE}/MaterialTypes`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const addMaterialType = async (data) => {
-  const res = await axios.post(`${API_BASE}/MaterialTypes`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const fetchMaterialQualities = async () => {
-  const res = await axios.get(`${API_BASE}/MaterialQualities`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const addMaterialQuality = async (data) => {
-  const res = await axios.post(`${API_BASE}/MaterialQualities`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Stock Items CRUD
-export const addStockItem = async (data) => {
-  const res = await axios.post(`${API_BASE}/StockItems`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const updateStockItem = async (id, data) => {
-  const res = await axios.put(`${API_BASE}/StockItems/${id}`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const deleteStockItem = async (id) => {
-  const res = await axios.delete(`${API_BASE}/StockItems/${id}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Stock Lot CRUD
-export const updateStockLot = async (id, data) => {
-  const res = await axios.put(`${API_BASE}/StockLot/${id}`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const deleteStockLot = async (id) => {
-  const res = await axios.delete(`${API_BASE}/StockLot/${id}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-
-// Stock Movements
-export const stockOut = async (data) => {
-  const res = await axios.post(`${API_BASE}/StockMovements/stock-out`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
-export const stockTransfer = async (data) => {
-  const res = await axios.post(`${API_BASE}/StockMovements/transfer`, data, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  return res.data;
-};
+// ─── UNITS ───────────────────────────────────────────────
+export const fetchUnits = () => api.get("/Unit").then(r => r.data);
