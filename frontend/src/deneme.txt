@@ -128,3 +128,25 @@ sayfalandırma yapısı sol tarafta yapılacak. 5-10-15-20 şeklinde artacak.
 
 13.06
 1-PaginationComponent Güncellendi
+
+
+
+SATIN ALMA VE TALEP OLUŞTURMA
+
+Demands Tablosu
+DemandNumber -> Talep No
+ProjectId -> talebin bağlı olduğu proje (project tablosundan adı alınacak)
+CompanyId -> talebin hangi firmadan geldiğini belirtecek (company tablosundan adı alınacak)
+Title -> Talebin adı
+Description -> Talebin açıklaması
+StatusId -> DemandStatues tablosundan name ve color bilgileri alınacak
+PriorityId -> DemandPriorities tablosundan name ve color bilgileri alınacak
+RequestedDate -> talep edilen tarihi
+RequiredDate -> talebin en geç temin edilmesi tarihi
+ApprovedDate -> Onaylanma tarihi
+IsApproved -> Onaylayan Kişi
+ApprovalNotes -> Onay notu
+EstimatedBudget -> talebin tahmini bütçesi
+Currency -> para birimi
+Notes -> talep için not 
+De
