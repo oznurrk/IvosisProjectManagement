@@ -89,7 +89,11 @@ const StockMovements = () => {
 
   // --- HAREKET DÜZENLEME ---
   const handleEditMovement = (movement) => {
-    // Hareket türüne göre modalı aç
+    // Tüm modalları kapat
+    setShowStockInModal(false);
+    setShowStockOutModal(false);
+    setShowStockTransferModal(false);
+    // Hareket türüne göre sadece bir modalı aç
     if (movement.movementType === 'IN' || movement.movementType === 'StockIn') {
       setEditModalType('in');
       setShowStockInModal(true);
@@ -820,7 +824,11 @@ const StockMovements = () => {
         {/* Stok Girişi */}
         <div className="relative group">
           <button
-            onClick={() => setShowStockInModal(true)}
+            onClick={() => {
+              setShowStockInModal(true);
+              setShowStockOutModal(false);
+              setShowStockTransferModal(false);
+            }}
             className="bg-green-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-green-600 transition-all duration-300"
           >
             <IconPlus className="h-5 w-5 md:h-6 md:w-6" />
@@ -832,7 +840,11 @@ const StockMovements = () => {
         {/* Stok Çıkışı */}
         <div className="relative group">
           <button
-            onClick={() => setShowStockOutModal(true)}
+            onClick={() => {
+              setShowStockInModal(false);
+              setShowStockOutModal(true);
+              setShowStockTransferModal(false);
+            }}
             className="bg-red-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-red-600 transition-all duration-300"
           >
             <IconMinus className="h-5 w-5 md:h-6 md:w-6" />
@@ -844,7 +856,11 @@ const StockMovements = () => {
         {/* Stok Transferi */}
         <div className="relative group">
           <button
-            onClick={() => setShowStockTransferModal(true)}
+            onClick={() => {
+              setShowStockInModal(false);
+              setShowStockOutModal(false);
+              setShowStockTransferModal(true);
+            }}
             className="bg-blue-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300"
           >
             <IconTransfer className="h-5 w-5 md:h-6 md:w-6" />
