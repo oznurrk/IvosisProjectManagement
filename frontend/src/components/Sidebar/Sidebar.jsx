@@ -16,8 +16,13 @@ import {
   IconFileInvoice,
   IconFileText,
   IconTruck,
+  IconShoppingCartDollar,
+  IconBasketCheck,
+  IconBasketDiscount,
+  IconTruckReturn,
 } from "@tabler/icons-react";
 import { NavLink } from "react-router-dom";
+import { name } from "dayjs/locale/tr";
 
 const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -83,6 +88,28 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           url: "/lot-management",
           icon: <IconPackage size={18} />,
         },
+      ]
+    },
+    {
+      name:"Satın Alma",
+      url:"/buying",
+      icon: <IconShoppingCartDollar size={20} />,
+      children:[
+        {
+          name: "Talep",
+          url: "/demands",
+          icon: <IconBasketCheck size={20} />
+        },
+        {
+          name: "Teklif",
+          url: "/offers",
+          icon: <IconBasketDiscount size={20} />
+        },
+        {
+          name: "Siparişler",
+          url: "/orders",
+          icon: <IconTruckReturn size={20} />
+        }
       ]
     },
     { 
