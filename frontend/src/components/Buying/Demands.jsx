@@ -14,6 +14,7 @@ import {
 } from "@tabler/icons-react";
 import Header from "../Header/Header";
 import FilterAndSearch from "../../Layout/FilterAndSearch";
+import DemandAddModal from "./DemandAddModal";
 
 const Demands = () => {
   const { isMobile, setIsMobileMenuOpen } = useOutletContext();
@@ -21,6 +22,8 @@ const Demands = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
+
+  const [showDemandAddModal, setShowDemandAddModal] = useState(false);
 
   const [searchFilters, setSearchFilters] = useState({
     search: "", // Genel arama - talep numarası, proje adı, başlık
@@ -282,6 +285,19 @@ const Demands = () => {
       style: 'currency',
       currency: currency
     }).format(amount);
+  };
+
+  // talep ekleme (modal içerisinde)
+  const handleSaveDemand = async (demandData) => {
+    try{
+      const token = localStorage.getItem("token");
+      await axios.post("http://localhost:5000/api/demand",demandData,{
+        headers: {Authorization: `Bearer ${token}`}
+      });
+      setShowDemandAddModal(false);
+    }catch(error){
+      console.error("Talep Kaydedilemedi..",error);
+    }
   };
 
   if (loading) {
@@ -680,7 +696,7 @@ const Demands = () => {
       <div className="fixed bottom-4 right-4 flex flex-row items-end space-x-2 z-50 md:bottom-6 md:right-6">
         <div className="relative group">
           <button
-            onClick={() => {/* Yeni talep modalı açılacak */}}
+            onClick={() => setShowDemandAddModal(true)}
             className="bg-ivosis-500 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-ivosis-600 transition-all duration-300"
           >
             <IconPlus className="h-6 w-6 md:h-7 md:w-7" />
@@ -690,7 +706,14 @@ const Demands = () => {
           </span>
         </div>
       </div>
+       <DemandAddModal
+                    isOpen={showDemandAddModal}
+                    onClose={() => setShowDemandAddModal(false)}
+                    onSave={handleSaveDemand}
+              />
     </div>
+
+   
   );
 };
 
