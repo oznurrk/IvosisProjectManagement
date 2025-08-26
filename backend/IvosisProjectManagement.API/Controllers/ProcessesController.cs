@@ -69,7 +69,7 @@ namespace IvosisProjectManagement.API.Controllers
             if (dto.CompanyId.HasValue && !HasGroupAccess())
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
-                    return Forbid("Bu firmaya süreç ekleme yetkiniz yok.");
+                   return StatusCode(403, new { success = false, message = "Bu firmaya süreç ekleme yetkiniz yok." });
             }
             
             var created = await _service.CreateAsync(dto);

@@ -71,7 +71,8 @@ namespace IvosisProjectManagement.API.Controllers
             if (!HasGroupAccess() && personnel.CompanyId.HasValue)
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, personnel.CompanyId.Value))
-                    return Forbid("Bu personel bilgisine erişim yetkiniz yok.");
+                    return StatusCode(403, new { success = false, message = "Bu personel bilgisine erişim yetkiniz yok." });
+                    
             }
 
             return Ok(personnel);
@@ -91,7 +92,7 @@ namespace IvosisProjectManagement.API.Controllers
             if(!HasGroupAccess() && personnel.CompanyId.HasValue)
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, personnel.CompanyId.Value))
-                    return Forbid("Bu personel bilgisine erişim yetkiniz yok.");
+                    return StatusCode(403, new { success = false, message = "Bu personel bilgisine erişim yetkiniz yok." });
             }
 
             return Ok(personnel);
@@ -112,7 +113,7 @@ namespace IvosisProjectManagement.API.Controllers
             if (dto.CompanyId.HasValue && !HasGroupAccess())
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
-                    return Forbid("Bu firmaya personel ekleme yetkiniz yok.");
+                    return StatusCode(403, new { success = false, message = "Bu firmaya personel ekleme yetkiniz yok." });
             }
             // Validations
             if (await _personnelService.SicilNoExistsAsync(dto.SicilNo))
@@ -151,7 +152,7 @@ namespace IvosisProjectManagement.API.Controllers
             if (dto.CompanyId.HasValue && !HasGroupAccess())
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
-                    return Forbid("Bu firmaya personel ekleme yetkiniz yok.");
+                    return StatusCode(403, new { success = false, message = "Bu firmaya personel ekleme yetkiniz yok." });
             }
             var oldPersonnel = await _personnelService.GetByIdAsync(id);
             if (oldPersonnel == null)

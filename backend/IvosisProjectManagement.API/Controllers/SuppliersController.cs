@@ -34,7 +34,7 @@ namespace IvosisProjectManagement.API.Controllers
             // Company access check
             if (!hasCompanyAccess && !companyId.HasValue)
             {
-                return Forbid("Şirket seviyesinde yetkiniz bulunmamaktadır.");
+                return StatusCode(403, Result<List<SupplierDto>>.Failure("Şirket seviyesinde yetkiniz bulunmamaktadır."));
             }
 
             var result = await _supplierService.GetAllAsync(hasCompanyAccess ? null : companyId);

@@ -29,12 +29,7 @@ namespace IvosisProjectManagement.API.Services.Implementations
         {
             try
             {
-                var query = _context.Suppliers
-                    .Include(s => s.CreatedByUser)
-                    .Include(s => s.UpdatedByUser)
-                    .Include(s => s.SupplierCompanies)
-                        .ThenInclude(sc => sc.Company)
-                    .AsQueryable();
+               var query = _context.Suppliers.AsQueryable();
 
                 if (companyId.HasValue)
                 {
@@ -220,7 +215,7 @@ namespace IvosisProjectManagement.API.Services.Implementations
                         ContactEmail = s.ContactEmail,
                         IsActive = s.IsActive,
                         CreatedAt = s.CreatedAt,
-                        CreatedByName = s.CreatedByUser.Name
+                        CreatedByName = s.CreatedByUser != null ? s.CreatedByUser.Name : null
                     })
                     .ToListAsync();
 
@@ -408,12 +403,12 @@ namespace IvosisProjectManagement.API.Services.Implementations
                 var totalSuppliers = await query.CountAsync();
                 var activeSuppliers = await query.CountAsync(s => s.IsActive);
                 var inactiveSuppliers = totalSuppliers - activeSuppliers;
-                
+
                 var suppliersWithCreditLimit = await query.CountAsync(s => s.CreditLimit.HasValue && s.CreditLimit > 0);
                 var totalCreditLimit = await query.Where(s => s.CreditLimit.HasValue).SumAsync(s => s.CreditLimit.Value);
-                
+
                 var suppliersCreatedThisMonth = await query.CountAsync(s => s.CreatedAt.Month == DateTime.Now.Month && s.CreatedAt.Year == DateTime.Now.Year);
-                
+
                 var topCities = await query
                     .Where(s => !string.IsNullOrEmpty(s.City))
                     .GroupBy(s => s.City)
@@ -441,4 +436,4 @@ namespace IvosisProjectManagement.API.Services.Implementations
             }
         }
     }
-}
+}   

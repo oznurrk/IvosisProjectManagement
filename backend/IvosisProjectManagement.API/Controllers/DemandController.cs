@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using IvosisProjectManagement.API.Controllers;
 using IvosisProjectManagement.API.Services.Interfaces;
 using IvosisProjectManagement.API.DTOs.Demand;
 using IvosisProjectManagement.API.DTOs.Common;
@@ -67,7 +66,7 @@ namespace IvosisProjectManagement.API.Controllers
                 {
                     if (result.Data?.CompanyCode != GetCurrentCompanyCode())
                     {
-                        return Forbid();
+                        return StatusCode(403, Result<DemandDto>.Failure("Bu talebe erişim yetkiniz bulunmamaktadır."));
                     }
                 }
 
@@ -100,7 +99,7 @@ namespace IvosisProjectManagement.API.Controllers
                 {
                     if (result.Data?.CompanyCode != GetCurrentCompanyCode())
                     {
-                        return Forbid();
+                        return StatusCode(403, Result<DemandDto>.Failure("Bu talebe erişim yetkiniz bulunmamaktadır."));
                     }
                 }
 
@@ -666,7 +665,7 @@ namespace IvosisProjectManagement.API.Controllers
                 // Yetki kontrolü - kullanıcı sadece kendi firması için numara oluşturabilir
                 if (!HasGroupAccess() && GetCurrentCompanyId() != companyId)
                 {
-                    return Forbid();
+                    return StatusCode(403, Result<string>.Failure("Bu firma için talep numarası oluşturma yetkiniz bulunmamaktadır."));
                 }
 
                 var result = await _demandService.GenerateNextDemandNumberAsync(companyId);

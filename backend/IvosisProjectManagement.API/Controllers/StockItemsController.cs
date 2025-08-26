@@ -83,7 +83,7 @@ using Microsoft.AspNetCore.Mvc;
             if (!HasGroupAccess() && item.CompanyId.HasValue)
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, item.CompanyId.Value))
-                    return Forbid("Bu stok kalemine erişim yetkiniz yok.");
+                     return StatusCode(403, new { success = false, message = "Bu stok kalemine erişim yetkiniz yok." });
             }
 
             return Ok(new { success = true, data = item });
@@ -129,7 +129,7 @@ using Microsoft.AspNetCore.Mvc;
             if (dto.CompanyId.HasValue && !HasGroupAccess())
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
-                    return Forbid("Bu firmaya stok kalemi ekleme yetkiniz yok.");
+                    return StatusCode(403, new { success = false, message = "Bu firmaya stok kalemi ekleme yetkiniz yok." });
             }
             
             var item = await _stockItemService.CreateAsync(dto, userId);

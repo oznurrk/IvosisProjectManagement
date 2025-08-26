@@ -50,7 +50,7 @@ namespace IvosisProjectManagement.API.Controllers
             
             // Sadece üretim rolü olanlar görebilir
             if (!GetCurrentUserRoles().Contains("PRODUCTION_MANAGER"))
-                return Forbid("Üretim projelerini görme yetkiniz yok.");
+                return StatusCode(403, new { success = false, message = "Üretim projelerini görme yetkiniz yok." });
 
             var companyId = GetCurrentCompanyId();
             if (!companyId.HasValue)
@@ -58,7 +58,7 @@ namespace IvosisProjectManagement.API.Controllers
 
             // Sadece çelik firması projelerini döndür (örnek: CompanyId = 1)
             if (companyId.Value != 1) // Çelik firması ID'si
-                return Forbid("Sadece çelik firması üretim projelerini görebilirsiniz.");
+                return StatusCode(403, new { success = false, message = "Sadece çelik firması üretim projelerini görebilirsiniz." });
 
             var projects = await _projectService.GetProductionProjectsAsync(companyId.Value);
             return Ok(projects);
@@ -84,8 +84,7 @@ namespace IvosisProjectManagement.API.Controllers
                 var energyProjects = await _projectService.GetProjectsByCompanyAsync(2);
                 return Ok(energyProjects);
             }
-            
-            return Forbid("Enerji projelerini görme yetkiniz yok.");
+            return StatusCode(403, new { success = false, message = "Enerji projelerini görme yetkiniz yok." });
         }
 
         [HttpGet("{id}")]
@@ -101,7 +100,7 @@ namespace IvosisProjectManagement.API.Controllers
             if (!HasGroupAccess() && project.CompanyId.HasValue)
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, project.CompanyId.Value))
-                    return Forbid("Bu projeye erişim yetkiniz yok.");
+                    return StatusCode(403, new { success = false, message = "Bu projeye erişim yetkiniz yok." });
             }
             
             return Ok(project);
@@ -124,7 +123,7 @@ namespace IvosisProjectManagement.API.Controllers
             if (dto.CompanyId.HasValue && !HasGroupAccess())
             {
                 if (!await _authService.CanUserAccessCompanyAsync(userId, dto.CompanyId.Value))
-                    return Forbid("Bu firmaya proje ekleme yetkiniz yok.");
+                     return StatusCode(403, new { success = false, message = "Bu firmaya proje ekleme yetkiniz yok." });
             }
 
             var created = await _projectService.CreateAsync(dto);
