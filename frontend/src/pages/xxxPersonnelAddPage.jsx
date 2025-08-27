@@ -245,7 +245,7 @@ const PersonnelAddPage = () => {
         tcKimlikNo: "",
         educationLevel: "",
         gender: "",
-        nationality: "Türk",
+        nationality: "Türk", 
         city: "",
         district: "",
         address: "",
@@ -300,7 +300,7 @@ const PersonnelAddPage = () => {
                     type="text"
                     value={form.sicilNo}
                     onChange={(e) => handleChange("sicilNo", e.target.value)}
-                    className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                    className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                     placeholder="Sicil numarasını giriniz"
                     required
                   />
@@ -315,7 +315,7 @@ const PersonnelAddPage = () => {
                       type="text"
                       value={form.name}
                       onChange={(e) => handleChange("name", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                       placeholder="Adını giriniz"
                       required
                     />
@@ -329,7 +329,7 @@ const PersonnelAddPage = () => {
                       type="text"
                       value={form.surname}
                       onChange={(e) => handleChange("surname", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                       placeholder="Soyadını giriniz"
                       required
                     />
@@ -344,7 +344,7 @@ const PersonnelAddPage = () => {
                     type="text"
                     value={form.title}
                     onChange={(e) => handleChange("title", e.target.value)}
-                    className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                    className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                     placeholder="Ünvanını giriniz"
                   />
                 </div>
@@ -357,7 +357,7 @@ const PersonnelAddPage = () => {
                     <select
                       value={form.badge}
                       onChange={(e) => handleChange("badge", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                     >
                       <option value="">Seçiniz</option>
                       <option value="BY">Beyaz Yaka</option>
@@ -372,7 +372,7 @@ const PersonnelAddPage = () => {
                     <select
                       value={form.gender}
                       onChange={(e) => handleChange("gender", e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                     >
                       <option value="">Seçiniz</option>
                       <option value="Erkek">Erkek</option>
@@ -411,7 +411,7 @@ const PersonnelAddPage = () => {
           <IconUser size={48} className="text-gray-400" />
         )}
       </div>
-        <h3 className="text-lg font-bold text-gray-800">
+        <h3 className="text font-bold text-gray-800">
           {form.name || "Ad"} {form.surname || "Soyad"}
         </h3>
         <p className="text-gray-600">{form.title || "Ünvan"}</p>
@@ -434,7 +434,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.department}
                   onChange={(e) => handleChange("department", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                 >
                   <option value="">Firma Seçiniz</option>
                   <option value="Üretim">Üretim</option>
@@ -449,7 +449,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.section}
                   onChange={(e) => handleChange("section", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                 >
                   <option value="">Departman Seçiniz</option>
                   <option value="Çelik">Çelik</option>
@@ -470,7 +470,7 @@ const PersonnelAddPage = () => {
                   type="date"
                   value={form.startDate}
                   onChange={(e) => handleChange("startDate", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                 />
               </div>
 
@@ -481,7 +481,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.workStatus}
                   onChange={(e) => handleChange("workStatus", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                 >
                   <option value="Aktif">Aktif</option>
                   <option value="Pasif">Pasif</option>
@@ -504,7 +504,7 @@ const PersonnelAddPage = () => {
                   value={form.tcKimlikNo}
                   onChange={(e) => handleChange("tcKimlikNo", e.target.value)}
                   maxLength="11"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="11 haneli TC Kimlik No"
                 />
               </div>
@@ -517,7 +517,7 @@ const PersonnelAddPage = () => {
                   type="date"
                   value={form.birthDate}
                   onChange={(e) => handleChange("birthDate", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                 />
               </div>
 
@@ -529,7 +529,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.birthPlace}
                   onChange={(e) => handleChange("birthPlace", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="Doğum yerini giriniz"
                 />
               </div>
@@ -541,7 +541,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.nationality}
                   onChange={(e) => handleChange("nationality", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                 >
                   <option value="TC">TC</option>
                   <option value="SRY">SRY</option>
@@ -556,7 +556,7 @@ const PersonnelAddPage = () => {
                 <select
                   value={form.educationLevel}
                   onChange={(e) => handleChange("educationLevel", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                 >
                   <option value="">Seçiniz</option>
                   <option value="İLKOKUL">İlkokul</option>
@@ -584,7 +584,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.city}
                   onChange={(e) => handleChange("city", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="İl adını giriniz"
                 />
               </div>
@@ -597,7 +597,7 @@ const PersonnelAddPage = () => {
                   type="text"
                   value={form.district}
                   onChange={(e) => handleChange("district", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="İlçe adını giriniz"
                 />
               </div>
@@ -610,7 +610,7 @@ const PersonnelAddPage = () => {
                   value={form.address}
                   onChange={(e) => handleChange("address", e.target.value)}
                   rows="4"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none text"
                   placeholder="Detaylı adres bilgilerini giriniz..."
                 />
               </div>
@@ -631,7 +631,7 @@ const PersonnelAddPage = () => {
                   value={form.mobilePhone}
                   maxLength="11"
                   onChange={(e) => handleChange("mobilePhone", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="0555 123 45 67"
                 />
               </div>
@@ -644,7 +644,7 @@ const PersonnelAddPage = () => {
                   type="email"
                   value={form.email}
                   onChange={(e) => handleChange("email", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="ornek@email.com"
                 />
               </div>
@@ -658,7 +658,7 @@ const PersonnelAddPage = () => {
                   step="0.01"
                   value={form.salary}
                   onChange={(e) => handleChange("salary", e.target.value)}
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="0.00"
                 />
               </div>
@@ -672,7 +672,7 @@ const PersonnelAddPage = () => {
                   value={form.iban}
                   onChange={(e) => handleChange("iban", e.target.value)}
                   maxLength="26"
-                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                  className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                   placeholder="TR00 0000 0000 0000 0000 00"
                 />
               </div>
@@ -684,7 +684,7 @@ const PersonnelAddPage = () => {
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Personel Fotoğrafı</h3>
+              <h3 className="text font-semibold text-gray-800 mb-2">Personel Fotoğrafı</h3>
               <p className="text-gray-600">Personel için profil fotoğrafı ekleyebilirsiniz</p>
             </div>
 
@@ -728,7 +728,7 @@ const PersonnelAddPage = () => {
                       type="url"
                       value={form.photo}
                       onChange={(e) => handleImageUrlChange(e.target.value)}
-                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                      className="w-full border-2 border-gray-200 p-4 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text"
                       placeholder="https://example.com/photo.jpg"
                     />
                   </div>

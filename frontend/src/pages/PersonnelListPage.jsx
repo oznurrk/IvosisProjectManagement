@@ -61,6 +61,11 @@ const PersonnelListPage = () => {
     setShowDetailModal(true);
   };
 
+  const handlePersonnelAdded = (person) => {
+    setPersonnel((prev) => [...prev, person]); 
+    setShowModal(false); 
+  };
+
 
   const handleUpdate = async (id, updatedData) => {
     try {
@@ -202,6 +207,7 @@ const PersonnelListPage = () => {
 
 
       {/* Actions */}
+      {/*
       <div className="px-4 mb-4">
         <div className="flex justify-between items-center">
           <div className="text-sm text-gray-600">
@@ -215,6 +221,29 @@ const PersonnelListPage = () => {
           </button>
         </div>
       </div>
+      */}
+      <div className="fixed bottom-4 right-4 flex flex-row items-end space-x-2 z-50 md:bottom-6 md:right-6 md:space-x-4">
+                <div className="relative group">
+                  {/*}
+                  <button
+                    onClick={() => navigate("/personel-add")}
+                    className="bg-green-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-green-600 transition-all duration-300">
+                      <IconPlus className="h-5 w-5 md:h-6 md:w-6" />
+                    </button>
+                    <span className="absolute bottom-14 right-1/2 translate-x-1/2 px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm bg-gray-900 text-white rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      Ekle
+                    </span>
+                    */}
+                  <button
+                    onClick={() => {
+                      setSelectedPersonnel(null); // boş veriyoruz, çünkü yeni ekleme olacak
+                      setShowModal(true); // modalı açıyoruz
+                    }}
+                    className="bg-green-500 text-white p-2 md:p-3 rounded-full shadow-lg hover:bg-green-600 transition-all duration-300">
+                      <IconPlus className="h-5 w-5 md:h-6 md:w-6" />
+                  </button>
+                </div>
+              </div>
 
 
       {/* Tablo */}
@@ -399,10 +428,10 @@ const PersonnelListPage = () => {
       <PersonnelEditModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
+        mode={selectedPersonnel ? "edit" : "add"}
         personnel={selectedPersonnel}
-        onSave={handleUpdate}
+        onSave={selectedPersonnel ? handleUpdate : handlePersonnelAdded}
       />
-
 
       {/* Detail Modal */}
       {showDetailModal && selectedPersonnel && (

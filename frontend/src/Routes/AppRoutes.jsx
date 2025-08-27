@@ -12,7 +12,6 @@ import Processes from "../pages/Processes";
 import TaskAdd from "../components/Tasks/TaskAdd";
 import Dashboard from "../pages/Dashboard";
 import PersonnelListPage from "../pages/PersonnelListPage";
-import PersonnelAddPage from "../pages/PersonnelAddPage";
 import StockManagement from "../pages/StockManagement";
 import StockCards from "../pages/StockCards";
 import StockMovements from "../pages/StockMovements";
@@ -42,7 +41,6 @@ const AppRoutes = () => {
                     <Route path="/add-task" element={<TaskAdd />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/users" element={<PersonnelListPage  />} />
-                    <Route path="personel-add" element={<PersonnelAddPage />} />
                     <Route path="/stock-cards" element={<StockCards />} />
                     <Route path="/stock-movements" element={<StockMovements />} />
                     <Route path="/e-invoices" element={<IncomingInvoices />} />

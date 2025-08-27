@@ -66,7 +66,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, personnelName, loading 
   );
 };
 
-const PersonnelEditModal = ({ isOpen, onClose, personnel }) => {
+const PersonnelEditModal = ({ isOpen, onClose, personnel, mode = "add" }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     sicilNo: "",
@@ -136,45 +136,80 @@ const PersonnelEditModal = ({ isOpen, onClose, personnel }) => {
   ];
 
   useEffect(() => {
-    if (personnel) {
-      const formData = {
-        sicilNo: personnel.sicilNo || "",
-        name: personnel.name || "",
-        surname: personnel.surname || "",
-        title: personnel.title || "",
-        badge: personnel.badge || "",
-        department: personnel.department || "",
-        section: personnel.section || "",
-        startDate: personnel.startDate ? personnel.startDate.split('T')[0] : "",
-        birthPlace: personnel.birthPlace || "",
-        birthDate: personnel.birthDate ? personnel.birthDate.split('T')[0] : "",
-        tcKimlikNo: personnel.tcKimlikNo || "",
-        educationLevel: personnel.educationLevel || "",
-        gender: personnel.gender || "",
-        nationality: personnel.nationality || "",
-        city: personnel.city || "",
-        district: personnel.district || "",
-        address: personnel.address || "",
-        mobilePhone: personnel.mobilePhone || "",
-        email: personnel.email || "",
-        salary: personnel.salary ? personnel.salary.toString() : "",
-        iban: personnel.iban || "",
-        photo: personnel.photo || "",
-        workStatus: personnel.workStatus || "Aktif",
-      };
+  if (mode === "edit" && personnel) {
+    const formData = {
+      sicilNo: personnel.sicilNo || "",
+      name: personnel.name || "",
+      surname: personnel.surname || "",
+      title: personnel.title || "",
+      badge: personnel.badge || "",
+      department: personnel.department || "",
+      section: personnel.section || "",
+      startDate: personnel.startDate ? personnel.startDate.split("T")[0] : "",
+      birthPlace: personnel.birthPlace || "",
+      birthDate: personnel.birthDate ? personnel.birthDate.split("T")[0] : "",
+      tcKimlikNo: personnel.tcKimlikNo || "",
+      educationLevel: personnel.educationLevel || "",
+      gender: personnel.gender || "",
+      nationality: personnel.nationality || "",
+      city: personnel.city || "",
+      district: personnel.district || "",
+      address: personnel.address || "",
+      mobilePhone: personnel.mobilePhone || "",
+      email: personnel.email || "",
+      salary: personnel.salary ? personnel.salary.toString() : "",
+      iban: personnel.iban || "",
+      photo: personnel.photo || "",
+      workStatus: personnel.workStatus || "Aktif",
+    };
 
-      setForm(formData);
-      if (personnel.photo) {
-        setPreviewImage(personnel.photo);
-      }
+    setForm(formData);
 
-      // Reset states
-      setActiveTab(0);
-      setCompletedTabs(new Set());
-      setError("");
-      setSuccess("");
+    if (personnel.photo) {
+      setPreviewImage(personnel.photo);
     }
-  }, [personnel]);
+
+    // Reset states
+    setActiveTab(0);
+    setCompletedTabs(new Set());
+    setError("");
+    setSuccess("");
+  } else if (mode === "add") {
+    setForm({
+      sicilNo: "",
+      name: "",
+      surname: "",
+      title: "",
+      badge: "",
+      department: "",
+      section: "",
+      startDate: "",
+      birthPlace: "",
+      birthDate: "",
+      tcKimlikNo: "",
+      educationLevel: "",
+      gender: "",
+      nationality: "",
+      city: "",
+      district: "",
+      address: "",
+      mobilePhone: "",
+      email: "",
+      salary: "",
+      iban: "",
+      photo: "",
+      workStatus: "Aktif",
+    });
+    setPreviewImage(null);
+
+    // Reset states
+    setActiveTab(0);
+    setCompletedTabs(new Set());
+    setError("");
+    setSuccess("");
+  }
+}, [mode, personnel]);
+
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
