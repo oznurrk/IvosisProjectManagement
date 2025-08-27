@@ -62,7 +62,7 @@ const Login = () => {
 
   return (
     <div
-      style={{ background: 'url("kapak.JPG")' }}
+      style={{ background: 'url("login-bg.jpg")' }}
       className="h-screen w-screen !bg-cover !bg-center !bg-no-repeat flex flex-col items-center justify-center"
     >
       <div className="w-[450px] backdrop-blur-md p-10 py-8 rounded-lg border border-primary-400">
